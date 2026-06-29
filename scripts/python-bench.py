@@ -26,10 +26,11 @@ from __future__ import annotations
 
 import json
 import sys
+import os
 import time
 from pathlib import Path
 
-BLENDERGRANNY_PATH = Path("/tmp/granny-audit/blendergranny")
+BLENDERGRANNY_PATH = Path(os.environ.get("BLENDERGRANNY_PATH") or str(Path.home() / ".cache" / "granny-ro-js" / "blendergranny"))
 if not BLENDERGRANNY_PATH.exists():
     sys.exit(
         f"FATAL: {BLENDERGRANNY_PATH} missing — re-clone via : "

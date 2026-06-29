@@ -33,6 +33,7 @@ import {
     symlinkSync,
     writeFileSync,
 } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseBakedSections } from './lib/baked.mjs';
@@ -52,13 +53,16 @@ const GRF_INSPECT = join(__dirname, 'lib', 'grf-inspect.mjs');
 //
 //   RO_FOLDER             — host path to the user's iRO ver12 client
 //                           (must contain data.grf + granny2.dll).
-//   BLENDERGRANNY_PATH    — local checkout of Rasetsuu/blendergranny
-//                           (cloned by `npm run setup:oracle` if missing).
+//   BLENDERGRANNY_PATH    — local checkout of Rasetsuu/blendergranny.
+//                           Defaults to ~/.cache/granny-ro-js/blendergranny ;
+//                           cloned by `npm run setup:oracle` if missing.
 //   GR2_DECOMPRESS_EXE    — Wine shim binary built from shim/gr2_decompress.c.
 //                           Same dir is expected to contain granny2.dll
 //                           (typically a symlink into RO_FOLDER).
+const DEFAULT_BLENDERGRANNY = join(homedir(), '.cache', 'granny-ro-js', 'blendergranny');
+
 const RO_FOLDER = process.env.RO_FOLDER;
-const BLENDERGRANNY = process.env.BLENDERGRANNY_PATH;
+const BLENDERGRANNY = process.env.BLENDERGRANNY_PATH || DEFAULT_BLENDERGRANNY;
 const SHIM_EXE = process.env.GR2_DECOMPRESS_EXE;
 
 function requireEnv(name, value) {

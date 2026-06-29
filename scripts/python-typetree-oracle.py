@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import json
 import sys
+import os
 from pathlib import Path
 
 # Adapt to the gitignored /tmp clone produced at granny-pipeline S1.
-BLENDERGRANNY_PATH = Path("/tmp/granny-audit/blendergranny")
+BLENDERGRANNY_PATH = Path(os.environ.get("BLENDERGRANNY_PATH") or str(Path.home() / ".cache" / "granny-ro-js" / "blendergranny"))
 if not BLENDERGRANNY_PATH.exists():
     sys.exit(
         f"FATAL: {BLENDERGRANNY_PATH} missing — "

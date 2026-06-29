@@ -28,4 +28,7 @@ services:
     env_file:
       - path: .env
         required: false
-    command: ${TEST_COMMAND:-npm test}
+    # sh -c wrapper so TEST_COMMAND can use && / pipes / shell syntax.
+    # Without it, compose v2 tokenizes the string into exec argv and
+    # passes `&&` as a literal arg to the first command.
+    command: ["sh", "-c", "${TEST_COMMAND:-npm test}"]

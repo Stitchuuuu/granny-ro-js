@@ -41,7 +41,7 @@ function probeOracle() {
     if (!haveOracle) return { ok: false, reason: 'oracle script missing' };
     const proc = spawnSync('python3', [
         '-c',
-        'import sys; sys.path.insert(0, "/tmp/granny-audit/blendergranny"); from io_scene_gr2.gr2.skeleton import extract_skeletons; from io_scene_gr2.gr2.animation import extract_animation_set',
+        'import sys; import os; sys.path.insert(0, os.environ.get("BLENDERGRANNY_PATH") or os.path.expanduser("~/.cache/granny-ro-js/blendergranny")); from io_scene_gr2.gr2.skeleton import extract_skeletons; from io_scene_gr2.gr2.animation import extract_animation_set',
     ], { encoding: 'utf8' });
     if (proc.status !== 0) {
         return { ok: false, reason: `blendergranny import failed : ${(proc.stderr || '').trim()}` };

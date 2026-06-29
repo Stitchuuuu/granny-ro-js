@@ -78,7 +78,7 @@ function jsSnapshot(name, buffer) {
  */
 function probeOracle() {
     if (!haveOracle) return { ok: false, reason: 'oracle script missing' };
-    const proc = spawnSync('python3', ['-c', 'import sys; sys.path.insert(0, "/tmp/granny-audit/blendergranny"); from io_scene_gr2.gr2.types import parse_type_definition_array'], {
+    const proc = spawnSync('python3', ['-c', 'import sys; import os; sys.path.insert(0, os.environ.get("BLENDERGRANNY_PATH") or os.path.expanduser("~/.cache/granny-ro-js/blendergranny")); from io_scene_gr2.gr2.types import parse_type_definition_array'], {
         encoding: 'utf8',
     });
     if (proc.status !== 0) {

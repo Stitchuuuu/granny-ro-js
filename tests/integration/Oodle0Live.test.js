@@ -23,6 +23,7 @@ import {
     readdirSync,
     statSync,
 } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseGR2File } from '../../src/GrannyFile.js';
@@ -34,10 +35,9 @@ const PKG = resolve(__dirname, '..', '..');
 const FIXTURE_SOURCE = join(PKG, 'tests', 'fixtures', 'source');
 const FIXTURE_BAKED  = join(PKG, 'tests', 'fixtures', 'baked');
 const PYTHON_ORACLE  = join(PKG, 'scripts', 'python-oracle.py');
-const SHIM_DIR       = '/workspace/iRO_ver12.0-full-client-data/RE/granny2/shim';
-const SHIM_EXE       = join(SHIM_DIR, 'gr2_decompress.exe');
-const SHIM_DLL       = join(SHIM_DIR, 'granny2.dll');
-const BLENDERGRANNY  = '/tmp/granny-audit/blendergranny';
+const SHIM_EXE       = process.env.GR2_DECOMPRESS_EXE || '';
+const SHIM_DLL       = SHIM_EXE ? join(dirname(SHIM_EXE), 'granny2.dll') : '';
+const BLENDERGRANNY  = process.env.BLENDERGRANNY_PATH || join(homedir(), '.cache', 'granny-ro-js', 'blendergranny');
 
 /** Hex-encoded SHA-256 of a buffer. */
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');

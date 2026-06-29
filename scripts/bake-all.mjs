@@ -333,6 +333,23 @@ function main() {
     log('OK —', manifest.fixtures.length, 'fixtures /', totalSections, 'sections',
         `(oodle0=${oodleCount}, none=${noneCount})`,
         '→', MANIFEST);
+
+    // Chain the texture bake — runs the Wine shim over each fixture's
+    // textures and appends a `textures` array to manifest.json. Skipped
+    // automatically when GR2_IGC_EXPORT_EXE is unset / missing (e.g.
+    // bake-free unit-test path) by bake-textures.mjs's own preflight.
+    if (process.env.GR2_IGC_EXPORT_EXE && existsSync(process.env.GR2_IGC_EXPORT_EXE)) {
+        log('chaining bake-textures.mjs (GR2_IGC_EXPORT_EXE='
+            + process.env.GR2_IGC_EXPORT_EXE + ')');
+        const child = spawnSync('node', [join(__dirname, 'bake-textures.mjs')], {
+            stdio: 'inherit',
+        });
+        if (child.status !== 0) {
+            throw new Error(`bake-textures.mjs failed : exit=${child.status}`);
+        }
+    } else {
+        log('skipping texture bake — set GR2_IGC_EXPORT_EXE to enable');
+    }
 }
 
 main();

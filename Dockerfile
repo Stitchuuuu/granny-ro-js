@@ -48,13 +48,17 @@ RUN npm ci
 
 COPY . .
 
-# Build the Wine shim from vendored MIT C source. The matching
+# Build the Wine shims from vendored MIT C source. The matching
 # granny2.dll is RAD copyright and is NOT in the image — it's supplied
 # at runtime via the RO_FOLDER mount (see docker-compose.yml).
+#   - gr2_decompress.exe    section-level Oodle0 decode (parent rollout S3')
+#   - gr2_igc_export.exe    IGC texture bake (granny-texture-igc S2)
 RUN mkdir -p /shim \
-    && i686-w64-mingw32-gcc -static -O2 -o /shim/gr2_decompress.exe shim/gr2_decompress.c
+    && i686-w64-mingw32-gcc -static -O2 -o /shim/gr2_decompress.exe shim/gr2_decompress.c \
+    && i686-w64-mingw32-gcc -static -O2 -o /shim/gr2_igc_export.exe  shim/gr2_igc_export.c
 
 ENV BLENDERGRANNY_PATH=/blendergranny \
-    GR2_DECOMPRESS_EXE=/shim/gr2_decompress.exe
+    GR2_DECOMPRESS_EXE=/shim/gr2_decompress.exe \
+    GR2_IGC_EXPORT_EXE=/shim/gr2_igc_export.exe
 
 CMD ["npm", "test"]

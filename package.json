@@ -33,6 +33,7 @@
   ],
   "scripts": {
     "bake": "node scripts/bake-all.mjs",
+    "bake:textures": "node scripts/bake-textures.mjs",
     "setup:oracle": "node scripts/setup-blendergranny.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

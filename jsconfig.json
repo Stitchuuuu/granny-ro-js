@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "scripts/**/*.mjs",
+    "tests/**/*.js",
+    "index.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests/fixtures"
+  ]
+}

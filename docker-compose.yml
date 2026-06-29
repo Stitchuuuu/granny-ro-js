@@ -1,0 +1,31 @@
+# granny-ro-js — portable test runner.
+#
+# Default `docker compose run test` runs the 80 bake-free unit tests
+# against the source baked into the image. Zero host-side config.
+#
+# For the full live-oracle path (`npm run bake + test:live`), populate
+# `.env` with RO_FOLDER pointing at your iRO ver12 client directory,
+# then set TEST_COMMAND. See .env.example.
+#
+# Hot-dev iteration : just use `npm test` directly on the host. Docker
+# is for portable validation, not live-reload — image is rebuilt on
+# `docker compose build` (cached, sub-second after the first build).
+
+services:
+  test:
+    build: .
+    # Read-only mount of the user's iRO client at /data so bake-all
+    # can reach data.grf + granny2.dll. Defaults to /dev/null when
+    # RO_FOLDER is unset (no-op mount = the bake-free path stays
+    # zero-config).
+    volumes:
+      - ${RO_FOLDER:-/dev/null}:/data:ro
+    environment:
+      # In-container RO_FOLDER points at the mount target above ;
+      # any host-side RO_FOLDER in .env is for compose substitution
+      # only, not for the script.
+      - RO_FOLDER=/data
+    env_file:
+      - path: .env
+        required: false
+    command: ${TEST_COMMAND:-npm test}

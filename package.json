@@ -1,0 +1,72 @@
+{
+  "name": "granny-ro-js",
+  "version": "1.0.0-a.1",
+  "description": "Pure-JS reader for .gr2 (Granny3D format 6) files : Oodle0 decompression + skeleton / mesh / animation extraction + pose composition.",
+  "type": "module",
+  "main": "./src/Granny.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/Granny.js"
+    },
+    "./file": {
+      "types": "./src/GrannyFile.d.ts",
+      "import": "./src/GrannyFile.js"
+    },
+    "./oodle0": {
+      "types": "./src/GrannyOodle0.d.ts",
+      "import": "./src/GrannyOodle0.js"
+    },
+    "./typetree": {
+      "types": "./src/GrannyTypeTree.d.ts",
+      "import": "./src/GrannyTypeTree.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/",
+    "index.d.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "bake": "node scripts/bake-all.mjs",
+    "setup:oracle": "node scripts/setup-blendergranny.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "GRANNY_LIVE_ORACLE=1 vitest run",
+    "typecheck": "tsc --noEmit -p jsconfig.json",
+    "bench": "vitest bench --run",
+    "perf:compare": "node scripts/perf-compare.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevledev/granny-ro-js.git"
+  },
+  "homepage": "https://github.com/kevledev/granny-ro-js#readme",
+  "bugs": {
+    "url": "https://github.com/kevledev/granny-ro-js/issues"
+  },
+  "keywords": [
+    "granny",
+    "granny2",
+    "granny3d",
+    "gr2",
+    "oodle",
+    "oodle0",
+    "decompression",
+    "skeletal-animation"
+  ],
+  "author": "Kévin <cmoi@kevledev.fr>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "typescript": "5.7",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

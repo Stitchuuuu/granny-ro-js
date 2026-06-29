@@ -1,0 +1,370 @@
+Statistical profiling result from isolate-0xffffa1440000-40466-v8.log, (1814 ticks, 0 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+     63    3.5%          /usr/local/bin/node
+      5    0.3%          /usr/lib/aarch64-linux-gnu/libc.so.6
+      1    0.1%          [vdso]
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+    847   46.7%   48.5%  JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+    570   31.4%   32.7%  JS: *remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+    119    6.6%    6.8%  JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+     33    1.8%    1.9%  JS: *bitReverse file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:175:27
+     18    1.0%    1.0%  JS: *get file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:201:8
+     14    0.8%    0.8%  JS: *u32lePadded file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:149:21
+      8    0.4%    0.5%  JS: *ArithModel file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:384:16
+      3    0.2%    0.2%  JS: +decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1    0.1%    0.1%  JS: ^decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1    0.1%    0.1%  JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1    0.1%    0.1%  JS: +decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1    0.1%    0.1%  JS: *_findPos file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:439:13
+      1    0.1%    0.1%  JS: *<anonymous> file:///workspace/robrowser/granny-js/src/GrannyFile.js:167:12
+
+ [C++]:
+   ticks  total  nonlib   name
+     83    4.6%    4.8%  __write@@GLIBC_2.17
+     18    1.0%    1.0%  syscall@@GLIBC_2.17
+      8    0.4%    0.5%  isprint@@GLIBC_2.17
+      5    0.3%    0.3%  pthread_cond_signal@@GLIBC_2.17
+      4    0.2%    0.2%  fputc@@GLIBC_2.17
+      3    0.2%    0.2%  std::ostream::put(char)@@GLIBCXX_3.4
+      3    0.2%    0.2%  __open@@GLIBC_2.17
+      1    0.1%    0.1%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)@@GLIBCXX_3.4.9
+      1    0.1%    0.1%  std::__detail::_Prime_rehash_policy::_M_next_bkt(unsigned long) const@@GLIBCXX_3.4.18
+      1    0.1%    0.1%  std::_Sp_counted_base<(__gnu_cxx::_Lock_policy)2>::_M_release_last_use_cold()
+      1    0.1%    0.1%  _IO_padn@@GLIBC_2.17
+
+ [Summary]:
+   ticks  total  nonlib   name
+   1617   89.1%   92.7%  JavaScript
+    128    7.1%    7.3%  C++
+     25    1.4%    1.4%  GC
+     69    3.8%          Shared libraries
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+     34   57.6%    1.9%  __write@@GLIBC_2.17
+      8   13.6%    0.4%  isprint@@GLIBC_2.17
+      5    8.5%    0.3%  syscall@@GLIBC_2.17
+      4    6.8%    0.2%  fputc@@GLIBC_2.17
+      3    5.1%    0.2%  std::ostream::put(char)@@GLIBCXX_3.4
+      3    5.1%    0.2%  __open@@GLIBC_2.17
+      1    1.7%    0.1%  std::_Sp_counted_base<(__gnu_cxx::_Lock_policy)2>::_M_release_last_use_cold()
+      1    1.7%    0.1%  pthread_cond_signal@@GLIBC_2.17
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+    847   46.7%  JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+    827   97.6%    JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+    657   79.4%      JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+    542   82.5%        JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+    542  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+    542  100.0%            /usr/local/bin/node
+    115   17.5%        JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+    115  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+    115  100.0%            /usr/local/bin/node
+    163   19.7%      JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+    163  100.0%        JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+    162   99.4%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+    162  100.0%            /usr/local/bin/node
+     12    1.4%    JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+     11   91.7%      JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     11  100.0%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     11  100.0%          /usr/local/bin/node
+     11  100.0%            /usr/local/bin/node
+      1    8.3%      JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+
+    570   31.4%  JS: *remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+    516   90.5%    JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+    516  100.0%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+    403   78.1%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+    322   79.9%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+    322  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     81   20.1%          JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     81  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+    105   20.3%        JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+    105  100.0%          JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+    103   98.1%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      2    1.9%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      8    1.6%        JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      8  100.0%          JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      8  100.0%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     34    6.0%    JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+     31   91.2%      JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+     28   90.3%        JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     28  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     28  100.0%            /usr/local/bin/node
+      3    9.7%        JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      3  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      3  100.0%            /usr/local/bin/node
+      3    8.8%      JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      3  100.0%        JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      3  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      3  100.0%            /usr/local/bin/node
+
+    119    6.6%  JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+     88   73.9%    JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+     75   85.2%      JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     75  100.0%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     75  100.0%          /usr/local/bin/node
+     75  100.0%            /usr/local/bin/node
+     13   14.8%      JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     13  100.0%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     13  100.0%          /usr/local/bin/node
+     13  100.0%            /usr/local/bin/node
+     30   25.2%    JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+     30  100.0%      JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+     29   96.7%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+     29  100.0%          /usr/local/bin/node
+     29  100.0%            /usr/local/bin/node
+      1    3.3%        Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+
+     83    4.6%  __write@@GLIBC_2.17
+     13   15.7%    JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+     13  100.0%      JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      3   23.1%        JS: ~<anonymous> node:internal/streams/duplex:1:1
+      3  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      3   23.1%        /usr/local/bin/node
+      1   33.3%          JS: ^getOwn node:internal/bootstrap/realm:202:16
+      1  100.0%            JS: ^syncExports node:internal/bootstrap/realm:371:14
+      1   33.3%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1   33.3%          /usr/local/bin/node
+      1  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      2   15.4%        JS: ~<anonymous> node:perf_hooks:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    7.7%        JS: ~<anonymous> node:stream:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1    7.7%        JS: ~<anonymous> node:internal/streams/operators:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1    7.7%        JS: ~<anonymous> node:internal/repl/history:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1    7.7%        JS: ~<anonymous> node:internal/perf/performance:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1    7.7%        JS: ~<anonymous> node:internal/fs/promises:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      6    7.2%    JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      3    3.6%    JS: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:26:27
+      3  100.0%      /usr/local/bin/node
+      3  100.0%        Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      3  100.0%          /usr/local/bin/node
+      3  100.0%            /usr/local/bin/node
+      2    2.4%    JS: ~<anonymous> node:net:1:1
+      2  100.0%      JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%        JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2  100.0%          /usr/local/bin/node
+      2  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      2    2.4%    JS: *remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+      2  100.0%      JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      2  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1   50.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1   50.0%          JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.2%    JS: ~decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%        JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%          JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.2%    JS: ~Duplex node:internal/streams/duplex:64:16
+      1  100.0%      JS: ~Socket node:net:365:16
+      1  100.0%        /usr/local/bin/node
+      1  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    1.2%    JS: ~ArithModel file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:384:16
+      1  100.0%      JS: ~LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      1  100.0%        JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%          JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.2%    JS: ^readModelSymbol file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:612:25
+      1  100.0%      JS: ^decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%        JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%          JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.2%    JS: +bitReverse file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:175:27
+      1  100.0%      JS: +remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+      1  100.0%        JS: ^getValue file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:269:13
+      1  100.0%          JS: +readModelSymbol file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:612:25
+      1  100.0%            JS: ^decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1    1.2%    JS: +EscapeSymbol file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:373:16
+      1  100.0%      JS: +decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.2%    JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.2%    /usr/local/bin/node
+      1  100.0%      JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     63    3.5%  /usr/local/bin/node
+     10   15.9%    JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      9   14.3%    JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      9  100.0%      JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   22.2%        JS: ~<anonymous> node:internal/readline/interface:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   22.2%        JS: ~<anonymous> node:internal/fs/streams:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   22.2%        JS: ~<anonymous> node:internal/fs/promises:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:net:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/streams/readable:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/streams/duplex:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      6    9.5%    JS: *ArithModel file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:384:16
+      3   50.0%      JS: +LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      3  100.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      2   66.7%          JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      2  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1   33.3%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      3   50.0%      JS: *LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      3  100.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      3  100.0%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      3  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      4    6.3%    /usr/local/bin/node
+      2   50.0%      JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      2  100.0%        JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      2  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      2  100.0%            /usr/local/bin/node
+      1   25.0%      JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%        /usr/local/bin/node
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+      1   25.0%      JS: +FastBuffer node:internal/buffer:960:1
+      1  100.0%        JS: +sectionBytes file:///workspace/robrowser/granny-js/src/GrannyFile.js:264:21
+      1  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      3    4.8%    JS: +parseGR2File file:///workspace/robrowser/granny-js/src/GrannyFile.js:188:29
+      3  100.0%      JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      3  100.0%        /usr/local/bin/node
+      3  100.0%          /usr/local/bin/node
+      3  100.0%            /usr/local/bin/node
+      1    1.6%    JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%      Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%        /usr/local/bin/node
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+      1    1.6%    JS: ~decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%      JS: ~readModelSymbol file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:612:25
+      1  100.0%        JS: ~decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.6%    JS: ~bufferView file:///workspace/robrowser/granny-js/src/GrannyFile.js:137:20
+      1  100.0%      JS: ~detectGR2 file:///workspace/robrowser/granny-js/src/GrannyFile.js:110:26
+      1  100.0%        JS: +parseGR2File file:///workspace/robrowser/granny-js/src/GrannyFile.js:188:29
+      1  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    1.6%    JS: ~bestShift file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:347:19
+      1  100.0%      JS: ~ArithModel file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:384:16
+      1  100.0%        JS: ~LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.6%    JS: ~Socket._writeGeneric node:net:995:42
+      1  100.0%      JS: ~Socket._write node:net:1037:35
+      1  100.0%        JS: ~writeOrBuffer node:internal/streams/writable:546:23
+      1  100.0%          JS: ~_write node:internal/streams/writable:451:16
+      1  100.0%            JS: ~Writable.write node:internal/streams/writable:502:36
+      1    1.6%    JS: ~<anonymous> node:internal/modules/esm/initialize_import_meta:1:1
+      1  100.0%      JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%        JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.6%    JS: ^decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%      JS: ^readModelSymbol file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:612:25
+      1  100.0%        JS: ^decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.6%    JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%      JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%        JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+      1    1.6%    JS: +LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      1  100.0%      JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%        JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    1.6%    JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    1.6%    JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%      JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%        JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%          Script: ~<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    1.6%    JS: *_rescale file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:513:13
+      1  100.0%      JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.6%    JS: *_findPos file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:439:13
+      1  100.0%      JS: +decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    1.6%    JS: *LZState file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:592:16
+      1  100.0%      JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%        JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1  100.0%          JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+
+     33    1.8%  JS: *bitReverse file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:175:27
+     24   72.7%    JS: *remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+     19   79.2%      JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+     19  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+     14   73.7%          JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+     12   85.7%            JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      2   14.3%            JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      4   21.1%          JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      4  100.0%            JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      1    5.3%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      5   20.8%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      3   60.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      3  100.0%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      3  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      2   40.0%        JS: ^decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      2  100.0%          JS: ^decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      2  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      4   12.1%    JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      4  100.0%      JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      4  100.0%        JS: +decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      4  100.0%          JS: +decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+      4  100.0%            JS: ^<anonymous> file:///workspace/robrowser/granny-js/scripts/perf-profile.mjs:1:1
+      1    3.0%    JS: +remove file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:281:11
+      1  100.0%      JS: *decompress file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:404:15
+      1  100.0%        JS: *decodeBlock file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ~decompressOodle0 file:///workspace/robrowser/granny-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ~decompressSection file:///workspace/robrowser/granny-js/src/Granny.js:36:34
+

@@ -14,6 +14,7 @@ import type {
 } from './GrannyTypeTree.js';
 import type { Skeleton, ExtractSkeletonsOptions } from './GrannySkeleton.js';
 import type { MeshGeometry, ExtractMeshesOptions } from './GrannyMesh.js';
+import type { TextureRecord, ExtractTexturesOptions } from './GrannyTexture.js';
 import type {
     Animation,
     TrackGroup,
@@ -77,6 +78,18 @@ export interface ParseModelResult extends ParseResult {
 /** Combined options for {@link parseModel} (forwarded to skeleton + mesh extractors). */
 export interface ParseModelOptions extends ExtractSkeletonsOptions, ExtractMeshesOptions {}
 
+/** Result of {@link parseTextured} : {@link ParseModelResult} + texture extraction. */
+export interface ParseTexturedResult extends ParseModelResult {
+    /** All decoded textures in the file (empty for texture-less fixtures). */
+    readonly textures: readonly TextureRecord[];
+}
+
+/** Combined options for {@link parseTextured} (forwarded to skeleton + mesh + texture extractors). */
+export interface ParseTexturedOptions
+    extends ExtractSkeletonsOptions,
+        ExtractMeshesOptions,
+        ExtractTexturesOptions {}
+
 /** Result of {@link parseAnimated} : {@link ParseModelResult} + animation extraction. */
 export interface ParseAnimatedResult extends ParseModelResult {
     /** All animations in the file (empty for pure-model fixtures without curves). */
@@ -123,6 +136,18 @@ export function parseAnimated(
 ): ParseAnimatedResult;
 
 /**
+ * Full textured-model pipeline : `parseModel(buffer)` + texture
+ * extraction. Decodes every (texture, image, MIP) triple to RGBA8888,
+ * ready for upload to a GPU texture. S3TC textures (encoding=2) throw
+ * — no iRO ver12 asset uses them. IGC textures (encoding=3) throw in
+ * `1.1.0-a.0` ; the JS bitstream decoder lands in `1.1.0-a.1`.
+ */
+export function parseTextured(
+    buffer: ArrayBuffer | Uint8Array | DataView | ArrayBufferView,
+    options?: ParseTexturedOptions,
+): ParseTexturedResult;
+
+/**
  * Sample the first skeleton of `parsed` at time `t` against
  * `parsed.animations[animationIndex]`. Returns a {@link PoseSnapshot}
  * with per-bone local Transforms + world matrices + skinning matrices
@@ -150,6 +175,7 @@ export {
 } from './GrannyTypeTree.js';
 export { extractSkeletons } from './GrannySkeleton.js';
 export { extractMeshes } from './GrannyMesh.js';
+export { extractTextures, walkTextureImages } from './GrannyTexture.js';
 export {
     extractAnimations,
     evaluateTransformTrack,
@@ -176,6 +202,8 @@ export type {
     ExtractSkeletonsOptions,
     MeshGeometry,
     ExtractMeshesOptions,
+    TextureRecord,
+    ExtractTexturesOptions,
     Animation,
     TrackGroup,
     TransformTrack,

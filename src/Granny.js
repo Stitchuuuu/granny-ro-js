@@ -23,6 +23,7 @@ import {
 } from './GrannyTypeTree.js';
 import { extractSkeletons } from './GrannySkeleton.js';
 import { extractMeshes } from './GrannyMesh.js';
+import { extractTextures, walkTextureImages } from './GrannyTexture.js';
 import { extractAnimations, evaluateTransformTrack, evaluateAnimation } from './GrannyAnimation.js';
 import {
     composeLocalMatrix,
@@ -36,6 +37,7 @@ export { parseGR2File, COMPRESSION_NAMES, SECTION_NAMES };
 export { COMPRESSION_NONE, COMPRESSION_OODLE0 };
 export { loadGR2, parseTypeTree, parseObject, objectStorageSize, readReferenceArrayObjects };
 export { extractSkeletons, extractMeshes };
+export { extractTextures, walkTextureImages };
 export { extractAnimations, evaluateTransformTrack, evaluateAnimation };
 export {
     composeLocalMatrix,
@@ -155,6 +157,32 @@ export function parseAnimated(buffer, options = {}) {
  * push per-bone transforms to the GPU vertex shader (`skinningMatrices`)
  * + debug-friendly intermediates (`localTransforms`, `worldMatrices`).
  */
+/**
+ * Full textured-model pipeline : `parseModel(buffer)` + texture
+ * extraction. On any model fixture with textures, `result.textures`
+ * carries each decoded `(texture, image, MIP)` as RGBA8888 ready for
+ * upload to the GPU. Animation-only fixtures resolve `result.textures`
+ * to `[]`.
+ *
+ * Re-runs the lower-level pipeline locally (does not call
+ * {@link parseModel}) so the lean shape stays consistent with the other
+ * pipeline entries.
+ *
+ * @throws Error on textures with `encoding=2` (S3TC, not in iRO corpus)
+ * @throws Error on textures with `encoding=3` (IGC) in `1.1.0-a.0` —
+ *   the JS bitstream port lands in `1.1.0-a.1` (S3.5).
+ */
+export function parseTextured(buffer, options = {}) {
+    const file = parseGR2File(buffer);
+    const loaded = loadGR2(file);
+    const typeTree = parseTypeTree(loaded, file.header.root_type);
+    const root = parseObject(loaded, typeTree, file.header.root_object);
+    const skeletons = extractSkeletons(loaded, options);
+    const meshes = extractMeshes(loaded, options);
+    const textures = extractTextures(loaded, options);
+    return { file, typeTree, root, skeletons, meshes, textures };
+}
+
 export function poseAt(parsed, animationIndex, t) {
     const skeleton = parsed.skeletons?.[0];
     if (!skeleton) {

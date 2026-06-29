@@ -58,9 +58,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseGR2File } from '../src/GrannyFile.js';
-import {
-    loadGR2, parseTypeTree, parseObject, readReferenceArrayObjects,
-} from '../src/GrannyTypeTree.js';
+import { loadGR2 } from '../src/GrannyTypeTree.js';
+import { walkTextureImages } from '../src/GrannyTexture.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, '..');
@@ -99,125 +98,6 @@ function ensureDir(path) {
 
 function log(...args) {
     process.stderr.write('[bake-textures] ' + args.join(' ') + '\n');
-}
-
-// --- type-tree walk : textures + images + mip levels -------------------
-
-/**
- * Walk a loaded .gr2 → return one record per (texture, image, mip).
- * Each record carries Width, Height, Encoding, Alpha + the raw Pixels
- * bytes ready for encoding-dispatch. Doesn't decode anything ; that's
- * the bake-driver's job.
- */
-function extractRawTextures(loaded) {
-    const file = loaded.file;
-    const rootTypeTree = parseTypeTree(loaded, file.header.root_type);
-    const root = parseObject(loaded, rootTypeTree, file.header.root_object, { maxArrayRefs: 256 });
-    const texField = root.Textures;
-    if (!texField || !texField.reference_type) return [];
-
-    const textureType = texField.reference_type;
-    const textureRefs = texField.element_refs ?? [];
-    if (textureRefs.length === 0) return [];
-
-    const texMembers = parseTypeTree(loaded, [textureType.section, textureType.offset]);
-    const records = [];
-
-    for (let ti = 0; ti < textureRefs.length; ti++) {
-        const texRef = textureRefs[ti];
-        if (!texRef) continue;
-        const texFields = parseObject(loaded, texMembers, [texRef.section, texRef.offset], { maxArrayRefs: 64 });
-        const width = texFields.Width?.value ?? 0;
-        const height = texFields.Height?.value ?? 0;
-        const encoding = texFields.Encoding?.value ?? 0;
-        const subFormat = texFields.SubFormat?.value ?? 0;
-        const fromFileName = texFields.FromFileName?.value ?? '';
-        const alpha = readAlphaFromLayout(loaded, texMembers, texFields, texRef);
-
-        const imagesField = texFields.Images;
-        const imageType = imagesField?.reference_type ?? null;
-        const images = imageType ? readReferenceArrayObjects(
-            loaded,
-            imagesField.target ?? null,
-            imagesField.count ?? 0,
-            imageType,
-            { maxCount: 8 },
-        ) : [];
-
-        for (let ii = 0; ii < images.length; ii++) {
-            const imgFields = images[ii].fields;
-            const mipsField = imgFields.MIPLevels;
-            const mipType = mipsField?.reference_type ?? null;
-            const mips = mipType ? readReferenceArrayObjects(
-                loaded,
-                mipsField.target ?? null,
-                mipsField.count ?? 0,
-                mipType,
-                { maxCount: 32 },
-            ) : [];
-
-            for (let mi = 0; mi < mips.length; mi++) {
-                const mipFields = mips[mi].fields;
-                const pixelField = mipFields.Pixels ?? mipFields.PixelBytes;
-                const pixelCount = pixelField?.count ?? 0;
-                const pixelTarget = pixelField?.target ?? null;
-                let pixelBytes = null;
-                if (pixelTarget && pixelCount > 0) {
-                    const section = loaded.sectionsOriginal[pixelTarget.section];
-                    if (section
-                        && pixelTarget.offset >= 0
-                        && pixelTarget.offset + pixelCount <= section.length) {
-                        pixelBytes = section.subarray(pixelTarget.offset, pixelTarget.offset + pixelCount);
-                    }
-                }
-                records.push({
-                    texIdx: ti,
-                    imgIdx: ii,
-                    mipIdx: mi,
-                    width,
-                    height,
-                    encoding,
-                    subFormat,
-                    alpha,
-                    fromFileName,
-                    pixelBytes,
-                    pixelCount,
-                });
-            }
-        }
-    }
-    return records;
-}
-
-/**
- * Infer Alpha (0 / 1) from the Texture's inline Layout struct. The
- * Layout's BytesPerPixel field is the first 4 bytes ; 4 = RGBA → alpha,
- * 3 = RGB → no alpha. Falls back to 1 (assume alpha) if unreadable —
- * IGC fixtures in iRO all set BinkEncodeAlpha so the default matches
- * the corpus.
- */
-function readAlphaFromLayout(loaded, texMembers, texFields, texRef) {
-    try {
-        const layoutField = texFields.Layout;
-        if (!layoutField || layoutField.type !== 'inline') return 1;
-        let layoutMember = null;
-        for (let i = 0; i < texMembers.length; i++) {
-            if (texMembers[i].name === 'Layout') {
-                layoutMember = texMembers[i];
-                break;
-            }
-        }
-        if (!layoutMember || !layoutMember.referenceType) return 1;
-        const refSection = layoutMember.referenceType.section;
-        if (!loaded.sectionsOriginal[refSection]) return 1;
-        const layoutMembers = parseTypeTree(loaded, [refSection, layoutMember.referenceType.offset]);
-        const layoutOffset = layoutField.offset ?? 0;
-        const layoutFields = parseObject(loaded, layoutMembers, [texRef.section, texRef.offset + layoutOffset]);
-        const bpp = layoutFields.BytesPerPixel?.value;
-        return bpp === 3 ? 0 : 1;
-    } catch {
-        return 1;
-    }
 }
 
 // --- encoding dispatch -------------------------------------------------
@@ -293,7 +173,7 @@ function bakeFixture(fixturePath, baked, options) {
     const buf = readFileSync(fixturePath);
     const file = parseGR2File(buf);
     const loaded = loadGR2(file);
-    const records = extractRawTextures(loaded);
+    const records = walkTextureImages(loaded);
     const stem = fixtureStem(fixturePath);
     const fixtureDir = join(baked, stem);
     ensureDir(fixtureDir);

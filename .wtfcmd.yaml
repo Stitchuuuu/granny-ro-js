@@ -1,0 +1,36 @@
+# wtf task runner — see .devcontainer/knowledge/wtf.md in the devcontainer
+# for the authoring cheat-sheet, or https://wtf.blunt.sh for canonical docs.
+#
+# Run from this repo's root (or any descendant — wtf walks up).
+
+- name: test
+  desc: |
+    Build the image (cached after the first run) and run `docker compose
+    run --rm test`. With .env populated, runs the full live-oracle path
+    (~3 min bake + 629 tests). Without .env, runs the 80 bake-free units
+    (~700 ms).
+
+    Pass --no-build to skip the build step when iterating.
+  flags:
+    - name: [no-build, n]
+      desc: Skip docker compose build (use the already-built image).
+      default: false
+      test: $bool
+  cmd: |
+    {{ if not .no_build }}docker compose build{{ end }}
+    docker compose run --rm test
+
+- name: test:bake-free
+  desc: |
+    Force the bake-free test path (80 unit tests, no Wine / Python /
+    fixtures needed). Bypasses any TEST_COMMAND set in .env.
+  cmd: |
+    docker compose build
+    docker compose run --rm -e TEST_COMMAND='npm test' test
+
+- name: publish:dry
+  desc: |
+    Inspect the npm tarball that would ship — verify the `files:`
+    whitelist matches expectations (no tests / scripts / docs / shim
+    leakage).
+  cmd: npm publish --dry-run --tag alpha

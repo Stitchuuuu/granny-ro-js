@@ -43,11 +43,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kevledev/granny-ro-js.git"
+    "url": "git+https://github.com/stitchuuuu/granny-ro-js.git"
   },
-  "homepage": "https://github.com/kevledev/granny-ro-js#readme",
+  "homepage": "https://github.com/stitchuuuu/granny-ro-js#readme",
   "bugs": {
-    "url": "https://github.com/kevledev/granny-ro-js/issues"
+    "url": "https://github.com/stitchuuuu/granny-ro-js/issues"
   },
   "keywords": [
     "granny",
@@ -59,7 +59,7 @@
     "decompression",
     "skeletal-animation"
   ],
-  "author": "Kévin <cmoi@kevledev.fr>",
+  "author": "Stitchuuuu <stitchuuuu@icloud.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^26.0.1",

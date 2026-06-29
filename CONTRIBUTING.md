@@ -9,7 +9,7 @@ via the `package.json` `files:` whitelist.
 ## Quick start
 
 ```bash
-git clone https://github.com/kevledev/granny-ro-js
+git clone https://github.com/stitchuuuu/granny-ro-js
 cd granny-ro-js
 docker compose run test
 ```

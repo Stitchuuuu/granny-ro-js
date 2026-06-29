@@ -1,7 +1,7 @@
 # granny-ro-js
 
 [![npm](https://img.shields.io/npm/v/granny-ro-js/alpha?label=npm)](https://www.npmjs.com/package/granny-ro-js)
-[![CI](https://github.com/kevledev/granny-ro-js/actions/workflows/test.yml/badge.svg)](https://github.com/kevledev/granny-ro-js/actions/workflows/test.yml)
+[![CI](https://github.com/stitchuuuu/granny-ro-js/actions/workflows/test.yml/badge.svg)](https://github.com/stitchuuuu/granny-ro-js/actions/workflows/test.yml)
 [![license](https://img.shields.io/npm/l/granny-ro-js.svg)](LICENSE)
 
 Pure-JS reader for `.gr2` (Granny3D format 6) files. Decompresses

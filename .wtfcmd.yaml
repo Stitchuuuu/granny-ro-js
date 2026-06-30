@@ -6,11 +6,10 @@
 - name: test
   desc: |
     Build the image (cached after the first run) and run `docker compose
-    run --rm test`. With .env populated, runs the full live-oracle path
-    (~3 min bake + 629 tests). Without .env, runs the 80 bake-free units
-    (~700 ms).
+    run --rm test`. Defaults to the JS-only contract (`npm test`). Set
+    TEST_COMMAND in .env to override (e.g. `npm run test:live`).
 
-    Pass --no-build to skip the build step when iterating.
+    Pass --nobuild to skip the build step when iterating.
   flags:
     - name: [nobuild, n]
       desc: Skip docker compose build (use the already-built image).
@@ -21,24 +20,35 @@
     docker compose run --rm test
 
 - group: test
-  name: bakefree
-  desc: |
-    Force the bake-free test path (80 unit tests, no Wine / Python /
-    fixtures needed). Bypasses any TEST_COMMAND set in .env.
-  cmd: |
-    docker compose build
-    docker compose run --rm -e TEST_COMMAND='npm test' test
-
-- group: test
   name: js
   desc: |
     JS-only content-addressed parity test via the **host Node** runtime
     (Node 20+ required). Fastest path overall — no docker startup,
-    sub-second test run. Use this when iterating on the JS port.
+    sub-second test run.
 
     For the Docker equivalent (when host has no Node) : `wtf test jsdocker`.
   cmd: |
     npm run test:js
+
+- group: test
+  name: live
+  desc: |
+    Live wine-vs-JS parity check : runs `npm run bake` (wine +
+    gr2_decompress.exe on sections), `npm run bake:textures` (wine +
+    gr2_igc_export.exe on IGC), merges those outputs with JS structural
+    extracts into a temp content-addressed manifest, then runs `test-js`
+    against it.
+
+    Green = JS port reproduces granny2.dll output byte-for-byte at this
+    moment. ~3 min cold, seconds warm.
+
+    Prerequisites :
+      - Wine (Linux container has it ; macOS via Wine.app or brew)
+      - RO_FOLDER set (data.grf + granny2.dll)
+
+    For the JS-only smoke (no wine) : `wtf test js`.
+  cmd: |
+    npm run test:live
 
 - group: test
   name: jsdocker
@@ -49,99 +59,112 @@
 
     For the native host-Node equivalent : `wtf test js`.
 
-    Pass --no-build to skip the build step when iterating.
+    Pass --nobuild to skip the build step when iterating.
   flags:
-    - name: [no-build, n]
+    - name: [nobuild, n]
       desc: Skip docker compose build (use the already-built image).
       default: false
       test: $bool
   cmd: |
-    {{ if not .no_build }}docker compose build test-js{{ end }}
+    {{ if not .nobuild }}docker compose build test-js{{ end }}
     docker compose run --rm test-js
 
-- group: build
-  name: shim
+- group: test
+  name: matrix
   desc: |
-    Cross-compile shim/gr2_igc_export.c → shim/prebuilt/gr2_igc_export.exe
-    via the heavyweight image (it has mingw-w64). Useful when the host
-    doesn't have mingw installed.
-
-    For the host-Node equivalent (works on Linux + macOS + MSYS2 with
-    mingw on PATH) : `npm run build:shim`.
+    Run the JS contract check + verify any per-target rebake artifacts
+    present in tests/fixtures/rebake-fresh/. Prints a ✓/⊘/✗ table per
+    target. No wine needed for the JS row.
   cmd: |
+    npm run test:matrix
+
+- name: build
+  desc: |
+    Cross-compile shim/gr2_igc_export.c → shim/prebuilt/gr2_igc_export.exe.
+
+    Default : host mingw-w64 (works on Linux + macOS with `brew install
+    mingw-w64` + Windows with MSYS2).
+
+    Pass --docker to build inside the heavyweight image (no host mingw
+    needed).
+  flags:
+    - name: docker
+      desc: Build via the heavyweight Docker image instead of host mingw.
+      default: false
+      test: $bool
+  cmd: |
+    {{ if .docker -}}
     docker compose run --rm build-shim
+    {{- else -}}
+    npm run build:shim
+    {{- end }}
 
-- group: rebake
-  name: container
+- name: rebake
   desc: |
-    DLL parity re-bake inside the heavyweight image (wine 8 + qemu-i386 +
-    shim + granny2.dll). Compares wine output element-by-element against
-    the committed content manifest. Needs RO_FOLDER set in .env so the
-    user's data.grf + granny2.dll get mounted at /data inside the
-    container.
+    DLL parity re-bake : runs the wine + shim + granny2.dll pipeline
+    against the user's data.grf + tests/fixtures/source/, writes the
+    fresh manifest to tests/fixtures/rebake-fresh/<target>/manifest.json.
 
-    Container has a known IGC divergence vs canonical macOS / Windows
-    re-bake — see docs/HOWTO.md.
+    Pick the target via one of the flags. Defaults to --container.
 
-    Host-Node equivalent (in the devcontainer or a similar Linux+wine
-    host) : `npm run rebake:container && npm run verify:rebake -- --target container`.
+    Verify the diff against the committed content manifest with
+    `wtf verify` (same flags).
+
+    Prerequisites depend on the target :
+      --container   wine 8 + qemu-i386 (devcontainer + heavy Docker image have it)
+      --macos       Wine 9+ via Wine.app / Wine Staging.app / brew
+      --windows     Windows native (no wine, direct exec)
+    Plus RO_FOLDER set in .env (data.grf + granny2.dll).
+  flags:
+    - name: container
+      desc: Re-bake inside the devcontainer / heavyweight Docker image.
+      default: false
+      test: $bool
+    - name: macos
+      desc: Re-bake on macOS host (runs scripts/rebake-host-macos.sh).
+      default: false
+      test: $bool
+    - name: windows
+      desc: Re-bake on Windows host (runs scripts/rebake-host-windows.ps1).
+      default: false
+      test: $bool
   cmd: |
-    docker compose run --rm rebake-container
-
-- group: rebake
-  name: hostmacos
-  desc: |
-    DLL parity re-bake on the macOS host (no docker, no qemu). Drives
-    `scripts/rebake-host-macos.sh` which auto-detects Wine.app /
-    Wine Staging.app / brew wine, stages granny2.dll next to the prebuilt
-    shim, runs the i386 PE under wine 9+'s built-in wow64, and writes
-    `tests/fixtures/rebake-fresh/macos-host/manifest.json`.
-
-    Prerequisites :
-      - Wine 9+ (Wine.app, Wine Staging.app, or `brew install wine-stable`)
-      - RO_FOLDER set (must contain data.grf + granny2.dll)
-      - Node 20+
-
-    Then verify the diff against the committed content manifest :
-      wtf verify rebakemacos    (or: npm run verify:rebake -- --target macos-host)
-  cmd: |
+    {{ if .macos -}}
     ./scripts/rebake-host-macos.sh
-
-- group: rebake
-  name: hostwindows
-  desc: |
-    DLL parity re-bake on Windows native (no wine — direct exec).
-    Drives `scripts/rebake-host-windows.ps1` which runs the prebuilt i386
-    PE shim under Windows + granny2.dll.
-
-    Prerequisites :
-      - Windows 10+ (x86 or x64)
-      - $env:RO_FOLDER set (must contain data.grf + granny2.dll)
-      - Node 20+
-      - PowerShell
-
-    Then verify the diff against the committed content manifest :
-      wtf verify rebakewindows    (or: npm run verify:rebake -- --target windows-host)
-  cmd: |
+    {{- else if .windows -}}
     pwsh ./scripts/rebake-host-windows.ps1
+    {{- else -}}
+    docker compose run --rm rebake-container
+    {{- end }}
 
-- group: verify
-  name: rebakemacos
+- name: verify
   desc: |
-    Diff `tests/fixtures/rebake-fresh/macos-host/manifest.json` (produced
-    by `wtf rebake hostmacos`) element-by-element against the committed
-    content manifest. Prints per-fixture per-category green / red.
+    Diff tests/fixtures/rebake-fresh/<target>/manifest.json (produced by
+    `wtf rebake`) element-by-element against the committed content
+    manifest. Prints per-fixture per-category green / red.
+
+    Pick the target via one of the flags. Defaults to --container.
+  flags:
+    - name: container
+      desc: Verify the container rebake.
+      default: false
+      test: $bool
+    - name: macos
+      desc: Verify the macOS rebake (rebake-fresh/macos-host/).
+      default: false
+      test: $bool
+    - name: windows
+      desc: Verify the Windows rebake (rebake-fresh/windows-host/).
+      default: false
+      test: $bool
   cmd: |
+    {{ if .macos -}}
     npm run verify:rebake -- --target macos-host
-
-- group: verify
-  name: rebakewindows
-  desc: |
-    Diff `tests/fixtures/rebake-fresh/windows-host/manifest.json` (produced
-    by `wtf rebake hostwindows`) element-by-element against the committed
-    content manifest. Prints per-fixture per-category green / red.
-  cmd: |
+    {{- else if .windows -}}
     npm run verify:rebake -- --target windows-host
+    {{- else -}}
+    npm run verify:rebake -- --target container
+    {{- end }}
 
 - group: publish
   name: dry

@@ -1,27 +1,29 @@
 #!/usr/bin/env node
 /**
- * test-live.mjs — regenerate-then-test, ephemeral manifest.
+ * test-live.mjs — live wine-vs-JS parity check.
  *
  * Chains :
- *   1. `regenerate-manifest.mjs --out tests/fixtures/manifest.live.json`
- *      → JS-decompresses every .gr2 in source/, writes a temp manifest.
+ *   1. `regenerate-manifest.mjs --run-bake --out tests/fixtures/manifest.live.json`
+ *      → runs `npm run bake` (wine + gr2_decompress.exe on sections) and
+ *        `npm run bake:textures` (wine + gr2_igc_export.exe on IGC), then
+ *        merges those outputs with JS structural extracts (meshes,
+ *        skeletons, animations, materials) into a content-addressed v2
+ *        manifest at `tests/fixtures/manifest.live.json` (gitignored).
  *   2. `test-js.mjs --manifest tests/fixtures/manifest.live.json`
- *      → JS-decompresses again, verifies sha-equality element-by-element.
+ *      → JS-decompresses every fixture and sha-compares element-by-
+ *        element against the wine-truth values from step 1.
  *
- * In strict JS-only mode this is a tautology (step 2 always passes if
- * step 1 succeeded, since both are pure JS on the same input). Its value
- * shows when `--with-wine` is passed : regen cross-checks JS vs the
- * wine+DLL shim and refuses to write divergent entries to the manifest,
- * so a green run proves JS+DLL agree byte-for-byte AT THIS MOMENT.
+ * Green = JS port reproduces wine + DLL output byte-for-byte AT THIS
+ * MOMENT.
  *
- * Use cases :
- *   - After a DLL version bump : confirm JS+new-DLL still agree.
- *   - Contributor flow : test JS changes end-to-end without amending the
- *     pinned committed manifest in the same PR.
- *   - CI / multi-host : re-derive the manifest fresh on a contributor's
- *     box and verify locally.
+ * Cost : ~3 min cold (21-fixture wine bake), seconds warm.
  *
- * Flags forward to both children — see their --help.
+ * Prerequisites :
+ *   - Wine 8+ on Linux / qemu-i386 OR Wine 9+ on macOS OR Windows native
+ *   - RO_FOLDER pointing at iRO ver12 client (data.grf + granny2.dll)
+ *
+ * For the no-wine JS-only contract check, use `npm test` instead — it
+ * verifies the JS port against the committed content-manifest.json.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -45,6 +47,7 @@ function step(cmd, args) {
 
 step('node', [
     resolve(__dirname, 'regenerate-manifest.mjs'),
+    '--run-bake',
     '--out', LIVE_MANIFEST,
     ...argv,
 ]);
@@ -54,4 +57,4 @@ step('node', [
     '--manifest', LIVE_MANIFEST,
 ]);
 
-process.stderr.write('[test-live] live regen + verify : green\n');
+process.stderr.write('[test-live] wine bake + JS verify : green\n');

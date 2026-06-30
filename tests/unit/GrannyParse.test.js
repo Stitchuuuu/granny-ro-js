@@ -1,25 +1,25 @@
-// 21-fixture parametric parse test.
+// Parametric parse test over every `.gr2` in tests/fixtures/source/.
 //
-// For each fixture in tests/fixtures/manifest.json, calls
-// `Granny.parse(buffer)` and asserts the basic shape : non-empty type
-// tree + non-empty root keyed by ASCII member names + at least one of
-// the canonical sub-arrays present.
+// For each fixture, calls `Granny.parse(buffer)` and asserts the basic
+// shape : non-empty type tree + non-empty root keyed by ASCII member
+// names + at least one of the canonical sub-arrays present.
 //
 // No try/catch fallback — fixtures that fail surface by name so we can
-// see exactly which one regressed (§ memory : feedback_no_empirical_closure_re).
+// see exactly which one regressed.
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from '../../src/Granny.js';
 
-const MANIFEST_URL = new URL('../fixtures/manifest.json', import.meta.url);
-const MANIFEST_PATH = fileURLToPath(MANIFEST_URL);
+const HERE = dirname(fileURLToPath(import.meta.url));
+const SOURCE_DIR = resolve(HERE, '..', 'fixtures', 'source');
 
-const haveManifest = existsSync(MANIFEST_PATH);
-const manifest = haveManifest
-    ? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'))
-    : { fixtures: [], fixture_count: 0 };
+const haveFixtures = existsSync(SOURCE_DIR);
+const fixtures = haveFixtures
+    ? readdirSync(SOURCE_DIR).filter((n) => n.endsWith('.gr2')).sort()
+    : [];
 
 /** Canonical root keys that Granny v2 schemas expose ; at least one must hit. */
 const CANONICAL_ROOT_KEYS = [
@@ -30,18 +30,16 @@ const CANONICAL_ROOT_KEYS = [
     'Textures',
 ];
 
-describe.skipIf(!haveManifest)('Granny.parse — 21-fixture parametric coverage', () => {
-    it(`manifest sanity : ${manifest.fixture_count} fixtures`, () => {
-        expect(manifest.fixtures.length).toBeGreaterThan(0);
-        expect(manifest.fixtures.length).toBe(manifest.fixture_count);
+describe.skipIf(!haveFixtures || fixtures.length === 0)('Granny.parse — parametric coverage', () => {
+    it(`source/ has at least 1 fixture (found ${fixtures.length})`, () => {
+        expect(fixtures.length).toBeGreaterThan(0);
     });
 
-    for (const fixture of manifest.fixtures) {
-        describe(fixture.name, () => {
+    for (const name of fixtures) {
+        describe(name, () => {
             let result;
             beforeAll(() => {
-                const url = new URL(`../fixtures/source/${fixture.name}`, import.meta.url);
-                const buf = readFileSync(url);
+                const buf = readFileSync(resolve(SOURCE_DIR, name));
                 result = parse(buf);
             });
 

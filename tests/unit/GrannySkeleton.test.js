@@ -73,8 +73,8 @@ describe.skipIf(!haveManifest)('extractSkeletons — model fixtures', () => {
 describe.skipIf(!haveManifest)('extractSkeletons — animation-only fixtures', () => {
     // Animation-only fixtures DO ship a skeleton (the bind target for the
     // animation curves) — so we sanity-check shape + value finiteness only.
-    // Field-by-field parity with the Python oracle is covered by the
-    // GrannyModelLive integration test (env-gated by GRANNY_LIVE_ORACLE=1).
+    // Field-by-field parity is covered by the content-addressed
+    // integration test (tests/integration/manifest.test.js).
     for (const fixture of animationFixtures) {
         it(`${fixture.name} returns a well-formed skeleton array`, () => {
             const skeletons = extractSkeletons(loadFixture(fixture.name));

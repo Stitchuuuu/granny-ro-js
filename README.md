@@ -108,28 +108,38 @@ import { parseTypeTree } from 'granny-ro-js/typetree';  // type-tree walker
 | vs. Python clean-room reference | **~55× faster** overall |
 
 Measured on aarch64 Apple Silicon, Node 20. Reproduce with `npm run
-bench` or `npm run perf:compare` (after `npm run bake`). Full breakdown
-in [docs/perf-baseline.md](docs/perf-baseline.md).
+bench` (vitest benches) or `npm run perf` (raw decompression timings on
+the 21-fixture corpus). For a v8 sample profile, use
+`npm run perf:profile`. Full breakdown in
+[docs/perf-baseline.md](docs/perf-baseline.md).
 
 ## Lineage & credits
 
 MIT licensed.
 
-- **Oodle0 codec + format walker** — clean-room port of
-  [Rasetsuu/blendergranny](https://github.com/Rasetsuu/blendergranny)
-  (Python, MIT). The Python clean-room is one of the three validation
-  oracles in the live test suite.
-- **Oodle0 byte parity reference** — RAD `granny2.dll` (proprietary,
-  RAD). Used as a third oracle via a small mingw + Wine shim built
-  from MIT C source ([magcius/noclip.website](https://github.com/magcius/noclip.website)).
-  Neither the DLL nor the shim binary are shipped.
-- **Leaked Granny SDK source** is **not** used as a port source —
-  referenced only as an asm-cite oracle if the Python clean-room and
-  the DLL ever disagree.
+Prior-art that informed the port :
+
+- **[Rasetsuu/blendergranny](https://github.com/Rasetsuu/blendergranny)**
+  (Python, MIT) — clean-room Python decoder. The structural side of the
+  JS port (format walker, type tree, fixups, mesh / skeleton / animation
+  extractors) was informed by reading and porting this codebase, and it
+  was used as a third validation oracle during the port (alongside JS +
+  the canonical DLL) until the harness migrated to the content-addressed
+  manifest in `1.0.0`.
+- **[magcius/noclip.website](https://github.com/magcius/noclip.website)**
+  (MIT) — RagnarokOnline granny.ts walker + the MIT C source for the
+  Wine shim around `granny2.dll`. Audited as a cross-reference for the
+  fixup table abstraction.
+- **RAD `granny2.dll`** (proprietary, RAD Game Tools) — the canonical
+  decoder. Used as the byte-parity oracle via the Wine shim. Neither
+  the DLL nor any RAD-copyrighted material is shipped in this repo.
+- **Leaked Granny SDK source** — referenced only as an asm-cite oracle
+  for edge cases where the prior-art ports disagreed with the DLL ;
+  **not** used as a port source.
 
 See [LICENSE](LICENSE) for full attribution.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, the live-
-oracle test path, and the release flow.
+See [docs/HOWTO.md](docs/HOWTO.md) for the dev setup, the live wine
+cross-check, the multi-host re-bake matrix, and troubleshooting.

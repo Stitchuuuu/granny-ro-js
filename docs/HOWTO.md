@@ -107,38 +107,26 @@ npm run test:js -- --source /path/to/your/.gr2/dir
 npm run test:js -- --manifest /path/to/other/manifest.json
 ```
 
-### Live regenerate + test (two flavors)
-
-**JS-only smoke** (use case A or B, ~700 ms) :
+### Live wine cross-check (use case C, ~3 min cold)
 
 ```sh
-npm run test:live-regen
-```
-
-Equivalent to `regenerate-manifest --out tests/fixtures/manifest.live.json`
-(JS-decompresses to a temp manifest) followed by
-`test-js --manifest tests/fixtures/manifest.live.json`. The second step
-is a JS-vs-JS tautology — useful as a regen-pipeline smoke check, not a
-DLL parity check.
-
-**Real wine cross-check** (use case C, ~3 min cold) :
-
-```sh
-npm run test:live-wine
+npm run test:live
 ```
 
 Chains :
 
-1. `npm run bake` (wine + `gr2_decompress.exe` + Python oracle on sections),
+1. `npm run bake` (wine + `gr2_decompress.exe` on sections, no Python
+   oracle — wine output IS the truth, validated post-port against the
+   committed content manifest),
 2. `npm run bake:textures` (wine + `gr2_igc_export.exe` on IGC textures),
-3. Reads the resulting v1 outputs and merges them with JS structural
-   extracts (meshes / skeletons / animations / materials) into
+3. Merges the wine outputs with JS structural extracts (meshes /
+   skeletons / animations / materials) into
    `tests/fixtures/manifest.live.json` (content-addressed v2 schema),
 4. Runs `test-js` against that manifest.
 
 Green = JS port reproduces `granny2.dll` output byte-for-byte AT THIS
-MOMENT. Use after a DLL version bump, or when bootstrapping a manifest
-from scratch on a new host.
+MOMENT. Use after a DLL version bump, when bootstrapping a manifest
+from scratch on a new host, or when contributing fixtures.
 
 ### Manifest coverage probe (use case B)
 
@@ -264,7 +252,7 @@ Either install wine (see [Prerequisites C](#c-i-want-to-run-the-wine--dll-re-bak
 or set `WINE_BIN` explicitly :
 
 ```sh
-WINE_BIN="/Applications/Wine Staging.app/Contents/Resources/wine/bin/wine" npm run rebake:host-macos
+WINE_BIN="/Applications/Wine Staging.app/Contents/Resources/wine/bin/wine" npm run rebake:macos-host
 ```
 
 ### `granny2.dll not found at <path>`
@@ -273,7 +261,7 @@ Either set `RO_FOLDER` so `${RO_FOLDER}/granny2.dll` is your DLL path,
 or set `GRANNY2_DLL` directly to the absolute path :
 
 ```sh
-GRANNY2_DLL=/path/to/granny2.dll npm run rebake:host-macos
+GRANNY2_DLL=/path/to/granny2.dll npm run rebake:macos-host
 ```
 
 ### `prebuilt shim not found at shim/prebuilt/gr2_igc_export.exe`

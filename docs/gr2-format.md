@@ -1,11 +1,11 @@
 # Granny2 .gr2 — binary format reference
 
 Byte-level layout of `.gr2` files (Granny 2.x, the format Gravity uses
-for WoE objects). Built by porting `Rasetsuu/blendergranny`'s Python
-parser to JS + reading `iRO_ver12.0-full-client-data/granny2.dll` strings.
-The fields documented here are what `granny-ro-js` actually parses today
-(S3') — the full type-tree walker (DataTypeDefinition + RootObject) is
-the job of session S5 and onward, and IS NOT documented yet.
+for WoE objects). Built by reading `granny2.dll` strings + RE'ing the
+relevant codec routines (see [README](../README.md) for prior-art
+lineage). The fields documented here are what `granny-ro-js` actually
+parses today ; the full type-tree walker (DataTypeDefinition +
+RootObject) is documented separately.
 
 All multi-byte fields are u32 unless noted. Little-endian on disk for
 the magic variants our corpus uses (`MAGIC_32LE`) ; the parser also
@@ -192,8 +192,7 @@ literal lengths `2..61` (off-by-one). Symbols ≥ `MAX_LENS - 3` (= 61, 62,
   offset-high).
 
 For details on the arith decoder + rescale logic, see `src/GrannyOodle0.js`
-in this package (which is a 1:1 port of `Rasetsuu/blendergranny`'s
-`io_scene_gr2/gr2/decompress/oodle0.py`). The leaked Microsoft Game
+in this package. The leaked Microsoft Game
 Studios source mirror — file `//jeffr/granny/rt/granny_oodle0_compression.cpp`
 in `sgzwiz/misc_microsoft_gamedev_source_code` — byte-matches our DLL's
 embedded string path and is the asm-cite reference for any edge case the
@@ -238,9 +237,8 @@ at by the section header, encode the rebase :
   all-LE iRO corpus ; non-empty + `byte_reversed` is rejected
   defensively.
 
-The walker doesn't carry the fixup table around — instead it follows
-[blendergranny `fixup.py:14–15, 66–78`](https://github.com/Rasetsuu/blendergranny)
-and **rewrites the pointer slots in-place** with synthesized « fake
+The walker doesn't carry the fixup table around — instead it
+**rewrites the pointer slots in-place** with synthesized « fake
 pointers » that encode `[section, offset]` directly :
 
 ```
@@ -317,22 +315,15 @@ root.Meshes;     // { type: 'array_of_references', count: 1, target, element_ref
 root.Skeletons;  // { type: 'array_of_references', count: 1, target, element_refs }
 ```
 
-### Port source + parity
+### Parity
 
-Ported from [`Rasetsuu/blendergranny`](https://github.com/Rasetsuu/blendergranny)
-`io_scene_gr2/gr2/{fixup,types}.py` (MIT, same provenance as the Oodle0
-codec). The noclip alternative (`magcius/noclip.website/src/RagnarokOnline/granny.ts`,
-MIT) was audited as a cross-reference but not used — it builds a
-single concatenated blob + absolute-offset lookup map that doesn't fit
-our `[section, offset]` abstraction.
-
-S5 parity validated three ways :
+Validated two ways :
 
 1. 21/21 fixtures parse without throwing (`tests/unit/GrannyParse.test.js`).
 2. Each fixture's root carries at least one of `Meshes` / `Skeletons` /
    `Animations` / `Materials` / `Textures` with a sane non-fallback
    member name (no `member_NNN`).
-3. 21/21 fixtures match the Python oracle field-by-field on
-   `typeTreeMemberNames`, `rootKeys`, and per-array `count`
-   (`tests/integration/GrannyParseLive.test.js`, env-gated by
-   `GRANNY_LIVE_ORACLE=1`).
+
+Byte-for-byte parity vs `granny2.dll` for every output category lives
+in the content-addressed integration test
+(`tests/integration/manifest.test.js`).

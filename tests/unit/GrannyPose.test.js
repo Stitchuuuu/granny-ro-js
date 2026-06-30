@@ -8,8 +8,8 @@
 //     on every model fixture must return identity per bone within 1e-4
 //     (the bind-pose math identity Mworld_bind × IWT = I).
 //
-// The live-oracle parity (JS vs Python numpy) lives in the integration
-// suite and is env-gated by GRANNY_LIVE_ORACLE=1.
+// Full per-fixture parity vs `granny2.dll` lives in the content-addressed
+// integration test (tests/integration/manifest.test.js).
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';

@@ -1,8 +1,13 @@
 # Performance baseline
 
-S3' (2026-06-28) locked the **pre-optimization baseline** below.
-S4 (2026-06-28) compared against it and shipped a 1.4× speedup —
-see the [« S4 result » section](#s4-result-2026-06-28) at the bottom.
+> **Note** : the JS-vs-Python ratios below are historical, from when the
+> harness had a Python clean-room oracle in-loop. The current perf tool
+> (`npm run perf` / `scripts/perf.mjs`) measures JS only ; for a v8
+> sample profile use `npm run perf:profile`. See
+> [docs/HOWTO.md](HOWTO.md#performance).
+>
+> Pre-optimization baseline locked early in the port ; post-optimization
+> result documented in the « 1.4× speedup » section at the bottom.
 
 ---
 

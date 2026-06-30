@@ -1,46 +1,24 @@
-// Byte-exact parity tests for the JS texture decoder vs the S2 parity-
-// bake golden RGBA blobs.
-//
-// All-skipped when bake artefacts aren't present (mirrors the
-// [GrannyMesh.test.js](./GrannyMesh.test.js) describe.skipIf pattern).
+// Unit tests for the texture decoder. Byte-exact parity vs granny2.dll
+// for every fixture lives in the content-addressed integration test at
+// tests/integration/manifest.test.js — this file covers the standalone
+// shape contract + the anti-hang guard + the yuvToRGB kernel.
 
 import { describe, it, expect } from 'vitest';
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseGR2File } from '../../src/GrannyFile.js';
 import { loadGR2 } from '../../src/GrannyTypeTree.js';
-import {
-    extractTextures,
-    walkTextureImages,
-    ENCODING_RAW,
-    ENCODING_IGC,
-} from '../../src/GrannyTexture.js';
+import { walkTextureImages } from '../../src/GrannyTexture.js';
 import { yuvToRGB, decodeIGCTexture } from '../../src/GrannyTextureIGC.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, '../..');
 const SOURCE_DIR = resolve(PKG_ROOT, 'tests/fixtures/source');
-const BAKED_DIR = resolve(PKG_ROOT, 'tests/fixtures/baked/textures');
-const MANIFEST_PATH = resolve(PKG_ROOT, 'tests/fixtures/manifest.json');
-const TEXTURES_JSON_PATH = resolve(BAKED_DIR, 'textures.json');
 
-function loadTextureManifest() {
-    if (existsSync(MANIFEST_PATH)) {
-        const m = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-        if (Array.isArray(m.textures)) return m.textures;
-    }
-    if (existsSync(TEXTURES_JSON_PATH)) {
-        const m = JSON.parse(readFileSync(TEXTURES_JSON_PATH, 'utf8'));
-        if (Array.isArray(m.textures)) return m.textures;
-    }
-    return null;
-}
-
-const textures = loadTextureManifest();
-const haveBake = textures !== null && textures.length > 0;
+const haveFixtures = existsSync(SOURCE_DIR) &&
+    readdirSync(SOURCE_DIR).some((n) => n.endsWith('.gr2'));
 
 const fixtureCache = {};
 function loadedFor(fixtureName) {
@@ -52,87 +30,21 @@ function loadedFor(fixtureName) {
     return loaded;
 }
 
-function rawEntries() {
-    return (textures ?? []).filter((e) => e.encoding === ENCODING_RAW);
-}
-function igcEntries() {
-    return (textures ?? []).filter((e) => e.encoding === ENCODING_IGC);
-}
-
-function locate(records, texIdx, imgIdx, mipIdx) {
-    for (let i = 0; i < records.length; i++) {
-        const r = records[i];
-        if (r.texIdx === texIdx && r.imgIdx === imgIdx && r.mipIdx === mipIdx) return r;
-    }
-    return null;
-}
-
 // --- walker shape ----------------------------------------------------
 
-describe.skipIf(!haveBake)('walkTextureImages — shape', () => {
-    it('emits one record per baked manifest entry for guildflag90_1', () => {
+describe.skipIf(!haveFixtures)('walkTextureImages — shape', () => {
+    it('emits 2 records for guildflag90_1 (2 textures × 1 image × 1 mip)', () => {
         const loaded = loadedFor('guildflag90_1.gr2');
         const records = walkTextureImages(loaded);
-        // guildflag90_1 has 2 textures, 1 image each, 1 mip each.
         expect(records.length).toBe(2);
         expect(records[0].pixelBytes).toBeInstanceOf(Uint8Array);
     });
 
-    it('returns [] for animation-only fixtures without crashing', () => {
-        // pick the first animation file in the source dir, if any
-        // (animation files are filtered out of bake but still parse fine)
-        const candidates = ['empelium90_0.gr2', 'treasurebox_2.gr2'];
-        // any model fixture also works ; the contract is « no throw » + array
-        const loaded = loadedFor(candidates[0]);
+    it('returns an array (no throw) on a fixture without textures', () => {
+        const loaded = loadedFor('1_attack.gr2');
         const records = walkTextureImages(loaded);
         expect(Array.isArray(records)).toBe(true);
     });
-});
-
-// --- Raw (encoding=1) byte-exact parity vs S2 golden ----------------
-
-describe.skipIf(!haveBake)('extractTextures — Raw encoding byte-exact parity', () => {
-    const raws = rawEntries();
-    if (raws.length === 0) {
-        it.skip('no Raw fixtures in manifest', () => {});
-        return;
-    }
-    for (const entry of raws) {
-        const stem = `${entry.fixture}/tex${entry.tex_idx}-img${entry.img_idx}-mip${entry.mip_idx}`;
-        it(`${stem} : sha256(pixels) === baked golden`, () => {
-            const loaded = loadedFor(entry.fixture);
-            const records = extractTextures(loaded);
-            const decoded = locate(records, entry.tex_idx, entry.img_idx, entry.mip_idx);
-            expect(decoded, `missing decoded record for ${stem}`).toBeTruthy();
-            expect(decoded.encoding).toBe(ENCODING_RAW);
-            expect(decoded.pixels.length).toBe(entry.width * entry.height * 4);
-            const actualSha = createHash('sha256').update(decoded.pixels).digest('hex');
-            expect(actualSha).toBe(entry.rgba_sha256);
-        });
-    }
-});
-
-// --- IGC (encoding=3) byte-exact parity vs S2 golden ----------------
-
-describe.skipIf(!haveBake)('extractTextures — IGC encoding byte-exact parity', () => {
-    const igcs = igcEntries();
-    if (igcs.length === 0) {
-        it.skip('no IGC fixtures in manifest', () => {});
-        return;
-    }
-    for (const entry of igcs) {
-        const stem = `${entry.fixture}/tex${entry.tex_idx}-img${entry.img_idx}-mip${entry.mip_idx}`;
-        it(`${stem} : sha256(pixels) === baked golden`, () => {
-            const loaded = loadedFor(entry.fixture);
-            const records = extractTextures(loaded);
-            const decoded = locate(records, entry.tex_idx, entry.img_idx, entry.mip_idx);
-            expect(decoded, `missing decoded record for ${stem}`).toBeTruthy();
-            expect(decoded.encoding).toBe(ENCODING_IGC);
-            expect(decoded.pixels.length).toBe(entry.width * entry.height * 4);
-            const actualSha = createHash('sha256').update(decoded.pixels).digest('hex');
-            expect(actualSha).toBe(entry.rgba_sha256);
-        });
-    }
 });
 
 // --- decodeHigh1 anti-hang guard — 1_attack off-corpus bitstream ----

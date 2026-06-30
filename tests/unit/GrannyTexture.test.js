@@ -121,26 +121,31 @@ describe.skipIf(!haveBake)('extractTextures — Raw encoding byte-exact parity',
     }
 });
 
-// --- IGC (encoding=3) deferred — throws a descriptive error ---------
+// --- IGC (encoding=3) S3.6 partial : 4 kernel bugs fixed, planes 1-3 WIP
 
-describe.skipIf(!haveBake)('extractTextures — IGC encoding (deferred to S3.5)', () => {
+describe.skipIf(!haveBake)('extractTextures — IGC encoding (S3.14 arith DLL-faithful ; RGBA downstream WIP)', () => {
     const igcs = igcEntries();
     if (igcs.length === 0) {
         it.skip('no IGC fixtures in manifest', () => {});
         return;
     }
-    // Smoke-check only one IGC fixture : the throw points everyone at the
-    // right plan path. Parametric byte-exact parity for IGC lands in a.1.
+    // S3.14 (2026-06-30) — full DLL-faithful arith port. Trace replay :
+    // 3414/3414 calls match the macOS-wine ARITH trace exactly, 0
+    // divergences. The bitstream layer is byte-exact. RGBA is NOT byte-exact :
+    // 5946/32768 bytes differ from baked golden starting row 83 (downstream
+    // bug in planeDecode / varBits / iDWT2D / yuvToRGB). The exported entry
+    // point still throws with an S3.14/S3.15 guidance message until the
+    // downstream is fixed in S3.15.
     const sample = igcs[0];
-    it(`${sample.fixture}/tex${sample.tex_idx} throws a clear "not yet implemented" error`, () => {
+    it(`${sample.fixture}/tex${sample.tex_idx} throws an "RGBA downstream WIP" error`, () => {
         const loaded = loadedFor(sample.fixture);
-        expect(() => extractTextures(loaded)).toThrow(/IGC.*not yet implemented|S3\.5/i);
+        expect(() => extractTextures(loaded)).toThrow(/arith layer DLL-faithful|S3\.14|S3\.15/i);
     });
 
     it('decodeIGCTexture(): direct call also throws with the same guidance', () => {
         expect(() => decodeIGCTexture({
             Width: 16, Height: 16, Alpha: 1, ImageData: new Uint8Array(8),
-        })).toThrow(/IGC.*not yet implemented|S3\.5/i);
+        })).toThrow(/arith layer DLL-faithful|S3\.14|S3\.15/i);
     });
 });
 

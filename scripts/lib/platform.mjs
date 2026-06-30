@@ -5,7 +5,8 @@
  * Used by bake-textures, bake-all, bake-igc-rgba, rebake, regenerate-manifest.
  *
  * Env contract (all OPTIONAL — auto-detected when absent) :
- *   RO_FOLDER       canonical iRO client root (data.grf + granny2.dll inside)
+ *   RO_FOLDER       Directory containing granny2.dll (and data.grf when
+ *                   the bake needs to extract .gr2 fixtures on first run)
  *   WINE_BIN        wine binary override ; skipped on win32 ; auto-detected on darwin
  *   GRANNY2_DLL     override for ${RO_FOLDER}/granny2.dll
  *   GR2_IGC_EXPORT_EXE  override for shim/prebuilt/gr2_igc_export.exe
@@ -109,16 +110,25 @@ export function findGranny2Dll() {
     }
     if (!process.env.RO_FOLDER) {
         throw new Error(
-            'Neither GRANNY2_DLL nor RO_FOLDER is set. Set RO_FOLDER to ' +
-            'your iRO client root (must contain granny2.dll), or set ' +
-            'GRANNY2_DLL to the absolute path.'
+            'Neither GRANNY2_DLL nor RO_FOLDER is set.\n' +
+            '\n' +
+            'Set ONE of :\n' +
+            '  GRANNY2_DLL  Absolute path to granny2.dll.\n' +
+            '  RO_FOLDER    Directory containing granny2.dll (and a\n' +
+            '               data.grf archive when tests/fixtures/source/\n' +
+            '               is empty — the bake extracts .gr2 fixtures\n' +
+            '               from data.grf on first run, then caches them\n' +
+            '               in tests/fixtures/source/).\n'
         );
     }
     const candidate = join(process.env.RO_FOLDER, 'granny2.dll');
     if (!existsSync(candidate)) {
         throw new Error(
-            `granny2.dll not found at ${candidate}. Set GRANNY2_DLL to ` +
-            `the absolute path, or fix RO_FOLDER.`
+            `granny2.dll not found at ${candidate}.\n` +
+            '\n' +
+            'Either :\n' +
+            '  - point RO_FOLDER at a directory that contains granny2.dll,\n' +
+            '  - or set GRANNY2_DLL to the absolute path of granny2.dll.\n'
         );
     }
     return candidate;

@@ -46,7 +46,7 @@ equivalent to running the DLL.
 
 Filenames only appear in the manifest as a `filenameHint` for log
 readability — they're never used for matching. A user with a different
-iRO version who happens to have one `.gr2` with a matching sha gets
+client version who happens to have one `.gr2` with a matching sha gets
 that one tested ; the rest are reported as "unknown" (not failures).
 
 ---
@@ -62,8 +62,8 @@ that one tested ; the rest are reported as "unknown" (not failures).
 ### B. "I want to test against my own `data.grf`"
 
 - Node ≥ 20
-- `RO_FOLDER` env pointing at your iRO ver12 client root (must contain
-  `data.grf`).
+- `RO_FOLDER` env pointing at a directory containing your client's
+  `data.grf`.
 
 ### C. "I want to run the wine + DLL re-bake locally"
 
@@ -72,8 +72,8 @@ that one tested ; the rest are reported as "unknown" (not failures).
       `brew install --cask --no-quarantine wine-stable`
     - Linux : `sudo apt install wine`
     - Windows : not needed (native exec)
-- `RO_FOLDER` env pointing at iRO ver12 client root (must contain
-  `data.grf` + `granny2.dll`)
+- `RO_FOLDER` env pointing at a directory containing both `data.grf`
+  and `granny2.dll`
 - `tests/fixtures/source/` populated (or use the devcontainer which
   pre-extracts a default set from your `RO_FOLDER`)
 
@@ -131,7 +131,7 @@ from scratch on a new host, or when contributing fixtures.
 ### Manifest coverage probe (use case B)
 
 ```sh
-RO_FOLDER=/path/to/iRO npm run coverage:gr2
+RO_FOLDER=/path/to/client npm run coverage:gr2
 ```
 
 Scans `tests/fixtures/source/` and (when `RO_FOLDER` is set) your
@@ -185,7 +185,7 @@ A Mac user with Docker but no local Wine install can run the rebake in
 the heavyweight image (`target: linux-wine` baseline) :
 
 ```sh
-RO_FOLDER=/path/to/iRO docker compose run --rm rebake
+RO_FOLDER=/path/to/client docker compose run --rm rebake
 ```
 
 #### Verify the JS contract
@@ -222,10 +222,10 @@ docker compose run --rm test-js
 docker compose run --rm build-shim
 
 # Refresh the content manifest from wine+DLL in the container
-RO_FOLDER=/path/to/iRO docker compose run --rm rebake
+RO_FOLDER=/path/to/client docker compose run --rm rebake
 
 # Catch-all (heavyweight pipeline)
-RO_FOLDER=/path/to/iRO TEST_COMMAND='npm run test:live' \
+RO_FOLDER=/path/to/client TEST_COMMAND='npm run test:live' \
   docker compose run --rm test
 ```
 

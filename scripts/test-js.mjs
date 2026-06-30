@@ -32,6 +32,21 @@ import { buildEntry } from './lib/js-bake.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
 
+// ANSI colors — honor NO_COLOR + only emit on TTY (CI logs stay plain).
+const isTTY = process.stderr.isTTY && !process.env.NO_COLOR;
+const ansi = (code) => (s) => isTTY ? `\x1b[${code}m${s}\x1b[0m` : s;
+const bold    = ansi('1');
+const dim     = ansi('2');
+const red     = ansi('31');
+const green   = ansi('32');
+const yellow  = ansi('33');
+const cyan    = ansi('36');
+
+const SYM_OK   = isTTY ? '✓' : 'OK';
+const SYM_FAIL = isTTY ? '✗' : 'FAIL';
+const SYM_SKIP = isTTY ? '?' : '?';
+const TAG = bold(cyan('[test-js]'));
+
 const DEFAULTS = {
     source: resolve(PKG_ROOT, 'tests/fixtures/source'),
     manifest: resolve(PKG_ROOT, 'tests/fixtures/content-manifest.json'),
@@ -54,7 +69,11 @@ function parseArgs(argv) {
 
 function log(opts, ...args) {
     if (opts.json) return;
-    if (!opts.quiet) process.stderr.write('[test-js] ' + args.join(' ') + '\n');
+    if (!opts.quiet) process.stderr.write(TAG + ' ' + args.join(' ') + '\n');
+}
+
+function logForce(...args) {
+    process.stderr.write(TAG + ' ' + args.join(' ') + '\n');
 }
 
 /**
@@ -106,10 +125,14 @@ function compareEntry(expected, actual) {
 }
 
 function fmtCategoryResult(category, r) {
-    if (r.total === 0) return `${category} 0`;
-    return r.match
-        ? `${category} ${r.total}/${r.total} ✓`
-        : `${category} ${r.total - r.mismatches.filter((m) => m.kind === 'sha-mismatch' || m.kind === 'missing').length}/${r.total} ✗`;
+    if (r.total === 0) return dim(`${category} 0`);
+    if (r.match) {
+        return `${category} ${r.total}/${r.total} ${green(SYM_OK)}`;
+    }
+    const bad = r.mismatches.filter((m) =>
+        m.kind === 'sha-mismatch' || m.kind === 'missing'
+    ).length;
+    return `${category} ${red(`${r.total - bad}/${r.total}`)} ${red(SYM_FAIL)}`;
 }
 
 function main() {
@@ -156,7 +179,9 @@ function main() {
                 sha256: fixture.sha256,
                 status: 'unknown',
             });
-            log(opts, '  ?', fixture.name, fixture.sha256.slice(0, 8), '(not in manifest)');
+            log(opts, ' ', yellow(SYM_SKIP), fixture.name,
+                dim(fixture.sha256.slice(0, 8)),
+                dim('(not in manifest)'));
             continue;
         }
         matched++;
@@ -171,7 +196,8 @@ function main() {
                 status: 'extract-fail',
                 error: err.message,
             });
-            log(opts, '  ✗', fixture.name, '— extract failed :', err.message);
+            log(opts, ' ', red(SYM_FAIL), bold(fixture.name),
+                red('— extract failed :'), err.message);
             continue;
         }
         const cmp = compareEntry(expected, actual);
@@ -193,17 +219,17 @@ function main() {
                 .map(([k, v]) => fmtCategoryResult(k, v))
                 .filter((s) => !s.endsWith(' 0'))
                 .join(', ');
-            log(opts, '  ✓', fixture.name, '—', cats);
+            log(opts, ' ', green(SYM_OK), fixture.name, dim('—'), cats);
         } else {
             failed++;
             const cats = Object.entries(cmp.byCategory)
                 .map(([k, v]) => fmtCategoryResult(k, v))
                 .join(', ');
-            log(opts, '  ✗', fixture.name, '—', cats);
+            log(opts, ' ', red(SYM_FAIL), bold(fixture.name), dim('—'), cats);
             if (!opts.quiet) {
                 for (const cat of Object.values(cmp.byCategory)) {
                     for (const m of cat.mismatches) {
-                        process.stderr.write('     ' + JSON.stringify(m) + '\n');
+                        process.stderr.write('     ' + red(JSON.stringify(m)) + '\n');
                     }
                 }
             }
@@ -227,10 +253,18 @@ function main() {
     if (opts.json) {
         console.log(JSON.stringify(summary, null, 2));
     } else {
-        log(opts,
-            `summary : ${passed}/${matched} pass, ${failed} fail, ` +
-            `${unknown} unknown (not in manifest)`
-        );
+        // Final summary line always shown (even with --quiet).
+        const passSeg = failed === 0
+            ? green(`${passed}/${matched} pass`)
+            : `${passed}/${matched} pass`;
+        const failSeg = failed === 0
+            ? dim(`${failed} fail`)
+            : red(bold(`${failed} fail`));
+        const skipSeg = unknown === 0
+            ? dim(`${unknown} unknown`)
+            : yellow(`${unknown} unknown`);
+        const head = failed === 0 ? green(SYM_OK) : red(SYM_FAIL);
+        logForce(`${head} summary : ${passSeg}, ${failSeg}, ${skipSeg} ${dim('(not in manifest)')}`);
     }
     process.exit(failed === 0 ? 0 : 1);
 }

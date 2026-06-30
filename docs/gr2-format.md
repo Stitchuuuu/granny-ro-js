@@ -65,7 +65,7 @@ Read u32s relative to offset `MAGIC_SIZE = 0x20`.
 
 | Offset (+ 0x20) | Field                  | Type                    | Meaning                                                       |
 |-----------------:|------------------------|-------------------------|---------------------------------------------------------------|
-| 0                | `version`              | u32                     | Format version. ≥ 7 for the iRO ver12 corpus.                 |
+| 0                | `version`              | u32                     | Format version. ≥ 7 for the test corpus.                 |
 | 4                | `total_size`           | u32                     | File size as declared by the writer.                          |
 | 8                | `crc`                  | u32                     | CRC32 of the file's data.                                     |
 | 12               | `section_array_offset` | u32                     | Section array offset, relative to `MAGIC_SIZE`.               |
@@ -101,7 +101,7 @@ of u32s.
 ### Section semantic slots
 
 The standard Granny 2.x distribution uses a fixed 6-slot layout
-(matches all 21 fixtures of the iRO ver12 corpus) :
+(matches all 21 fixtures of the test corpus) :
 
 | `index` | Semantic name        | Typical content                                                  |
 |--------:|----------------------|------------------------------------------------------------------|

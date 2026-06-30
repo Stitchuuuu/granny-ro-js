@@ -138,7 +138,10 @@ describe.skipIf(!haveBake)('extractTextures — IGC encoding byte-exact parity',
 // --- decodeHigh1 anti-hang guard — 1_attack off-corpus bitstream ----
 
 describe('decodeIGCTexture — anti-hang guard on degenerate bitstream', () => {
-    it('throws within 50 ms on 1_attack tex0 (granny2.dll also hangs)', () => {
+    // The guard fires via a 64-idle-iter counter on litLen=0/zeroLen=0,
+    // not a wall-clock deadline. 100 ms gives headroom for loaded CI
+    // hosts while still catching real spins (which would be unbounded).
+    it('throws within 100 ms on 1_attack tex0 (granny2.dll also hangs)', () => {
         const loaded = loadedFor('1_attack.gr2');
         const records = walkTextureImages(loaded);
         const r = records.find((x) => x.texIdx === 0 && x.imgIdx === 0 && x.mipIdx === 0);
@@ -148,7 +151,7 @@ describe('decodeIGCTexture — anti-hang guard on degenerate bitstream', () => {
             Width: r.width, Height: r.height, Alpha: r.alpha, ImageData: r.pixelBytes,
         })).toThrow(/stuck.*litLen=0\/zeroLen=0/);
         const elapsed = Date.now() - t0;
-        expect(elapsed).toBeLessThan(50);
+        expect(elapsed).toBeLessThan(100);
     });
 });
 

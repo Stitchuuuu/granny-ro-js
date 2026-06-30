@@ -1,0 +1,2101 @@
+{
+  "version": 2,
+  "schema": "content-manifest-v2",
+  "generatedAt": "2026-06-30T21:23:06.324Z",
+  "sourceBaseline": {
+    "generatedBy": "regenerate-manifest.mjs (JS-only)",
+    "platform": "linux/arm64",
+    "node": "v24.18.0"
+  },
+  "fixtures": {
+    "f03887ef10f6acb95e3c454cc11885514a36fa08d74b9ef9002334aecdeed061": {
+      "sizeBytes": 141860,
+      "filenameHint": "1_attack.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 66792,
+          "sha256": "a582b5cae10404afff475a4c9348406b6bdfb0afeb25b91968abd1d90e4fab78"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 98028,
+          "sha256": "ddbf1f7fd10e1d87643c1d8d1c7b65faa9d60ce594e006174b4e0ced4e73772b"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 50,
+          "sha256": "bc9c63358c4324999bf14c88d3a744871eda9c90099506a3bda84b076a96f53f"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0211R2NoviceFF\\0220R2NFF-attackII01.max",
+          "duration": 1.133333444595337,
+          "sha256": "4fed1651bb1fcf3c4752751e6a5d5300bea5ead57ae28abbed3287f38e182d0b"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #6",
+          "sha256": "111853428d9199c7392d0fd1561314894cd1d51ac76233b07c498944c86192d3"
+        },
+        {
+          "idx": 1,
+          "name": "Material #3",
+          "sha256": "0dbe536527b727308edbf1f73a15019c2b27057ff9d31edfbcf7a787fcdc61f5"
+        },
+        {
+          "idx": 2,
+          "name": "Material #15",
+          "sha256": "d253eb5374f2c62ea6725e86998fa1533381889deb1d7c77a654e3f57c2449e1"
+        },
+        {
+          "idx": 3,
+          "name": "Map #6",
+          "sha256": "285f379552574aa89bd68481c91e44431c6166c3d64f01ac287c8a19e0a4c7b2"
+        },
+        {
+          "idx": 4,
+          "name": "Material #30",
+          "sha256": "08e1537f16d0833fe99ada0df84b537ac9537e4b3f2db278f3868b60261be36d"
+        },
+        {
+          "idx": 5,
+          "name": "Map #5",
+          "sha256": "2aa3f66a44291250a23f07414ffe7a54c053e902feddacf11d13f929ad18e32b"
+        },
+        {
+          "idx": 6,
+          "name": "Material #29",
+          "sha256": "e2767ed77fce7cd07b362b98c99bc536731c559880806183067f091dd997817b"
+        },
+        {
+          "idx": 7,
+          "name": "Map #4",
+          "sha256": "e9c0f01035ff9d2d1b700ff4cccbf52b8a2dee9b42954f2ac932a8490403be20"
+        },
+        {
+          "idx": 8,
+          "name": "Material #28",
+          "sha256": "391c7398766bc63834e448a77e24db93d8d232cbbc341f013989c8bc79bc8e71"
+        },
+        {
+          "idx": 9,
+          "name": "Map #3",
+          "sha256": "9fde1f518dbdd8876a936273687382ec90e1ed1759dae31875dc4617dab2fdb7"
+        },
+        {
+          "idx": 10,
+          "name": "Material #27",
+          "sha256": "ca1f8d7f3e23a1b7454b884c46bcbba02d7b08b2d577db10f2db263b6ee835ba"
+        },
+        {
+          "idx": 11,
+          "name": "Map #7",
+          "sha256": "1dec6a886dcaf5e45a1c1982dd487e2dd9cf35a4b44cea667a4f846dd1e1c91a"
+        },
+        {
+          "idx": 12,
+          "name": "Map #2",
+          "sha256": "bbd806e98e6e03e832a2e55507272070d54f2abe3c6d9c69caadf52f37e00a23"
+        },
+        {
+          "idx": 13,
+          "name": "Material #26",
+          "sha256": "1807c22723e2d5ea60372d473baae40ac2bb4acc2a8e74c3a0ef1216685eb29c"
+        },
+        {
+          "idx": 14,
+          "name": "Map #1",
+          "sha256": "686a26a5e6d2cfca8d954a4b68fd7a14a45cb0718a3708378bf019c326fc9bc3"
+        },
+        {
+          "idx": 15,
+          "name": "Material #9",
+          "sha256": "36f26fac98b3e9f1532a5133ff2dab85d2eedb5b4f66a7385505d25cce9b5eb6"
+        }
+      ],
+      "errors": {
+        "textures": "decodeHigh1: stuck at h=16 w=15 after 65 consecutive arith reads with litLen=0/zeroLen=0 — bitstream likely off-corpus (granny2.dll hangs on the same input). Encoding=16x16."
+      }
+    },
+    "24bdc6321a98f4bc5c7455480cb0203f98d2e5e89721a0a72d711939489aa45c": {
+      "sizeBytes": 15196,
+      "filenameHint": "2_damage.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 22160,
+          "sha256": "5661c9efdf8f1be34dc74a18348be40839a0d0cf6fd4d12d391dca386ae2d259"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 22,
+          "sha256": "fdf65e95a19d7293a776d877a4debc0c1528e8901f1c00a9bee72ce176fcf162"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_damage01-td_01.max",
+          "duration": 1.3333333730697632,
+          "sha256": "09eb116617484f4c77c2612321af919199659aaad07562e8e901c2d43c5ec158"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "7 - Default",
+          "sha256": "3e8595415ceb4e3205b54b8e534c338360aaff73622b5e1c9e2b268518cda70f"
+        }
+      ]
+    },
+    "9c22930c8b008aa7e17261d08af931ebf264432d28149e676b756350f4f42470": {
+      "sizeBytes": 25036,
+      "filenameHint": "2_dead.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 37100,
+          "sha256": "9501ebf26f55c9a352be53ba078374d7ead43dee6be2b3f89b037c1bdaeabd9b"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 22,
+          "sha256": "224c7058d9f7c35d4c44584c546d84d0916f4cc6caaeb3d22ce726502fe67358"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_die09-td02_01.max",
+          "duration": 3.3333334922790527,
+          "sha256": "c75b15bc0031b146cd583ee4b8206b8da5566f35d2b217848b392e30651938fb"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "7 - Default",
+          "sha256": "3e8595415ceb4e3205b54b8e534c338360aaff73622b5e1c9e2b268518cda70f"
+        }
+      ]
+    },
+    "b177c370c659eab33746574f21af1d536372020c47c67aa43bbece94969852d1": {
+      "sizeBytes": 31244,
+      "filenameHint": "7_attack.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 46032,
+          "sha256": "f7eba3843378804d7c3f0f73e32babf46974b1799ae8d68a840d2f06d2762bc3"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 35,
+          "sha256": "093336ad6c3ac9706d0a86eb3b869ccc9dee35bfaf42e3d5f022f20a63139635"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_Attack-center0228.max",
+          "duration": 1.5000001192092896,
+          "sha256": "4defed4b793b384e8d44e4e705a06e28e3f946eabc63acd0ace4666afac311cb"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Metal_Wall",
+          "sha256": "a1c1aed89461cb6a51cb10e656fc032bb6cb832a15298df7d32d1e15c423d9a3"
+        },
+        {
+          "idx": 1,
+          "name": "22 - Default",
+          "sha256": "b2912e16109b836bdb31e89d691d9977b5f198307c76f85f2cd1e70a23790bec"
+        },
+        {
+          "idx": 2,
+          "name": "21 - Default",
+          "sha256": "92eb5a617debdf913067bb4a5711c2bab0557618cb54396961b1f22df7e345c7"
+        },
+        {
+          "idx": 3,
+          "name": "20 - Default",
+          "sha256": "9e44dcaa1598ea5d8359dee6c2b0592f93b949c5f94aef51c4ad1741965f81df"
+        },
+        {
+          "idx": 4,
+          "name": "19 - Default",
+          "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
+        }
+      ]
+    },
+    "785a3019be8a0feb4aaf46949d28b5bbe6a3a19590be40f3c0d813f67a5ca5eb": {
+      "sizeBytes": 40124,
+      "filenameHint": "7_damage.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 60516,
+          "sha256": "01dbc386a8d2f36cfe1eab8ea3d7f3030b827452ab61ce490bc1ca1dd4a4f9dc"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 35,
+          "sha256": "88974f12a35b29a32415f72c86cc185f59e3c9a3618aa629b33e7406051e590d"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_damage-center.max",
+          "duration": 2,
+          "sha256": "4372077b9e0b7e05e5724141bcacb0878e9d45d5c641996dc638a62290a09057"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Metal_Wall",
+          "sha256": "a1c1aed89461cb6a51cb10e656fc032bb6cb832a15298df7d32d1e15c423d9a3"
+        },
+        {
+          "idx": 1,
+          "name": "22 - Default",
+          "sha256": "b2912e16109b836bdb31e89d691d9977b5f198307c76f85f2cd1e70a23790bec"
+        },
+        {
+          "idx": 2,
+          "name": "21 - Default",
+          "sha256": "92eb5a617debdf913067bb4a5711c2bab0557618cb54396961b1f22df7e345c7"
+        },
+        {
+          "idx": 3,
+          "name": "20 - Default",
+          "sha256": "9e44dcaa1598ea5d8359dee6c2b0592f93b949c5f94aef51c4ad1741965f81df"
+        },
+        {
+          "idx": 4,
+          "name": "19 - Default",
+          "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
+        }
+      ]
+    },
+    "ac6be7fd49ab3eb3292d9b506996f20eef65839c4785b2e744da9b1f8acad471": {
+      "sizeBytes": 55756,
+      "filenameHint": "7_dead.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 84472,
+          "sha256": "219e1404424919c510a0d299c0a4ce57b06597268e7b217ad58f6cdd41c5e5d5"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 35,
+          "sha256": "137f00b937a27d3b8f06bd94449baa9907459f9e36f27de3615ff13905fbb784"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_death-center.max",
+          "duration": 3.6666667461395264,
+          "sha256": "320816b06d9f8400b2ff5a84be5366880466864f62cd5a48e8c4b41fba7e0cf4"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Metal_Wall",
+          "sha256": "a1c1aed89461cb6a51cb10e656fc032bb6cb832a15298df7d32d1e15c423d9a3"
+        },
+        {
+          "idx": 1,
+          "name": "22 - Default",
+          "sha256": "b2912e16109b836bdb31e89d691d9977b5f198307c76f85f2cd1e70a23790bec"
+        },
+        {
+          "idx": 2,
+          "name": "21 - Default",
+          "sha256": "92eb5a617debdf913067bb4a5711c2bab0557618cb54396961b1f22df7e345c7"
+        },
+        {
+          "idx": 3,
+          "name": "20 - Default",
+          "sha256": "9e44dcaa1598ea5d8359dee6c2b0592f93b949c5f94aef51c4ad1741965f81df"
+        },
+        {
+          "idx": 4,
+          "name": "19 - Default",
+          "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
+        }
+      ]
+    },
+    "111e893ae933afb96331adf2dfebbe141569446ed4bffc1597c7ef70ba30644e": {
+      "sizeBytes": 40916,
+      "filenameHint": "7_move.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 59496,
+          "sha256": "9586ada6d46387b3c9bf4d6c60c7e3d6662e3230114e051f45843f62a69c65f3"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 35,
+          "sha256": "9b889e9047592bbd29540ace6962cb7ba36db1ae775726a89c8073c52cacfbe0"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_walking-center.max",
+          "duration": 2,
+          "sha256": "1805c888be0cb5a07156824e0ba5f88030807a4ded51a813588e8f74fb2e5ef5"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Metal_Wall",
+          "sha256": "a1c1aed89461cb6a51cb10e656fc032bb6cb832a15298df7d32d1e15c423d9a3"
+        },
+        {
+          "idx": 1,
+          "name": "22 - Default",
+          "sha256": "b2912e16109b836bdb31e89d691d9977b5f198307c76f85f2cd1e70a23790bec"
+        },
+        {
+          "idx": 2,
+          "name": "21 - Default",
+          "sha256": "92eb5a617debdf913067bb4a5711c2bab0557618cb54396961b1f22df7e345c7"
+        },
+        {
+          "idx": 3,
+          "name": "20 - Default",
+          "sha256": "9e44dcaa1598ea5d8359dee6c2b0592f93b949c5f94aef51c4ad1741965f81df"
+        },
+        {
+          "idx": 4,
+          "name": "19 - Default",
+          "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
+        }
+      ]
+    },
+    "36fa5e49a257e7afbdd5b086b728498d5b423c7b5b6d175ca278280056c00fd1": {
+      "sizeBytes": 50812,
+      "filenameHint": "8_attack.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 69796,
+          "sha256": "86efba94d1aedf47132997f618c678cfe08efa8b76e606fac7c63f1943a3835e"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 2560,
+          "sha256": "d43abbdce654c722e7d5dec757a3e9bb526b4f0437d57e9765ad6d46b41b3f85"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 672,
+          "sha256": "b7b8b45c0895c3a847c163765969325a653ed311818d8b2b02cc71057a3215b8"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Bip01 L UpperArm02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "a988adf7930ce46b74fe4567777a59ba7c5d2e038d6336a87985bb8d6c0377df"
+        },
+        {
+          "idx": 1,
+          "name": "Bip01 L UpperArm01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "e1241e78838d09227b96c263246fc2c87392a19767a652dcc0e415e6e8339ddf"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "boneCount": 43,
+          "sha256": "1a46ee08d25fc7c02582cbb5a2780d11744ebb8aaabcc59f107cfa0780dd4283"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0414-HG2_ARROW_SH.max",
+          "duration": 1.8333333730697632,
+          "sha256": "e00fd7cd71c701bc0c7305df0a80b346221e6ab2a76579d13a447777234f2fa1"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "10 - Default",
+          "sha256": "f78617db0ca93ea5f759096feff3fb0081ea1562c5769378ea2c5c607ce79a0a"
+        },
+        {
+          "idx": 1,
+          "name": "9 - Default",
+          "sha256": "731c699644dc18b0d5df6c1ffcd4d7973207516bf177d2e06aebe6612ead2aa9"
+        },
+        {
+          "idx": 2,
+          "name": "8 - Default",
+          "sha256": "cbc68968d921b366d9e47359be278dd20944557e667fc0ff857124e7f392cc45"
+        },
+        {
+          "idx": 3,
+          "name": "7 - Default",
+          "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ]
+    },
+    "31d8c6334be7eac0e5c930b4b5df526410646f28758172e3a266b7665672cc0d": {
+      "sizeBytes": 28392,
+      "filenameHint": "8_damage.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 38520,
+          "sha256": "9913c5cd8d5a4d213915512d87636b4fbf88e5fed32b2476f48fca90d4f83436"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 2560,
+          "sha256": "371454cdea8622ad9dc40c5e88efae272d4895f42fa963a3ae91cb5a8cbf8ace"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 672,
+          "sha256": "b7b8b45c0895c3a847c163765969325a653ed311818d8b2b02cc71057a3215b8"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Bip01 L UpperArm02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1ea7173d8752db664b490b11cf3540daa1770fa76a56ff775377f426ce83dc06"
+        },
+        {
+          "idx": 1,
+          "name": "Bip01 L UpperArm01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1983943f27b13fc8eeae4e9d677d3fc7527cf28c08fea03c1706f833f4f486d4"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "boneCount": 43,
+          "sha256": "5f2c0809512c13e24c2b4c3d8d9e239842a9dc79d88730b9ba47fc4d0e24d1cd"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_DM.max",
+          "duration": 1.5000001192092896,
+          "sha256": "39cff7e0b249c60fb2c6e5f4f2b949e8a19e589ef9aa9bdd9e1a7d27bcb6f718"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "10 - Default",
+          "sha256": "f78617db0ca93ea5f759096feff3fb0081ea1562c5769378ea2c5c607ce79a0a"
+        },
+        {
+          "idx": 1,
+          "name": "9 - Default",
+          "sha256": "731c699644dc18b0d5df6c1ffcd4d7973207516bf177d2e06aebe6612ead2aa9"
+        },
+        {
+          "idx": 2,
+          "name": "8 - Default",
+          "sha256": "cbc68968d921b366d9e47359be278dd20944557e667fc0ff857124e7f392cc45"
+        },
+        {
+          "idx": 3,
+          "name": "7 - Default",
+          "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ]
+    },
+    "a6d455a4204c27e0bc1d5e508c3135d2f610e56933e182cfaac98cec6fc03158": {
+      "sizeBytes": 39608,
+      "filenameHint": "8_dead.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 58952,
+          "sha256": "f77ffe2ef2622b20cc79b97fd7e53056cc8cad60c4f8eb6788c2bbab9f8a4246"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 2560,
+          "sha256": "cb13ebdc71dbe9533a5dbbbb319c21e3a25020414023dac86585280623eddfe8"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 672,
+          "sha256": "b7b8b45c0895c3a847c163765969325a653ed311818d8b2b02cc71057a3215b8"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Bip01 L UpperArm02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "5d260d7711c8036d791e2bd07e653d128bebbdf9abdf9fca9c5bd2b018764cc5"
+        },
+        {
+          "idx": 1,
+          "name": "Bip01 L UpperArm01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "303e41c1b6dc8d608934b3c2fd4d43db10865ec7a629ba895820f087bdee9a21"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "boneCount": 43,
+          "sha256": "84e35b843e6cb8eed88d30007bd1ab532fb700f231307e4bff4e249b39bf7317"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_DIE01.max",
+          "duration": 3.000000238418579,
+          "sha256": "923257dc1fe8def5a42572d51b53d04d6ea200bfa79ccd93c501fda399f71b03"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "10 - Default",
+          "sha256": "f78617db0ca93ea5f759096feff3fb0081ea1562c5769378ea2c5c607ce79a0a"
+        },
+        {
+          "idx": 1,
+          "name": "9 - Default",
+          "sha256": "731c699644dc18b0d5df6c1ffcd4d7973207516bf177d2e06aebe6612ead2aa9"
+        },
+        {
+          "idx": 2,
+          "name": "8 - Default",
+          "sha256": "cbc68968d921b366d9e47359be278dd20944557e667fc0ff857124e7f392cc45"
+        },
+        {
+          "idx": 3,
+          "name": "7 - Default",
+          "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ]
+    },
+    "624cd8f5d094d2bf92b4ad6bba42ad3b055154a2d4dfea0ee84991ca2a07ed36": {
+      "sizeBytes": 37304,
+      "filenameHint": "8_move.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 51612,
+          "sha256": "7001f7d9f37318135c780b92b8637de1b59dbdec87c6099fac8e2462bc158a1a"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 2560,
+          "sha256": "664fb91ea7ab3006d7f80b85d3741d8135c4ce3f74d566f13bf1c7b48d2f8975"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 672,
+          "sha256": "b7b8b45c0895c3a847c163765969325a653ed311818d8b2b02cc71057a3215b8"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Bip01 L UpperArm02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1ceb5a1d487925e72a9752c905a77babc328344c69840566e4c7a717cb35a0b9"
+        },
+        {
+          "idx": 1,
+          "name": "Bip01 L UpperArm01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "a52211499969654d9e99b57d0f41d68e63a0caf98fe84def470c3722a2abc1f1"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "boneCount": 43,
+          "sha256": "e405b62fa884c3be2c69ac1cf7fa8397ddf17bfb5ad69eb314f2dfce1ec7027a"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_WALK01.max",
+          "duration": 1.8666667938232422,
+          "sha256": "d29e8ef141a3707a64b6b299a8d2f61aea7017f27eced9fd09744ebdb2ee3ac1"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "10 - Default",
+          "sha256": "f78617db0ca93ea5f759096feff3fb0081ea1562c5769378ea2c5c607ce79a0a"
+        },
+        {
+          "idx": 1,
+          "name": "9 - Default",
+          "sha256": "731c699644dc18b0d5df6c1ffcd4d7973207516bf177d2e06aebe6612ead2aa9"
+        },
+        {
+          "idx": 2,
+          "name": "8 - Default",
+          "sha256": "cbc68968d921b366d9e47359be278dd20944557e667fc0ff857124e7f392cc45"
+        },
+        {
+          "idx": 3,
+          "name": "7 - Default",
+          "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ]
+    },
+    "6217636e88bee0f8c0870309d28d5796b7c2493169fd4a91f3d8c1348cdc4648": {
+      "sizeBytes": 28564,
+      "filenameHint": "9_attack.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 41104,
+          "sha256": "e23384cd1ca368251b89e832d42107065a7cff5d09bd937d5358c9004a5af0db"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 31,
+          "sha256": "fde6a542220a42c19dfc136fe01c4e2523ddcca9365523d287bf7c13d9f4ffd4"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "duration": 1.5000001192092896,
+          "sha256": "a90ca818e1c378758e71d444105bab194168668bc05c488e8b9c9d6af0d4a7a7"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Material #183",
+          "sha256": "9a0836e7fede9b48d53fec925732e3fb412272d065403565991714502599683f"
+        },
+        {
+          "idx": 1,
+          "name": "Material #182",
+          "sha256": "acfb7d75ff14c2a6ffa30e62b3c4eca27018dc6215dd69cd190dffb9f11287de"
+        },
+        {
+          "idx": 2,
+          "name": "Material #181",
+          "sha256": "b2fa0d42514b6e5ac5c2d7142176a2dd8e536b64fd80155d1a04d0d2cf32262a"
+        },
+        {
+          "idx": 3,
+          "name": "Material #180",
+          "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ]
+    },
+    "e1d09f70d4f9148c1939784750db1d0af083e77ca207483527b4575e0dffe0fd": {
+      "sizeBytes": 35452,
+      "filenameHint": "9_damage.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 52368,
+          "sha256": "95fce9f7d8e70ec75236aa8a394443c2677b29e1fd2ba37551bac9bc0f78a3c8"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 31,
+          "sha256": "6cdae34b8a7113cc824e631946960cbee801c1617541d14311d0f14eca03ab11"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "duration": 1.6666667461395264,
+          "sha256": "3ebb70d51cbaa0b1307f1eb438d2f174e55bbf84bf0ac389acae583175dc0db7"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Material #183",
+          "sha256": "9a0836e7fede9b48d53fec925732e3fb412272d065403565991714502599683f"
+        },
+        {
+          "idx": 1,
+          "name": "Material #182",
+          "sha256": "acfb7d75ff14c2a6ffa30e62b3c4eca27018dc6215dd69cd190dffb9f11287de"
+        },
+        {
+          "idx": 2,
+          "name": "Material #181",
+          "sha256": "b2fa0d42514b6e5ac5c2d7142176a2dd8e536b64fd80155d1a04d0d2cf32262a"
+        },
+        {
+          "idx": 3,
+          "name": "Material #180",
+          "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ]
+    },
+    "1cdb974bf8341435defbd1a1fe95be5ed9a1ac1b8fe277e177817e354483adce": {
+      "sizeBytes": 50108,
+      "filenameHint": "9_dead.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 76316,
+          "sha256": "a84e01905672673329ee0fdf1c64a6af0d9100213deda0123e48f875e9d46677"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 31,
+          "sha256": "5cbc94f9869ba9328fa6d7c1e13cb53c293303e4e7cb32ba5bd3a4ac799c3a6a"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "duration": 3.5333335399627686,
+          "sha256": "739b022b5a338c1e6954a9783ebec6686514e7d2f4e5aaa0f3eb016f2c2f4810"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Material #183",
+          "sha256": "9a0836e7fede9b48d53fec925732e3fb412272d065403565991714502599683f"
+        },
+        {
+          "idx": 1,
+          "name": "Material #182",
+          "sha256": "acfb7d75ff14c2a6ffa30e62b3c4eca27018dc6215dd69cd190dffb9f11287de"
+        },
+        {
+          "idx": 2,
+          "name": "Material #181",
+          "sha256": "b2fa0d42514b6e5ac5c2d7142176a2dd8e536b64fd80155d1a04d0d2cf32262a"
+        },
+        {
+          "idx": 3,
+          "name": "Material #180",
+          "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ]
+    },
+    "ec2bbfbc4f76bfe0bb94d29f1b3ca40a7c5d2f278bbc87d671977eb86c0c3680": {
+      "sizeBytes": 36920,
+      "filenameHint": "9_move.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 52796,
+          "sha256": "d1db99e238652e153db056be0a1a6fe3722ccadee6bd0720876f3e8a88d36e4e"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "textures": [],
+      "meshes": [],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 31,
+          "sha256": "b414f942339132c288e9fb4e5975e7e881acc82598c92aac4b5187718b555b3e"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "duration": 1.9666668176651,
+          "sha256": "22192d162d4c36e98494ae06ed80af1fd75decd3f66135cde8397bf30cd0a1f0"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Material #183",
+          "sha256": "9a0836e7fede9b48d53fec925732e3fb412272d065403565991714502599683f"
+        },
+        {
+          "idx": 1,
+          "name": "Material #182",
+          "sha256": "acfb7d75ff14c2a6ffa30e62b3c4eca27018dc6215dd69cd190dffb9f11287de"
+        },
+        {
+          "idx": 2,
+          "name": "Material #181",
+          "sha256": "b2fa0d42514b6e5ac5c2d7142176a2dd8e536b64fd80155d1a04d0d2cf32262a"
+        },
+        {
+          "idx": 3,
+          "name": "Material #180",
+          "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ]
+    },
+    "22311b3f02500305745cb6a59e3fd6f4e474212994ad3a618e644726c02de72a": {
+      "sizeBytes": 142304,
+      "filenameHint": "aguardian90_8.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 76344,
+          "sha256": "ee46782355d8e1a9112f1165354d7b9dfac7664900f6d3ff0b659d00bde271fa"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 2560,
+          "sha256": "8cd24c071a5aecf192eaac33e50205694afda301a08d0c095d1632d1953852e1"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 672,
+          "sha256": "b7b8b45c0895c3a847c163765969325a653ed311818d8b2b02cc71057a3215b8"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 31520,
+          "sha256": "9cec495eaf68e8be844f04a7da297f0b8c54fb7ce0c2bb4f6a8c6c29e413fe59"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 11736,
+          "sha256": "9d7e89164621fb914ccf806022300cc28063dcd5c46c2d846715a760d48de254"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 70532,
+          "sha256": "68ac56ddf58976c0ada1ac866db2c4d02c29cb16ab48b181d358f52745c00318"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "74457e4fc0eda7a0494294adeac1dd747ccd0ea51562eba0e590e8be9fa87291"
+        },
+        {
+          "texIdx": 1,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "29ed689db98552ef22c9bff73ca18af145be4bfab64628de0f9edb38b9cf1144"
+        },
+        {
+          "texIdx": 2,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "58956a759d3b256e966063c435079bd5cffd3af62510a66fe17aeca9bde7e70f"
+        },
+        {
+          "texIdx": 3,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "3fbe3f5411be4a2c84b657dc3860e5fc3e8caa19eb36c60619978bece3f868cc"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Bip01 L UpperArm02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "32b40ea8aa3a81e1eb14df559d2792297f779ce42e6aee7c83effa9f0ddb7e77"
+        },
+        {
+          "idx": 1,
+          "name": "Bip01 L UpperArm01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1888f3c9b29a7507a3a0821c518af48a0c3879fdf0209a8274b648cb4bc762a0"
+        },
+        {
+          "idx": 2,
+          "name": "body",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1124be983b254398cd50cfce28eb83a0a34efe5d6df48cf270564ef0595aaa78"
+        },
+        {
+          "idx": 3,
+          "name": "shield",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "57aedc92c3dfe7a121d58e4c3c8ad48792c8e04040bf8d466323887521bf99dd"
+        },
+        {
+          "idx": 4,
+          "name": "head",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "ca73bcfb8ba7a8ddc1973ce4fa3eee3ed12547b005d6d242e1f7d442cf528af6"
+        },
+        {
+          "idx": 5,
+          "name": "leg",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "f47fd643d3073ec894fad34656d983742a324ab71bb15e2dd472a449428df82c"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "boneCount": 43,
+          "sha256": "b3201ea3963a9a607051bfbdf6c4c9c53ee9721f7551d7995c3c4c6bcc359aac"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0123-HG2_BREATH_SH.max",
+          "duration": 3.3333334922790527,
+          "sha256": "97a1763b5f0379c3e38d4aa86236e051fbd3fc465a16d1cf56083d1caf378eb8"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #8",
+          "sha256": "efa5244af28fd481bb7eb428b947746e24746c42d80fe48091af98788b0ea21a"
+        },
+        {
+          "idx": 1,
+          "name": "10 - Default",
+          "sha256": "4f34ad5d134fe23c7ac8c41c3eb03be3386b173a62664c282a3e2f781cf68c7f"
+        },
+        {
+          "idx": 2,
+          "name": "Map #7",
+          "sha256": "ea089f5f2a701daf414e3351658d15dd315dd5407a95a1d50e617caa5a7d1f0e"
+        },
+        {
+          "idx": 3,
+          "name": "9 - Default",
+          "sha256": "d3227cc26a8028e76cd8b65b948b98e2cbb619ee04f7313064c01590fd67ac08"
+        },
+        {
+          "idx": 4,
+          "name": "Map #6",
+          "sha256": "e7bba1b1a44bc2b4f21852df0a04336144ecc8c05f0d38d7ddd78af10cb89315"
+        },
+        {
+          "idx": 5,
+          "name": "8 - Default",
+          "sha256": "eb76a69a127832243962fa4bac6b5092d953d8a3828173719764de3930165b45"
+        },
+        {
+          "idx": 6,
+          "name": "Map #5",
+          "sha256": "326a9d504aa4e6d6d38e7cb582a13137993eb34c7d171997639401d198badd9d"
+        },
+        {
+          "idx": 7,
+          "name": "7 - Default",
+          "sha256": "be6d401cb068d9e0ffdf9b960576db1bfe1359412f832d404c221b9f1046e9f1"
+        }
+      ]
+    },
+    "b850bcb443505e6b9e87196cb8b6ed3b2744dcda0fc73dd6cab8da679f42957f": {
+      "sizeBytes": 51780,
+      "filenameHint": "empelium90_0.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 51660,
+          "sha256": "262fc90d9129c1a7a787bfe2977eef8f4702599bc6e580c205bcb6016b1ca143"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 6368,
+          "sha256": "84dd06f0f1fe44d84b542fff1d14988b8e486eb1b72c4c5bb27a5c872731eef0"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 1656,
+          "sha256": "6b4f630ca5bb7d724f1a618aec2294932c9ac73de8ec0abb6bbf1f7164678e9d"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 17692,
+          "sha256": "67ca79b55542caf58a80958bc43d939a7a866d048140acb0aebdc4d1ce7c33b2"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "027d21c2d0b661340c7e1229e6717ac49325ec124c4bd049444b14390446ef45"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Cylinder13",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "372439927fba4874702b68b8c822524910fd46da7c36de502ad630738666b767"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 18,
+          "sha256": "16fe1bab3e2d1d5c4859db1d8e1931abb8eec1a35da826dedfe1aa06bbdbd145"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0226empelium\\0227_empel-groundsolution0314.max",
+          "duration": 9.933333396911621,
+          "sha256": "a7407cf891435215d66fa4d193175f73d4ec5339f15f67d94290804490be7df9"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #3",
+          "sha256": "6385c69900846b79968158ec973102217c59c4f6b12a30adf7a2116bc36f33e2"
+        },
+        {
+          "idx": 1,
+          "name": "Material #38",
+          "sha256": "e8ec3b7682a1cf5cc1649d8d175f30366f161e88edafbe4d6191f696e0522b20"
+        }
+      ]
+    },
+    "06f845d0c018d399f9870c405ac38a071066a613ec14f8b5babcc215aa082d37": {
+      "sizeBytes": 56340,
+      "filenameHint": "guildflag90_1.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 54820,
+          "sha256": "352f3f34d32a5f429dc5ac15876f8704c24e6318624da38226a2e901d8316dd5"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 11840,
+          "sha256": "a3ab8e9e57187415ae5cc9c5002b1ab01e01025e5c9de7c52f8c6d3a58f70a91"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 2280,
+          "sha256": "f9582cec8da4c4dbffac7bb8dfcbff7131c7834f7dc2e783ad4f9e4e6a74ba1c"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 18976,
+          "sha256": "09b0cc6a9cb6d6a26a187803af04132e1494fae739bb92524453d078931c3617"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "3e91a4cf042333089a0e7ab1516c759159c4557ef2e449c3483f3246292d37b5"
+        },
+        {
+          "texIdx": 1,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 16,
+          "height": 16,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "606da35b16343b9b41bde6397d9c26828424112b30c0fc58b911772fda32ad5f"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Plane01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "41914c2ae08c04b5c2fbff0c19ecbb0d1d76ad8ccd7a7cd4d8aac9195940af3c"
+        },
+        {
+          "idx": 1,
+          "name": "Object08",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "66f9220354f331732b2e4212b003bfd9b420244c7b69cfb51c1aef0f8cba25ef"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 41,
+          "sha256": "26b5e50d447c6d9e4d3aa7e0ac1002b15e6f246db955cbf82b7e62b225d6db21"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227flag\\flag03-ani-emblem-0414extrude.max",
+          "duration": 5.6666669845581055,
+          "sha256": "f51031c4492565f8fb747c55a968349843b7a6ac927a8276ba3ca34c219f348a"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #5",
+          "sha256": "905079eabbb44cad7073195c2dccd3fcbb30861e567b43573d984454e3817821"
+        },
+        {
+          "idx": 1,
+          "name": "Map #4",
+          "sha256": "591d0d2ad237a77a8f81e1e41617fc62c4299c20026cfc4fd2591a12508163a7"
+        },
+        {
+          "idx": 2,
+          "name": "8 - Default",
+          "sha256": "fcdb28734b437300aad333b9f273e8939a595d74e43da22470f2df5d1f81935e"
+        },
+        {
+          "idx": 3,
+          "name": "Map #6",
+          "sha256": "db0170b8c19011ad4472ac262f9abc4d42444c2adfefb70cf730725e3e0f9c16"
+        },
+        {
+          "idx": 4,
+          "name": "8 - Default1",
+          "sha256": "ca787e6b1527e048b54f0c7dac7944f99ad42dfbfe981b58f91a127c92c19ba1"
+        }
+      ]
+    },
+    "054a538b8067b8bf6cfa5973cdb42084f2bd1eb768df0ec6a16651fb9462bfdf": {
+      "sizeBytes": 135908,
+      "filenameHint": "kguardian90_7.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 65180,
+          "sha256": "ba33b0ddc4189228fcf8496026503959ea81b0260a3035081e34cc958cd794ba"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 29440,
+          "sha256": "4fc38540856831d8d8a7daf74039ba721d578aa33ea2ba8c2c63108da20a6a46"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 11340,
+          "sha256": "f494e538064704b089c7512741e3d11a41c14a3158872ad30157534a0bb10bd6"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 73556,
+          "sha256": "b70ee37be0ec9478cd7f4278b6f94b7d450feaf55eb81033a4410032cba9e18d"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 64,
+          "height": 128,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "c9f4b7478af41da74a101d1d26a2d94929ec2569633736766d62c53eb4ed9f86"
+        },
+        {
+          "texIdx": 1,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "ce5f264026d3594d91fb5375f2ba320acdceeffd059e1048f380e80ee2dfd514"
+        },
+        {
+          "texIdx": 2,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "0d558670e2b476f7aeffc1ce137b06e80aa422d272aa68aee496817cc3739a61"
+        },
+        {
+          "texIdx": 3,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "01e176fbccfcbc6eeafd1bf2502808cabd6767d6f9b6ca8d010dab3f5cb1a56d"
+        },
+        {
+          "texIdx": 4,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "ed4729c9b8e18d7521bd6e093b28bb31962cd3b25e152025064a5a4b5cab6803"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Object03",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "3921cbf8906ac4ac6a770e8337d008471f01e9d94d4f06bdb70a61bade811ffb"
+        },
+        {
+          "idx": 1,
+          "name": "Object02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "89b35c28103a00b3ea27479b667d64cc44270998d391e593e9e2d015f10b1e8e"
+        },
+        {
+          "idx": 2,
+          "name": "Object01",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "1c4df5edffa2a391b1262d2e272ea6c8348458fb6eecb7d4d82864055e27e0e8"
+        },
+        {
+          "idx": 3,
+          "name": "HEAD",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "6e0c97a096fa0dd55b8ca95c18f7e0caa189d623a64465e4d7ccf65ae2b78467"
+        },
+        {
+          "idx": 4,
+          "name": "Mesh04",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "0446ef7ea6439b4a037b9d5d7b8b3f26c50f0557a6f094293f1cb4a6db473242"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 35,
+          "sha256": "bde0d2c3f8bbf32975c2590b1b8ab85c8593cad10f976629457c1e06730b8048"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_basis-center.max",
+          "duration": 2,
+          "sha256": "7f621830bccff2e978502ef04af2ab285696abd92857f9b73c39d554d11248c0"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #8",
+          "sha256": "d3a8566917d5596afb1141cb168866ed55996f859b482d606e0d7bb373e7df49"
+        },
+        {
+          "idx": 1,
+          "name": "Metal_Wall",
+          "sha256": "77823efca627003b6f70ad8571a2754986c5a262eeb49ced7ce7e79868874f57"
+        },
+        {
+          "idx": 2,
+          "name": "Map #16",
+          "sha256": "afd839f0f5bbd9c36502ef2fd72c070b4e5634f67fc9d800c6a2f140f6810aa7"
+        },
+        {
+          "idx": 3,
+          "name": "22 - Default",
+          "sha256": "28bd846197f54ee446c5ddcd5c708cf810c6b027d7d8b6003fc66dfc3d2a23c3"
+        },
+        {
+          "idx": 4,
+          "name": "Map #15",
+          "sha256": "d3ceed1a17ee3e299c1604dc49b119069b889704cca1646a70e33106e3241060"
+        },
+        {
+          "idx": 5,
+          "name": "21 - Default",
+          "sha256": "15e6b0db8dd1a9eac76263c781414aad245d57cd73ba8cb1d092f838f7cbd413"
+        },
+        {
+          "idx": 6,
+          "name": "Map #14",
+          "sha256": "98d43bb5ea2efc005cb22170d7075b86a46e234980d8abf167c54521ef2e0940"
+        },
+        {
+          "idx": 7,
+          "name": "20 - Default",
+          "sha256": "53b85f8bcd881239daa57e5460c2367455e389fdf2c341e4b0cd68d438e09b7d"
+        },
+        {
+          "idx": 8,
+          "name": "Map #13",
+          "sha256": "b8d84c7e15e1c901a20f3323349926cd08ce794fa4e230958d1060c740b46b1f"
+        },
+        {
+          "idx": 9,
+          "name": "19 - Default",
+          "sha256": "9094c30bf76db2f9e7236fd934c9515a47f69a93e0a005f0c166fee79ee5634c"
+        }
+      ]
+    },
+    "dc08c70f05a368477128cc40e644342ed6adfd3a03e83b734346c49b6a27c6cc": {
+      "sizeBytes": 125984,
+      "filenameHint": "sguardian90_9.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 59444,
+          "sha256": "068e852326e8239913fd7987642ad2ddb1677141a406ddcdba2e8d3afe82ed72"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 23200,
+          "sha256": "09ccdee4293333e171dae703c443b85751abd7c55799bf9cfb52377dc86d8b14"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 9072,
+          "sha256": "64371f0834b39d879bee385c0104b985ea8552c644b909c955049f3142c4fc57"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 72368,
+          "sha256": "8ab9b608d3c080de29dfc1ffc8c8fd552fafd68d3e124976a1daf228b2b61e76"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "83b9bf1d092ecdb1a5f524759d7a5a0e1cea806e8e199f681b55467e8693815a"
+        },
+        {
+          "texIdx": 1,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "dce5b28b8ce9e8cc4f1d77d3b916def1f73d06186e8f17c45e463996ef09ee63"
+        },
+        {
+          "texIdx": 2,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "6b0f60a9c322bc665cf73b3223b25343ebc1e095defe418c51cf39e6366f8d54"
+        },
+        {
+          "texIdx": 3,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "d7477231a81c2976bda13081569da571500ff97cae2a781c7bb6982a9fb37e07"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Object02-1",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "74322d9667a241f348295f4bdca119a076b939b081326e73ccc57c7ca15811ed"
+        },
+        {
+          "idx": 1,
+          "name": "Object01-1",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "83397a45f7fbca67445e05c99eefc7512e00c8b9619bcc7a1bf7c3c4393741bd"
+        },
+        {
+          "idx": 2,
+          "name": "HEAD-1",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "e1c9da8d089ff1bac4159cebcd614efb71868981cab3838c73a19653c88f4299"
+        },
+        {
+          "idx": 3,
+          "name": "Mesh04-1",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "46205a6755ff19710755a78b657cf0745811ca227ebd7feb65c73dce67c6c868"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 31,
+          "sha256": "50f6540b249f3e58f9bb728874133d800ca9ed8f88c982f9fc5495c81c597763"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0227NG01.max",
+          "duration": 2,
+          "sha256": "d6592550b0491bf0b4eab5088bbb09ea90ee10a7b526f0054a2092707d7b5f5b"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #17",
+          "sha256": "32a1fcac398a3d11c9009cf28111cdecf2477e21f1d959fcc383b42403f48781"
+        },
+        {
+          "idx": 1,
+          "name": "Map #14",
+          "sha256": "e313c0382324786cf2605038976d4cd9ede67127fcc3b9dfd9d97ade72a888f5"
+        },
+        {
+          "idx": 2,
+          "name": "Material #183",
+          "sha256": "3fdfd456a7646e91ad193fe8f065a64bda73e9181de4e20286145e9140447218"
+        },
+        {
+          "idx": 3,
+          "name": "Map #18",
+          "sha256": "a7635cd13cb10d5e4997a7c0ee08bf871f1f322b197662f6db42adcf1d967a68"
+        },
+        {
+          "idx": 4,
+          "name": "Map #16",
+          "sha256": "fa3b10e0b4e69b7ec50ede30911bbe8f6edb2b99a6771197dffae28dd1dd3130"
+        },
+        {
+          "idx": 5,
+          "name": "Material #182",
+          "sha256": "c7cb23e59f4f392a4f1028bd3749b9e755480313fff239afdd32326453b172ed"
+        },
+        {
+          "idx": 6,
+          "name": "Map #15",
+          "sha256": "276bf940042a48e23884fdf74d8da67c0a1dc602321e83d27098895db2931199"
+        },
+        {
+          "idx": 7,
+          "name": "Material #181",
+          "sha256": "77fe3f9dac5c38b9e795113ce388e86491e6ba8635bcede474d3d3504fad5389"
+        },
+        {
+          "idx": 8,
+          "name": "Map #13",
+          "sha256": "db44a474ebb4c6062637690c5632cac66030d0aa14ca94b40c19c091d242d1fd"
+        },
+        {
+          "idx": 9,
+          "name": "Material #180",
+          "sha256": "b811ade3c52c993813fb6eb4f2061e99796649656384678aad10bfb990fd03ca"
+        }
+      ]
+    },
+    "b139dc834d9578c0a67a7ae4fcefecb0dead03b4a74f19758a099cfc1b7a4e14": {
+      "sizeBytes": 41532,
+      "filenameHint": "treasurebox_2.gr2",
+      "sections": [
+        {
+          "idx": 0,
+          "sizeBytes": 27416,
+          "sha256": "489aa242095a36b326683efcc1201c66089355b53f751945d5def344d8bcba77"
+        },
+        {
+          "idx": 1,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 2,
+          "sizeBytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "idx": 3,
+          "sizeBytes": 8704,
+          "sha256": "e6541d228e196425c605ddb730bc7e1ffa559e8e3a8ae5bc19b91a9b5a121154"
+        },
+        {
+          "idx": 4,
+          "sizeBytes": 2304,
+          "sha256": "3d3b190265cf7d1092afd1ed6b4fc41f4e1128061521a541d315ee2c8c451c36"
+        },
+        {
+          "idx": 5,
+          "sizeBytes": 17648,
+          "sha256": "70f2cea3204cf4a2bec0ffb283fb1bd93aacf004352245b8054b8d58301cca75"
+        }
+      ],
+      "textures": [
+        {
+          "texIdx": 0,
+          "imgIdx": 0,
+          "mipIdx": 0,
+          "width": 256,
+          "height": 256,
+          "encoding": 3,
+          "alpha": 1,
+          "rgbaSha256": "ca02c9e90bd5211c8436db2b563f40a3fd8be61d218db73baa3709558eaa1932"
+        }
+      ],
+      "meshes": [
+        {
+          "idx": 0,
+          "name": "Object02",
+          "verticesCount": null,
+          "triangleGroupsCount": 1,
+          "sha256": "e3055c87af40aa02ef08b9e0300a2b2856947e466e801cbbcf597512e7f5eeeb"
+        }
+      ],
+      "skeletons": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "boneCount": 22,
+          "sha256": "09a6df14827573fcf0a7ab83793bae8d081f5fb453a216eae632337c9de7f461"
+        }
+      ],
+      "animations": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_base01-t_02.max",
+          "duration": 3.000000238418579,
+          "sha256": "f9c0f04605ef858dc05a47d5df222b761cd637f26fdb46a5b26fc1e180ee2f61"
+        }
+      ],
+      "materials": [
+        {
+          "idx": 0,
+          "name": "Map #2",
+          "sha256": "741654cab9aa1d130f615474294839b3a72a38ae694637188bb1c0e3b5b1ae9c"
+        },
+        {
+          "idx": 1,
+          "name": "7 - Default",
+          "sha256": "66e96946d70b0b777c8c2deaeb7e7e2df2c27f1b98c689cf86a47fb6a2c04687"
+        }
+      ]
+    }
+  }
+}

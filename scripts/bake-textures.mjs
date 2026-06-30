@@ -48,7 +48,6 @@
  */
 
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 import {
     existsSync, mkdirSync, readdirSync, readFileSync, statSync,
     writeFileSync,
@@ -59,6 +58,7 @@ import { fileURLToPath } from 'node:url';
 
 import { parseGR2File } from '../src/GrannyFile.js';
 import { loadGR2 } from '../src/GrannyTypeTree.js';
+import { spawnShim } from './lib/platform.mjs';
 import { walkTextureImages } from '../src/GrannyTexture.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -138,14 +138,9 @@ function bakeIGC(record, shimExe, tmpDir) {
     const outRgba = join(tmpDir, `${stem}.rgba`);
     writeFileSync(inBin, pixelBytes);
 
-    const result = spawnSync(
-        'wine',
-        [shimExe, inBin, String(width), String(height), String(alpha), outRgba],
-        {
-            cwd: dirname(shimExe),
-            stdio: ['ignore', 'pipe', 'pipe'],
-            env: { ...process.env, WINEDEBUG: '-all' },
-        },
+    const result = spawnShim(
+        shimExe,
+        [inBin, String(width), String(height), String(alpha), outRgba],
     );
     if (result.status !== 0) {
         throw new Error(`wine shim failed for ${describe(record)} : ` +

@@ -2,6 +2,8 @@ node_modules/
 tests/fixtures/source/
 tests/fixtures/baked/
 tests/fixtures/manifest.json
+tests/fixtures/manifest.live.json
+tests/fixtures/rebake-fresh/
 tests/fixtures/python-oracle.jsonl
 
 # Vitest snapshots are derived from the live-oracle corpus and contain
@@ -18,5 +20,8 @@ tests/**/__snapshots__/
 # Build output (none today, reserve for future)
 dist/
 
-# Wine shim build artifacts (cross-compiled via mingw)
+# Wine shim build artifacts (cross-compiled via mingw).
+# shim/prebuilt/ is intentionally NOT ignored — it ships the canonical
+# i386 PE binary so hosts without mingw can run wine-based checks.
 shim/*.exe
+shim/runtime/

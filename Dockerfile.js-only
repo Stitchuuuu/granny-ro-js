@@ -1,0 +1,36 @@
+# granny-ro-js — minimal JS-only test image.
+#
+# Zero wine, zero qemu, zero DLL. Just node + the JS port + the
+# content-addressed manifest. Runs the same `npm test` parity check
+# as the host, in <2 s after image build.
+#
+# Use case : day-to-day work on the JS port, perf iteration, CI matrix
+# entry that doesn't need binary tooling. ~80 MB image.
+#
+# Build / run :
+#   docker compose build test-js
+#   docker compose run --rm test-js
+#
+# Alternatively, RO_FOLDER can be mounted to test against the user's
+# data.grf via the coverage probe :
+#   docker compose run --rm test-js npm run coverage:gr2
+
+FROM node:20.18.1-alpine
+
+WORKDIR /granny-ro-js
+
+# Layer caching : deps first, source next.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Source + scripts + committed test manifest + source fixtures (if
+# present at build time). Source fixtures are gitignored so they only
+# get baked into the image when the user explicitly populates them
+# locally before building.
+COPY src/ src/
+COPY scripts/ scripts/
+COPY tests/ tests/
+
+# JS-only path uses node:* builtins ; no vitest at runtime here, the
+# test-js driver is plain Node.
+CMD ["node", "scripts/test-js.mjs"]

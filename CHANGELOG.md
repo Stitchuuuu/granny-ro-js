@@ -4,6 +4,38 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.0.0 — 2026-06-30
+
+Stable release. Byte-exact parity across 21 fixtures vs `granny2.dll`,
+locked by a content-addressed test manifest.
+
+### Highlights
+
+- **Content-addressed parity contract** : [`tests/fixtures/content-manifest.json`](tests/fixtures/content-manifest.json)
+  maps each `.gr2` sha256 → per-element output sha256s (sections,
+  textures, meshes, skeletons, animations, materials). `npm test`
+  walks fixtures, hashes them, compares JS port output element-by-
+  element against the pinned values. No wine, no DLL required.
+- **JS-only Docker image** (~80 MB, alpine + node) via
+  `Dockerfile.js-only` — fastest path for day-to-day iteration.
+- **Multi-target DLL re-bake matrix** : `npm run rebake:{container,host-macos,host-windows}`
+  cross-checks `granny2.dll` output against the manifest. Same prebuilt
+  i386 PE shim runs under Linux + Wine + qemu, macOS Wine 9+ (built-in
+  wow64), or Windows native exec — committed at
+  `shim/prebuilt/gr2_igc_export.exe`, rebuildable via
+  `npm run build:shim` or `docker compose run --rm build-shim`.
+- **Comprehensive docs** : [docs/HOWTO.md](docs/HOWTO.md) covers
+  prerequisites, commands, host vs Docker variants, troubleshooting.
+
+### Public API additions
+
+- `extractMaterials(loaded, options)` — surfaces `root.Materials` as a
+  typed array.
+
+### Breaking changes
+
+None vs `1.0.0-a.5`. The public API surface is unchanged.
+
 ## 1.0.0-a.1 — 2026-06-28
 
 Initial public release as a pre-release alpha. Will graduate to a

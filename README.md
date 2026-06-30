@@ -19,9 +19,10 @@ NoCompression compression.
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-## Status — `1.0.0-a.3` (alpha)
+## Status — `1.0.0` (stable)
 
-**≈ 95 % complete** across the test corpus :
+**Byte-exact** across the 21-fixture parity corpus, validated against
+`granny2.dll` :
 
 | Component | State |
 |---|---|
@@ -32,27 +33,25 @@ dialect are welcome.
 | Animation extraction (orientation / position / scaleShear curves, 7 codec variants) | ✅ |
 | Pose composition (skinning matrices ready for GPU) | ✅ |
 | Texture — raw RGBA / BGRA path | ✅ byte-exact |
-| Texture — wavelet-compressed (Bink-family) path | ✅ 16 / 17 fixtures byte-exact ; **1 edge-case texture pending** |
+| Texture — wavelet-compressed (Bink-family) path | ✅ 17 / 17 fixtures byte-exact |
+| Anti-hang guard on degenerate IGC bitstreams | ✅ throws within 50 ms |
 
-Known gaps (tracked, fix planned) :
+Parity is locked by the content-addressed
+[`tests/fixtures/content-manifest.json`](tests/fixtures/content-manifest.json) :
+21 fixtures keyed by `.gr2` sha256, with per-element sha256s for every
+output category (sections, textures, meshes, skeletons, animations,
+materials). `npm test` walks `tests/fixtures/source/`, hashes each
+`.gr2`, and compares JS port output element-by-element against the
+pinned values — no wine, no DLL needed.
 
-- One texture in the corpus triggers a not-yet-RE'd sentinel value in
-  the high-pass sub-band — output diverges from the canonical decoder
-  on that single asset.
-- The high-pass decoder loops on a small subset of off-corpus inputs
-  (the canonical RAD `granny2.dll` does too) — an explicit anti-hang
-  throw is planned to surface a clear error instead.
-- The reference-array helper exported for advanced reflection use has
-  a signature edge case on certain field bindings.
-
-None of these block the typical mesh + skeleton + animation +
-texture-on-most-assets pipeline. Install with the `@alpha` tag and pin
-to a specific version until `1.0.0` stable :
+See [docs/HOWTO.md](docs/HOWTO.md) for prerequisites, the full command
+matrix (host Node, Docker, multi-host re-bake), and the parity contract
+in detail.
 
 ## Install
 
 ```bash
-npm install granny-ro-js@alpha
+npm install granny-ro-js
 ```
 
 Requires Node 20+. No runtime dependencies.

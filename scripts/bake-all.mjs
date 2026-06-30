@@ -37,6 +37,7 @@ import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseBakedSections } from './lib/baked.mjs';
+import { spawnShim } from './lib/platform.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG = resolve(__dirname, '..');
@@ -177,14 +178,7 @@ function runShim(sourcePath, bakedPath) {
         statSync(bakedPath).mtimeMs >= statSync(sourcePath).mtimeMs) {
         return;  // cached
     }
-    const result = spawnSync(
-        'wine',
-        [SHIM_EXE, sourcePath, bakedPath],
-        {
-            cwd: dirname(SHIM_EXE),
-            stdio: ['ignore', 'pipe', 'pipe'],
-        },
-    );
+    const result = spawnShim(SHIM_EXE, [sourcePath, bakedPath]);
     if (result.status !== 0) {
         throw new Error(
             `wine shim failed on ${basename(sourcePath)} : ` +

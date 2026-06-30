@@ -12,6 +12,9 @@
 # `docker compose build` (cached, sub-second after the first build).
 
 services:
+  # Heavyweight catch-all : full Dockerfile (wine + qemu + mingw + Python +
+  # blendergranny). Defaults to `npm test` but TEST_COMMAND can drive any
+  # of the rebake / bake pipelines. ~600 MB image.
   test:
     build: .
     # Read-only mount of the user's iRO client at /data so bake-all
@@ -32,3 +35,41 @@ services:
     # Without it, compose v2 tokenizes the string into exec argv and
     # passes `&&` as a literal arg to the first command.
     command: ["sh", "-c", "${TEST_COMMAND:-npm test}"]
+
+  # JS-only minimal image (~80 MB, alpine + node). No wine, no DLL.
+  # Primary target for day-to-day JS port iteration + perf work.
+  # The committed content-manifest.json is the contract.
+  test-js:
+    build:
+      context: .
+      dockerfile: Dockerfile.js-only
+    volumes:
+      - ${RO_FOLDER:-/dev/null}:/data:ro
+    environment:
+      - RO_FOLDER=/data
+
+  # One-shot Win32 shim cross-compile. Uses the heavyweight image (it
+  # has mingw-w64) but mounts the host repo and writes the .exe back to
+  # shim/prebuilt/ on the host fs — so anyone with Docker but no host
+  # mingw can rebuild the shim.
+  build-shim:
+    build: .
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: ["sh", "-c", "i686-w64-mingw32-gcc -static -O2 -o shim/prebuilt/gr2_igc_export.exe shim/gr2_igc_export.c && echo built shim/prebuilt/gr2_igc_export.exe"]
+
+  # DLL parity re-bake against the user's data.grf + granny2.dll inside
+  # the container (wine + qemu + shim). Compares wine+DLL output vs the
+  # committed manifest. Container has a known IGC divergence pattern
+  # vs macOS/Windows native — see docs/HOWTO.md.
+  rebake-container:
+    build: .
+    volumes:
+      - ${RO_FOLDER:-/dev/null}:/data:ro
+    environment:
+      - RO_FOLDER=/data
+    env_file:
+      - path: .env
+        required: false
+    command: ["sh", "-c", "npm run rebake:container && npm run verify:rebake -- --target container"]

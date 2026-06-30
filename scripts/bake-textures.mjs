@@ -231,7 +231,6 @@ function bakeFixture(fixturePath, baked, options, progress) {
             rgba_path: `${stem}/${fileName}`,
             rgba_sha256: sha256Hex(rgba),
         });
-        log(`baked ${stem}/${fileName} (${rgba.length} bytes, enc=${record.encoding})`);
     }
     return out;
 }

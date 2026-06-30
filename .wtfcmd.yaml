@@ -3,22 +3,6 @@
 #
 # Run from this repo's root (or any descendant — wtf walks up).
 
-- name: test
-  desc: |
-    Build the image (cached after the first run) and run `docker compose
-    run --rm test`. Defaults to the JS-only contract (`npm test`). Set
-    TEST_COMMAND in .env to override (e.g. `npm run test:live`).
-
-    Pass --nobuild to skip the build step when iterating.
-  flags:
-    - name: [nobuild, n]
-      desc: Skip docker compose build (use the already-built image).
-      default: false
-      test: $bool
-  cmd: |
-    {{ if not .nobuild }}docker compose build{{ end }}
-    docker compose run --rm test
-
 - group: test
   name: js
   desc: |
@@ -51,6 +35,23 @@
     {{- else -}}
     npm run test:js
     {{- end }}
+
+- group: test
+  name: docker
+  desc: |
+    Heavyweight Docker catch-all : `docker compose run --rm test`.
+    Defaults to the JS-only contract (`npm test`). Set TEST_COMMAND in
+    .env to override (e.g. `TEST_COMMAND=npm run test:live`).
+
+    Pass --nobuild to skip the docker compose build step.
+  flags:
+    - name: [nobuild, n]
+      desc: Skip docker compose build (use the already-built image).
+      default: false
+      test: $bool
+  cmd: |
+    {{ if not .nobuild }}docker compose build{{ end }}
+    docker compose run --rm test
 
 - group: test
   name: live

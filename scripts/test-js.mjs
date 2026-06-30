@@ -266,7 +266,7 @@ function main() {
         const head = failed === 0 ? green(SYM_OK) : red(SYM_FAIL);
         logForce(`${head} summary : ${passSeg}, ${failSeg}, ${skipSeg} ${dim('(not in manifest)')}`);
     }
-    process.exit(failed === 0 ? 0 : 1);
+    process.exitCode = failed === 0 ? 0 : 1;
 }
 
 main();

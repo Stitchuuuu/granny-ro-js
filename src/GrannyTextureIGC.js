@@ -188,12 +188,16 @@ function arithRenorm(ab) {
 }
 
 function arithBitsGet(ab, scale) {
-    // Peek — no state change. Formula : offset = ((target - low + 1) * scale) / (high - low + 1)
-    // (mirrors fcn.1000e6f0 @ 0x1000e734-0x1000e744 — used by arithDecompress
-    //  for the offset-into-cumCounts compute, without the trailing -1 from GetValue).
+    // fcn.1000e6f0 @ 0x1000e730-0x1000e744 — used by arithDecompress for the
+    // offset-into-cumCounts compute.
+    //   offset = ((target - low + 1) * scale - 1) / (high - low + 1)
+    // The asm at 0x1000e73a-3d does `sub eax, 1 ; sbb edx, 0` on the 64-bit
+    // product (tNorm * scale) before dividing by range — same -1 pattern as
+    // arithBitsGetValue. The previous comment claimed "without the trailing
+    // -1 from GetValue" but the asm shows the -1 IS present (S3.17 fix).
     const range = (ab.high - ab.low + 1) >>> 0;
     const tNorm = (ab.target - ab.low + 1) >>> 0;
-    const num = BigInt(tNorm) * BigInt(scale);
+    const num = BigInt(tNorm) * BigInt(scale) - 1n;
     const v = Number(num / BigInt(range)) | 0;
     return (v >= scale) ? (scale - 1) : v;
 }

@@ -1,6 +1,6 @@
 {
   "name": "granny-ro-js",
-  "version": "1.0.0-a.3",
+  "version": "1.0.0-a.4",
   "description": "Pure-JS reader for .gr2 (Granny3D format 6) files : Oodle0 decompression + skeleton / mesh / animation extraction + pose composition.",
   "type": "module",
   "main": "./src/Granny.js",

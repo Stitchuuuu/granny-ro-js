@@ -1677,6 +1677,7 @@ function decodeHigh1(ab, vb, outp, outOffset, pixelPitch, encWidth, encHeight) {
     let w = encWidth - 1;
     let litLen = 0;
     let zeroLen = 0;
+    let idleIter = 0;
 
     outer: for (;;) {
         // Read lit_len
@@ -1706,6 +1707,17 @@ function decodeHigh1(ab, vb, outp, outOffset, pixelPitch, encWidth, encHeight) {
             zeroLen = EXTRA_ZERO_LENGTHS[zeroLen - (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)] + MIN_ZERO_LENGTH - 1;
         } else if (zeroLen) {
             zeroLen += MIN_ZERO_LENGTH - 1;
+        }
+
+        // Anti-hang : both lengths zero = neither inner while progresses h.
+        // granny2.dll itself spins on the same off-corpus bitstream
+        // (`1_attack.gr2` textures). 64 consecutive idle iters = throw.
+        if (litLen === 0 && zeroLen === 0) {
+            if (++idleIter > 64) {
+                throw new Error(`decodeHigh1: stuck at h=${h} w=${w} after ${idleIter} consecutive arith reads with litLen=0/zeroLen=0 — bitstream likely off-corpus (granny2.dll hangs on the same input). Encoding=${encWidth}x${encHeight}.`);
+            }
+        } else {
+            idleIter = 0;
         }
 
         // Decode literals
@@ -1819,6 +1831,7 @@ function decodeHigh1AfterFirst(ab, vb, outp, outOffset, pixelPitch, encWidth, en
 
     let litLen = 0;
     let zeroLen = 0;
+    let idleIter = 0;
 
     for (;;) {
         let litLenRet = arithDecompress(lits, ab);
@@ -1845,6 +1858,14 @@ function decodeHigh1AfterFirst(ab, vb, outp, outOffset, pixelPitch, encWidth, en
             zeroLen = EXTRA_ZERO_LENGTHS[zeroLen - (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)] + MIN_ZERO_LENGTH - 1;
         } else if (zeroLen) {
             zeroLen += MIN_ZERO_LENGTH - 1;
+        }
+
+        if (litLen === 0 && zeroLen === 0) {
+            if (++idleIter > 64) {
+                throw new Error(`decodeHigh1AfterFirst: stuck at h=${h} w=${w} after ${idleIter} consecutive arith reads with litLen=0/zeroLen=0 — bitstream likely off-corpus. Encoding=${encWidth}x${encHeight}.`);
+            }
+        } else {
+            idleIter = 0;
         }
 
         while (litLen > 0) {

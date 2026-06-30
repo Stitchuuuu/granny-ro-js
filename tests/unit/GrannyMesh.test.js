@@ -16,7 +16,7 @@ import { resolve, dirname } from 'node:path';
 import { parseGR2File } from '../../src/GrannyFile.js';
 import { loadGR2 } from '../../src/GrannyTypeTree.js';
 import { extractSkeletons } from '../../src/GrannySkeleton.js';
-import { extractMeshes } from '../../src/GrannyMesh.js';
+import { extractMeshes, extractMaterials } from '../../src/GrannyMesh.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, '../..');
@@ -106,6 +106,40 @@ describe.skipIf(!haveManifest)('extractMeshes — animation-only fixtures', () =
             }
         });
     }
+});
+
+describe.skipIf(!haveManifest)('extractMaterials — model fixtures', () => {
+    for (const fixture of modelFixtures) {
+        it(`${fixture.name} returns one MaterialInfo per root.Materials entry`, () => {
+            const mats = extractMaterials(loadFixture(fixture.name));
+            expect(Array.isArray(mats)).toBe(true);
+            for (let i = 0; i < mats.length; i++) {
+                expect(mats[i].index).toBe(i);
+                expect(typeof mats[i].name).toBe('string');
+                expect(typeof mats[i].textureFile).toBe('string');
+                expect(mats[i].textureSize === null ||
+                    (Array.isArray(mats[i].textureSize) && mats[i].textureSize.length === 2)).toBe(true);
+            }
+        });
+    }
+});
+
+describe.skipIf(!haveManifest)('extractMaterials — animation-only fixtures', () => {
+    for (const fixture of animationFixtures) {
+        it(`${fixture.name} returns []`, () => {
+            const mats = extractMaterials(loadFixture(fixture.name));
+            expect(mats).toEqual([]);
+        });
+    }
+});
+
+describe.skipIf(!existsSync(resolve(FIXTURE_DIR, 'guildflag90_1.gr2')))('extractMaterials — guildflag90_1 detailed', () => {
+    it('returns at least one Material with a textureFile populated', () => {
+        const mats = extractMaterials(loadFixture('guildflag90_1.gr2'));
+        expect(mats.length).toBeGreaterThan(0);
+        const withTexture = mats.find((m) => m.textureFile);
+        expect(withTexture, 'expected at least one material with textureFile').toBeTruthy();
+    });
 });
 
 describe.skipIf(!existsSync(TREASUREBOX_PATH))('extractMeshes — treasurebox_2.gr2 snapshot', () => {

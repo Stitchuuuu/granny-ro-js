@@ -100,3 +100,20 @@ export function extractMeshes(
     loaded: LoadedGR2,
     options?: ExtractMeshesOptions,
 ): readonly MeshGeometry[];
+
+/** Options for {@link extractMaterials}. */
+export interface ExtractMaterialsOptions {
+    /** Cap on the number of materials extracted (defaults to 4096). */
+    readonly maxMaterials?: number;
+}
+
+/**
+ * Walk `root.Materials` and return one {@link MaterialInfo} per top-level
+ * material in source order. Returns `[]` for fixtures without materials.
+ * For per-mesh material binding, use {@link extractMeshes} (which builds
+ * its own internal lookup off the same walk).
+ */
+export function extractMaterials(
+    loaded: LoadedGR2,
+    options?: ExtractMaterialsOptions,
+): readonly MaterialInfo[];

@@ -22,7 +22,7 @@ import {
     readReferenceArrayObjects,
 } from './GrannyTypeTree.js';
 import { extractSkeletons } from './GrannySkeleton.js';
-import { extractMeshes } from './GrannyMesh.js';
+import { extractMeshes, extractMaterials } from './GrannyMesh.js';
 import { extractTextures, walkTextureImages } from './GrannyTexture.js';
 import { extractAnimations, evaluateTransformTrack, evaluateAnimation } from './GrannyAnimation.js';
 import {
@@ -36,7 +36,7 @@ import {
 export { parseGR2File, COMPRESSION_NAMES, SECTION_NAMES };
 export { COMPRESSION_NONE, COMPRESSION_OODLE0 };
 export { loadGR2, parseTypeTree, parseObject, objectStorageSize, readReferenceArrayObjects };
-export { extractSkeletons, extractMeshes };
+export { extractSkeletons, extractMeshes, extractMaterials };
 export { extractTextures, walkTextureImages };
 export { extractAnimations, evaluateTransformTrack, evaluateAnimation };
 export {

@@ -18,7 +18,7 @@ import {
     ENCODING_RAW,
     ENCODING_IGC,
 } from '../../src/GrannyTexture.js';
-import { yuvToRGB } from '../../src/GrannyTextureIGC.js';
+import { yuvToRGB, decodeIGCTexture } from '../../src/GrannyTextureIGC.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, '../..');
@@ -133,6 +133,23 @@ describe.skipIf(!haveBake)('extractTextures — IGC encoding byte-exact parity',
             expect(actualSha).toBe(entry.rgba_sha256);
         });
     }
+});
+
+// --- decodeHigh1 anti-hang guard — 1_attack off-corpus bitstream ----
+
+describe('decodeIGCTexture — anti-hang guard on degenerate bitstream', () => {
+    it('throws within 50 ms on 1_attack tex0 (granny2.dll also hangs)', () => {
+        const loaded = loadedFor('1_attack.gr2');
+        const records = walkTextureImages(loaded);
+        const r = records.find((x) => x.texIdx === 0 && x.imgIdx === 0 && x.mipIdx === 0);
+        expect(r, 'missing 1_attack tex0').toBeTruthy();
+        const t0 = Date.now();
+        expect(() => decodeIGCTexture({
+            Width: r.width, Height: r.height, Alpha: r.alpha, ImageData: r.pixelBytes,
+        })).toThrow(/stuck.*litLen=0\/zeroLen=0/);
+        const elapsed = Date.now() - t0;
+        expect(elapsed).toBeLessThan(50);
+    });
 });
 
 // --- yuvToRGB kernel — synthetic-plane validation -------------------

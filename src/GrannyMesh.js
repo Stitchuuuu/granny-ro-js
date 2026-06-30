@@ -448,28 +448,49 @@ function bestIndexField(topologyFields) {
 // --- material extraction (inlined port of material.py) -----------------
 
 /**
- * Build a `"section:offset"` → MaterialInfo lookup for every material
- * referenced from `root.Materials`. Recursion through `Maps[].Map`
- * resolves nested material graphs ; the `seen` set guards against
- * cycles, `cache` memoizes already-resolved materials across the walk.
+ * Walk `root.Materials` once and produce both shapes : an ordered array
+ * (one entry per top-level material, in element_refs order) and a
+ * `"section:offset"` → MaterialInfo cache used by mesh binding lookups.
+ * Recursion through `Maps[].Map` resolves nested material graphs ;
+ * `readMaterial` memoizes via the shared cache.
  */
-function materialMap(loaded, maxMaterials) {
+function walkRootMaterials(loaded, maxMaterials) {
     const file = loaded.file;
     const rootTypeTree = parseTypeTree(loaded, file.header.root_type);
     const root = parseObject(loaded, rootTypeTree, file.header.root_object, { maxArrayRefs: maxMaterials });
     const materialField = root.Materials;
-    if (!materialField) return {};
+    if (!materialField) return { materials: [], cache: {} };
     const materialType = materialField.reference_type ?? null;
     const elementRefs = materialField.element_refs ?? [];
     const cache = {};
     const limit = elementRefs.length < maxMaterials ? elementRefs.length : maxMaterials;
+    const materials = new Array(limit);
+    let n = 0;
     for (let i = 0; i < limit; i++) {
         const ref = elementRefs[i];
         if (!ref) continue;
-        const key = `${ref.section}:${ref.offset}`;
-        cache[key] = readMaterial(loaded, ref, materialType, i, cache, {});
+        materials[n++] = readMaterial(loaded, ref, materialType, i, cache, {});
     }
-    return cache;
+    materials.length = n;
+    return { materials, cache };
+}
+
+function materialMap(loaded, maxMaterials) {
+    return walkRootMaterials(loaded, maxMaterials).cache;
+}
+
+/**
+ * Public top-level Materials extractor. Returns one {@link MaterialInfo}
+ * per `root.Materials` entry, in source order (so `materials[i].index === i`
+ * for fixtures with no null refs). Mirrors `extractMeshes` / `extractTextures`
+ * surface : pure function of `loaded`, idempotent, no side effects.
+ *
+ * For consumers that want material binding per mesh, use `extractMeshes` —
+ * it already resolves materials per face-group via the shared cache.
+ */
+export function extractMaterials(loaded, options = {}) {
+    const maxMaterials = options.maxMaterials ?? 4096;
+    return walkRootMaterials(loaded, maxMaterials).materials;
 }
 
 function readMaterial(loaded, ref, materialType, index, cache, seen) {

@@ -174,7 +174,7 @@ export {
     readReferenceArrayObjects,
 } from './GrannyTypeTree.js';
 export { extractSkeletons } from './GrannySkeleton.js';
-export { extractMeshes } from './GrannyMesh.js';
+export { extractMeshes, extractMaterials } from './GrannyMesh.js';
 export { extractTextures, walkTextureImages } from './GrannyTexture.js';
 export {
     extractAnimations,

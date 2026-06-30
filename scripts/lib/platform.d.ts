@@ -28,18 +28,18 @@ export const SHIM_PREBUILT: string;
 export const SHIM_RUNTIME: string;
 
 /**
- * Discriminated target string.
+ * Discriminated target string. Stamped into the content manifest's
+ * `sourceBaseline.target` so we know which environment produced the
+ * pinned shas.
  */
 export type Target =
-    | 'container-wine-qemu'
-    | 'linux-wine'
-    | 'macos-wine'
-    | 'windows-native';
+    | 'windows-native'   // Windows direct exec (no wine)
+    | 'macos-wine'       // macOS Wine.app / Wine Staging.app / brew wine
+    | 'linux-wine';      // Linux + wine (native or inside Docker — qemu
+                         // is just an i386-on-aarch64 detail when cross-arch)
 
 /**
- * Detect the current target. JS-only paths return `linux-wine` (no wine
- * actually launched). Wine paths split by platform so callers can pick
- * the right spawn strategy.
+ * Detect the current rebake target.
  */
 export function getTarget(): Target;
 

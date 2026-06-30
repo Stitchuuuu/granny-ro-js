@@ -18,12 +18,14 @@ locked by a content-addressed test manifest.
   element against the pinned values. No wine, no DLL required.
 - **JS-only Docker image** (~80 MB, alpine + node) via
   `Dockerfile.js-only` — fastest path for day-to-day iteration.
-- **Multi-target DLL re-bake matrix** : `npm run rebake:{container,host-macos,host-windows}`
-  cross-checks `granny2.dll` output against the manifest. Same prebuilt
-  i386 PE shim runs under Linux + Wine + qemu, macOS Wine 9+ (built-in
-  wow64), or Windows native exec — committed at
-  `shim/prebuilt/gr2_igc_export.exe`, rebuildable via
-  `npm run build:shim` or `docker compose run --rm build-shim`.
+- **`npm run rebake`** refreshes the content manifest from wine + DLL
+  output on the current host. Auto-detects the target (`macos-wine` /
+  `linux-wine` / `windows-native`) and stamps `sourceBaseline.target`
+  in the manifest. `git diff` afterwards reveals any drift vs the
+  canonical pin. Same prebuilt i386 PE shim
+  (`shim/prebuilt/gr2_igc_export.exe`) runs under Linux + Wine + qemu,
+  macOS Wine 9+ (built-in wow64), or Windows native exec. Rebuildable
+  via `npm run build:shim` or `docker compose run --rm build-shim`.
 - **Comprehensive docs** : [docs/HOWTO.md](docs/HOWTO.md) covers
   prerequisites, commands, host vs Docker variants, troubleshooting.
 

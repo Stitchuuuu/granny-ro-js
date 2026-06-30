@@ -59,17 +59,37 @@ services:
     working_dir: /workspace
     command: ["sh", "-c", "i686-w64-mingw32-gcc -static -O2 -o shim/prebuilt/gr2_igc_export.exe shim/gr2_igc_export.c && echo built shim/prebuilt/gr2_igc_export.exe"]
 
-  # DLL parity re-bake against the user's data.grf + granny2.dll inside
-  # the container (wine + qemu + shim). Compares wine+DLL output vs the
-  # committed manifest. Container has a known IGC divergence pattern
-  # vs macOS/Windows native — see docs/HOWTO.md.
-  rebake-container:
+  # Refresh the committed tests/fixtures/content-manifest.json from
+  # wine + DLL output inside the heavyweight image. The result lands on
+  # the host filesystem via the bind mount on the working dir ; `git
+  # diff` afterwards reveals any drift vs the canonical pin.
+  #
+  # Use case : Mac user without local Wine wants to test the linux-wine
+  # target via Docker (gives a `target: linux-wine` baseline). For a
+  # macOS-host rebake, just `npm run rebake` directly on the host.
+  rebake:
     build: .
     volumes:
+      - .:/granny-ro-js
       - ${RO_FOLDER:-/dev/null}:/data:ro
     environment:
       - RO_FOLDER=/data
     env_file:
       - path: .env
         required: false
-    command: ["sh", "-c", "npm run rebake:container && npm run verify:rebake -- --target container"]
+    command: ["npm", "run", "rebake"]
+
+  # Ephemeral cross-check : wine + DLL bake → temp manifest.live.json,
+  # then JS test against it. Doesn't touch the committed content-
+  # manifest.json. Same `linux-wine` baseline as the `rebake` service.
+  verify:
+    build: .
+    volumes:
+      - .:/granny-ro-js
+      - ${RO_FOLDER:-/dev/null}:/data:ro
+    environment:
+      - RO_FOLDER=/data
+    env_file:
+      - path: .env
+        required: false
+    command: ["npm", "run", "test:live"]

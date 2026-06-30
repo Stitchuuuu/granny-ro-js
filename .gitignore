@@ -3,8 +3,6 @@ tests/fixtures/source/
 tests/fixtures/baked/
 tests/fixtures/manifest.json
 tests/fixtures/manifest.live.json
-tests/fixtures/rebake-fresh/
-tests/fixtures/python-oracle.jsonl
 
 # Vitest snapshots are derived from the live-oracle corpus and contain
 # fixture-extracted data ; auto-regenerated when contributors run the

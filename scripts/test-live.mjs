@@ -1,60 +1,114 @@
 #!/usr/bin/env node
 /**
- * test-live.mjs — live wine-vs-JS parity check.
+ * test-live.mjs — live wine-vs-JS parity check, ephemeral.
  *
- * Chains :
- *   1. `regenerate-manifest.mjs --run-bake --out tests/fixtures/manifest.live.json`
- *      → runs `npm run bake` (wine + gr2_decompress.exe on sections) and
- *        `npm run bake:textures` (wine + gr2_igc_export.exe on IGC), then
- *        merges those outputs with JS structural extracts (meshes,
- *        skeletons, animations, materials) into a content-addressed v2
- *        manifest at `tests/fixtures/manifest.live.json` (gitignored).
- *   2. `test-js.mjs --manifest tests/fixtures/manifest.live.json`
- *      → JS-decompresses every fixture and sha-compares element-by-
- *        element against the wine-truth values from step 1.
+ * Pipeline (4 phases, ~3 min cold) :
+ *
+ *   [1/4] Section bake     : `npm run bake` (wine + gr2_decompress.exe on
+ *                            21 fixtures → tests/fixtures/manifest.json)
+ *   [2/4] Texture bake     : `npm run bake:textures` (wine + gr2_igc_export.exe
+ *                            on 17 IGC textures → merged into manifest.json)
+ *   [3/4] Manifest merge   : `regenerate-manifest --from-wine --out manifest.live.json`
+ *                            (joins wine truth + JS structural extracts)
+ *   [4/4] JS contract test : `test-js --manifest manifest.live.json`
  *
  * Green = JS port reproduces wine + DLL output byte-for-byte AT THIS
- * MOMENT.
+ * MOMENT. Doesn't touch the committed content-manifest.json.
  *
- * Cost : ~3 min cold (21-fixture wine bake), seconds warm.
+ * On green, ALL temp artifacts are cleaned (manifest.live.json, the v1
+ * tests/fixtures/manifest.json, tests/fixtures/baked/, shim/runtime/).
+ * On red, the artifacts are kept so you can inspect the divergence.
  *
  * Prerequisites :
- *   - Wine 8+ on Linux / qemu-i386 OR Wine 9+ on macOS OR Windows native
- *   - RO_FOLDER pointing at iRO ver12 client (data.grf + granny2.dll)
+ *   - Wine (Linux container has it ; macOS via Wine.app or brew)
+ *   - RO_FOLDER set (data.grf + granny2.dll)
  *
- * For the no-wine JS-only contract check, use `npm test` instead — it
- * verifies the JS port against the committed content-manifest.json.
+ * For the no-wine JS-only contract check, use `npm test` instead.
  */
 
 import { spawnSync } from 'node:child_process';
+import { existsSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
 const LIVE_MANIFEST = resolve(PKG_ROOT, 'tests/fixtures/manifest.live.json');
+const V1_MANIFEST   = resolve(PKG_ROOT, 'tests/fixtures/manifest.json');
+const BAKED_DIR     = resolve(PKG_ROOT, 'tests/fixtures/baked');
+const SHIM_RUNTIME  = resolve(PKG_ROOT, 'shim/runtime');
 
-const argv = process.argv.slice(2);
+const PHASES = [
+    {
+        label: 'section bake (wine + gr2_decompress.exe → manifest.json)',
+        cmd: 'npm', args: ['run', 'bake', '--silent'],
+    },
+    {
+        label: 'texture bake (wine + gr2_igc_export.exe → 17 IGC RGBA)',
+        cmd: 'npm', args: ['run', 'bake:textures', '--silent'],
+    },
+    {
+        label: 'manifest merge (wine truth + JS structural extracts)',
+        cmd: 'node', args: [
+            resolve(__dirname, 'regenerate-manifest.mjs'),
+            '--from-wine', '--out', LIVE_MANIFEST, '--quiet',
+        ],
+    },
+    {
+        label: 'JS test against the fresh manifest',
+        cmd: 'node', args: [
+            resolve(__dirname, 'test-js.mjs'),
+            '--manifest', LIVE_MANIFEST, '--quiet',
+        ],
+    },
+];
 
-function step(cmd, args) {
-    process.stderr.write('[test-live] $ ' + cmd + ' ' + args.join(' ') + '\n');
-    const r = spawnSync(cmd, args, { stdio: 'inherit' });
+function fmtDuration(ms) {
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60_000)} m ${Math.round((ms % 60_000) / 1000)} s`;
+}
+
+function runPhase(idx, total, phase, startedAt) {
+    const elapsed = Date.now() - startedAt;
+    process.stderr.write(
+        `[test-live] [${idx}/${total}] ${phase.label} ` +
+        `(+${fmtDuration(elapsed)} elapsed)\n`
+    );
+    const t0 = Date.now();
+    const r = spawnSync(phase.cmd, phase.args, { stdio: 'inherit' });
+    const dt = Date.now() - t0;
     if (r.status !== 0) {
-        process.stderr.write(`[test-live] step failed : ${cmd} (exit=${r.status})\n`);
+        process.stderr.write(
+            `[test-live] [${idx}/${total}] FAILED in ${fmtDuration(dt)} ` +
+            `(exit=${r.status}) — temp artifacts kept for inspection\n`
+        );
         process.exit(r.status ?? 1);
+    }
+    process.stderr.write(
+        `[test-live] [${idx}/${total}] done in ${fmtDuration(dt)}\n`
+    );
+}
+
+function cleanup() {
+    process.stderr.write('[test-live] cleaning up temp artifacts...\n');
+    for (const path of [LIVE_MANIFEST, V1_MANIFEST, BAKED_DIR, SHIM_RUNTIME]) {
+        if (existsSync(path)) rmSync(path, { recursive: true, force: true });
     }
 }
 
-step('node', [
-    resolve(__dirname, 'regenerate-manifest.mjs'),
-    '--run-bake',
-    '--out', LIVE_MANIFEST,
-    ...argv,
-]);
+const startedAt = Date.now();
+process.stderr.write(
+    `[test-live] pipeline started — ${PHASES.length} phases, ` +
+    `~3 min cold (seconds warm)\n`
+);
+for (let i = 0; i < PHASES.length; i++) {
+    runPhase(i + 1, PHASES.length, PHASES[i], startedAt);
+}
 
-step('node', [
-    resolve(__dirname, 'test-js.mjs'),
-    '--manifest', LIVE_MANIFEST,
-]);
+cleanup();
 
-process.stderr.write('[test-live] wine bake + JS verify : green\n');
+const total = Date.now() - startedAt;
+process.stderr.write(
+    `[test-live] wine bake + JS verify : green in ${fmtDuration(total)}\n`
+);

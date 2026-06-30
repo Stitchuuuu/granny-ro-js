@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 
 import { parseBakedSections } from './lib/baked.mjs';
 import {
-    findDecompressShim, findGranny2Dll, spawnShim, stageShimRuntime,
+    findDecompressShim, findGranny2Dll, findIgcShim, spawnShim, stageShimRuntime,
 } from './lib/platform.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -48,6 +48,12 @@ const EXTRACT_TMP = process.env.EXTRACT_TMP || '/tmp/gr2-ver12';
 const RO_FOLDER = process.env.RO_FOLDER;
 
 function log(...args) { console.error('[bake]', ...args); }
+
+function fmtDuration(ms) {
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60_000)} m ${Math.round((ms % 60_000) / 1000)} s`;
+}
 
 function requireEnv(name, value) {
     if (!value) {
@@ -132,10 +138,12 @@ function main() {
     const sourceGR2 = listGR2(FIXTURE_SOURCE).length > 0
         ? listGR2(FIXTURE_SOURCE).sort()
         : listGR2(EXTRACT_TMP).sort();
-    log('found', sourceGR2.length, '.gr2 fixtures');
+    log(`baking ${sourceGR2.length} .gr2 fixtures through wine + gr2_decompress.exe...`);
 
+    const startedAt = Date.now();
     const fixtures = [];
-    for (const src of sourceGR2) {
+    for (let i = 0; i < sourceGR2.length; i++) {
+        const src = sourceGR2[i];
         const name = basename(src);
         const dstSource = join(FIXTURE_SOURCE, name);
         const dstBaked = join(FIXTURE_BAKED, name);
@@ -143,8 +151,12 @@ function main() {
             statSync(dstSource).mtimeMs < statSync(src).mtimeMs) {
             copyFileSync(src, dstSource);
         }
-        log('shim-bake', name);
+        const t0 = Date.now();
         runShim(runtimeExe, dstSource, dstBaked);
+        const dt = Date.now() - t0;
+        const elapsed = Date.now() - startedAt;
+        log(`[${i + 1}/${sourceGR2.length}] ${name} ` +
+            `(${dt} ms shim, +${fmtDuration(elapsed)} elapsed)`);
         fixtures.push({
             name,
             sourcePath: dstSource,
@@ -180,18 +192,11 @@ function main() {
     log('OK —', manifest.fixtures.length, 'fixtures /', totalSections, 'sections',
         '→', MANIFEST);
 
-    // Chain the texture bake when the IGC shim is also available.
-    if (process.env.GR2_IGC_EXPORT_EXE && existsSync(process.env.GR2_IGC_EXPORT_EXE)) {
-        log('chaining bake-textures.mjs');
-        const child = spawnSync('node', [join(__dirname, 'bake-textures.mjs')], {
-            stdio: 'inherit',
-        });
-        if (child.status !== 0) {
-            throw new Error(`bake-textures.mjs failed : exit=${child.status}`);
-        }
-    } else {
-        log('skipping texture bake — GR2_IGC_EXPORT_EXE not set');
-    }
+    // Texture bake is orchestrated by `npm run rebake` (which calls
+    // both `bake` and `bake:textures` explicitly) so we don't chain it
+    // here — keeps `npm run bake` strictly section-level and avoids
+    // running bake-textures twice in the rebake pipeline.
+    log('section-level bake complete ; run `npm run bake:textures` for IGC RGBA');
 }
 
 main();

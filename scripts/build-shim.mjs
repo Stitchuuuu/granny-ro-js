@@ -18,17 +18,27 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG = resolve(__dirname, '..');
-const SRC = join(PKG, 'shim', 'gr2_igc_export.c');
-const OUT_DIR = join(PKG, 'shim', 'prebuilt');
-const OUT = join(OUT_DIR, 'gr2_igc_export.exe');
+const SHIM_DIR = join(PKG, 'shim');
+const OUT_DIR = join(SHIM_DIR, 'prebuilt');
 const GCC = 'i686-w64-mingw32-gcc';
 const FLAGS = ['-static', '-O2'];
 
+/**
+ * The Win32 shims that ship in the prebuilt directory. Both are needed
+ * by the wine bake pipeline (section-level decompress + IGC texture
+ * export). Build all of them in one shot — if mingw is on PATH, this
+ * is sub-second.
+ */
+const SHIMS = [
+    { src: 'gr2_decompress.c', out: 'gr2_decompress.exe' },
+    { src: 'gr2_igc_export.c', out: 'gr2_igc_export.exe' },
+];
+
 function log(...args) { console.log('build-shim:', ...args); }
 
-function isUpToDate() {
-    if (!existsSync(OUT)) return false;
-    return statSync(OUT).mtimeMs >= statSync(SRC).mtimeMs;
+function isUpToDate(srcPath, outPath) {
+    if (!existsSync(outPath)) return false;
+    return statSync(outPath).mtimeMs >= statSync(srcPath).mtimeMs;
 }
 
 function hasMingw() {
@@ -51,8 +61,12 @@ function printDockerFallback() {
 }
 
 function main() {
-    if (isUpToDate()) {
-        log('up-to-date, skipping :', OUT);
+    const needsBuild = SHIMS.filter((s) => !isUpToDate(
+        join(SHIM_DIR, s.src),
+        join(OUT_DIR, s.out),
+    ));
+    if (needsBuild.length === 0) {
+        log('all shims up-to-date, skipping');
         return;
     }
     if (!hasMingw()) {
@@ -60,13 +74,17 @@ function main() {
         process.exit(1);
     }
     mkdirSync(OUT_DIR, { recursive: true });
-    log('compiling', SRC, '→', OUT);
-    const r = spawnSync(GCC, [...FLAGS, '-o', OUT, SRC], { stdio: 'inherit' });
-    if (r.status !== 0) {
-        console.error('build-shim: compile failed, exit', r.status);
-        process.exit(r.status ?? 1);
+    for (const s of needsBuild) {
+        const srcPath = join(SHIM_DIR, s.src);
+        const outPath = join(OUT_DIR, s.out);
+        log('compiling', srcPath, '→', outPath);
+        const r = spawnSync(GCC, [...FLAGS, '-o', outPath, srcPath], { stdio: 'inherit' });
+        if (r.status !== 0) {
+            console.error('build-shim: compile failed, exit', r.status);
+            process.exit(r.status ?? 1);
+        }
     }
-    log('built', OUT);
+    log('built', needsBuild.length, 'shim(s)');
 }
 
 main();

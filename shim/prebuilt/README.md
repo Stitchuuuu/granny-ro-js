@@ -6,6 +6,7 @@ step.
 
 | Binary | Source | Purpose |
 |---|---|---|
+| `gr2_decompress.exe` | [../gr2_decompress.c](../gr2_decompress.c) | Re-bakes a `.gr2` with all sections decompressed via `_GrannyDecompressData@28` (Oodle0 → NoCompression) |
 | `gr2_igc_export.exe` | [../gr2_igc_export.c](../gr2_igc_export.c) | Thin wrapper around `_GrannyDecompressIGCTexture@12` — feeds raw IGC bytes → RGBA8888 |
 
 ## Runtime modes

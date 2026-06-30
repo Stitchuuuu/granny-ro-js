@@ -58,7 +58,9 @@ import { fileURLToPath } from 'node:url';
 
 import { parseGR2File } from '../src/GrannyFile.js';
 import { loadGR2 } from '../src/GrannyTypeTree.js';
-import { spawnShim } from './lib/platform.mjs';
+import {
+    findIgcShim, spawnShim, stageShimRuntime,
+} from './lib/platform.mjs';
 import { walkTextureImages } from '../src/GrannyTexture.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -67,7 +69,11 @@ const DEFAULTS = {
     source: resolve(PKG_ROOT, 'tests/fixtures/source'),
     output: resolve(PKG_ROOT, 'tests/fixtures/baked/textures'),
     manifest: resolve(PKG_ROOT, 'tests/fixtures/manifest.json'),
-    shim: process.env.GR2_IGC_EXPORT_EXE ?? '/shim/gr2_igc_export.exe',
+    // shim resolved lazily via platform.mjs::findIgcShim() so we honor
+    // both GR2_IGC_EXPORT_EXE (Dockerfile ENV) and the committed
+    // shim/prebuilt/gr2_igc_export.exe fallback. Passing `--shim` still
+    // overrides explicitly.
+    shim: null,
 };
 
 const ENCODING_RAW = 1;
@@ -164,7 +170,13 @@ function fixtureStem(name) {
     return basename(name).replace(/\.gr2$/i, '');
 }
 
-function bakeFixture(fixturePath, baked, options) {
+function fmtDuration(ms) {
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60_000)} m ${Math.round((ms % 60_000) / 1000)} s`;
+}
+
+function bakeFixture(fixturePath, baked, options, progress) {
     const buf = readFileSync(fixturePath);
     const file = parseGR2File(buf);
     const loaded = loadGR2(file);
@@ -190,7 +202,9 @@ function bakeFixture(fixturePath, baked, options) {
                 log(`skip IGC (--no-wine) : ${stem}/${describe(record)}`);
                 continue;
             }
+            const t0 = Date.now();
             rgba = bakeIGC(record, options.shim, tmpRoot);
+            progress.bakeMs += Date.now() - t0;
         } else {
             log(`skip unknown encoding=${record.encoding} : ${stem}/${describe(record)}`);
             continue;
@@ -198,6 +212,11 @@ function bakeFixture(fixturePath, baked, options) {
         const fileName = `${describe(record)}.rgba`;
         const rgbaPath = join(fixtureDir, fileName);
         writeFileSync(rgbaPath, rgba);
+        progress.done += 1;
+        const elapsed = Date.now() - progress.startedAt;
+        log(`[${progress.done}/${progress.total}] ${stem}/${fileName} ` +
+            `(${rgba.length} bytes, enc=${record.encoding}, ` +
+            `+${fmtDuration(elapsed)} elapsed)`);
         out.push({
             fixture: basename(fixturePath),
             name: record.fromFileName,
@@ -222,9 +241,13 @@ function main() {
     if (!existsSync(opts.source)) {
         throw new Error(`source dir not found : ${opts.source}`);
     }
-    if (!opts.noWine && !existsSync(opts.shim)) {
-        throw new Error(`shim binary not found : ${opts.shim} ` +
-            `(set GR2_IGC_EXPORT_EXE or pass --shim)`);
+    if (!opts.noWine) {
+        // Resolve via platform.mjs (honors GR2_IGC_EXPORT_EXE +
+        // shim/prebuilt fallback) unless --shim was passed explicitly.
+        // Then stage shim+granny2.dll into shim/runtime/ so wine can
+        // resolve LoadLibrary("granny2.dll") by sibling lookup.
+        const shimSrc = opts.shim ?? findIgcShim();
+        opts.shim = stageShimRuntime(shimSrc);
     }
     ensureDir(opts.output);
 
@@ -240,17 +263,38 @@ function main() {
         .sort();
     log(`source=${opts.source} fixtures=${fixtures.length} (animation files filtered out)`);
 
+    // Count IGC + Raw records upfront so we can show [N/Total] progress.
+    let total = 0;
+    for (const name of fixtures) {
+        const buf = readFileSync(join(opts.source, name));
+        const loaded = loadGR2(parseGR2File(buf));
+        for (const record of walkTextureImages(loaded)) {
+            if (record.encoding === ENCODING_RAW) total += 1;
+            else if (record.encoding === ENCODING_IGC && !opts.noWine) total += 1;
+        }
+    }
+    log(`baking ${total} textures across ${fixtures.length} fixtures...`);
+
+    const progress = {
+        total,
+        done: 0,
+        startedAt: Date.now(),
+        bakeMs: 0,
+    };
+
     const allEntries = [];
     for (const name of fixtures) {
         const path = join(opts.source, name);
         try {
-            const entries = bakeFixture(path, opts.output, opts);
+            const entries = bakeFixture(path, opts.output, opts, progress);
             allEntries.push(...entries);
         } catch (err) {
             log(`ERROR ${name} : ${err.message}`);
             throw err;
         }
     }
+    log(`baked ${progress.done}/${progress.total} in ${fmtDuration(Date.now() - progress.startedAt)} ` +
+        `(of which ${fmtDuration(progress.bakeMs)} in wine IGC shim)`);
 
     // Merge into manifest.json if it exists ; otherwise write a standalone
     // textures.json next to the baked dir.

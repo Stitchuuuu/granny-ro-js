@@ -35,12 +35,15 @@ import { fileURLToPath } from 'node:url';
 
 import { walkSourceDir } from './lib/discover-gr2.mjs';
 import { buildEntry } from './lib/js-bake.mjs';
+import { getTarget } from './lib/platform.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
 
 const V1_MANIFEST = resolve(PKG_ROOT, 'tests/fixtures/manifest.json');
-const V1_TEXTURES = resolve(PKG_ROOT, 'tests/fixtures/baked/textures/textures.json');
+// bake-textures.mjs merges into `manifest.textures` when manifest.json
+// exists ; the standalone textures.json under baked/ is a fallback only.
+const V1_TEXTURES_FALLBACK = resolve(PKG_ROOT, 'tests/fixtures/baked/textures/textures.json');
 
 const DEFAULTS = {
     source: resolve(PKG_ROOT, 'tests/fixtures/source'),
@@ -172,14 +175,22 @@ function main() {
                 `--from-wine requires ${V1_MANIFEST} (run \`npm run bake\` first or pass --run-bake)`
             );
         }
-        if (!existsSync(V1_TEXTURES)) {
+        v1Manifest = JSON.parse(readFileSync(V1_MANIFEST, 'utf-8'));
+        // bake-textures.mjs merges into `manifest.textures` when manifest.json
+        // exists ; fall back to the standalone textures.json otherwise.
+        if (Array.isArray(v1Manifest.textures)) {
+            v1Textures = { textures: v1Manifest.textures };
+            log(opts, 'wine truth :', V1_MANIFEST, '(+ embedded textures)');
+        } else if (existsSync(V1_TEXTURES_FALLBACK)) {
+            v1Textures = JSON.parse(readFileSync(V1_TEXTURES_FALLBACK, 'utf-8'));
+            log(opts, 'wine truth :', V1_MANIFEST, '+', V1_TEXTURES_FALLBACK);
+        } else {
             throw new Error(
-                `--from-wine requires ${V1_TEXTURES} (run \`npm run bake:textures\` first or pass --run-bake)`
+                `--from-wine requires texture entries either as \`manifest.textures\` ` +
+                `array in ${V1_MANIFEST} or at ${V1_TEXTURES_FALLBACK}. ` +
+                `Run \`npm run bake:textures\` first or pass --run-bake.`
             );
         }
-        v1Manifest = JSON.parse(readFileSync(V1_MANIFEST, 'utf-8'));
-        v1Textures = JSON.parse(readFileSync(V1_TEXTURES, 'utf-8'));
-        log(opts, 'wine truth :', V1_MANIFEST, '+', V1_TEXTURES);
     }
 
     const fixtures = walkSourceDir(opts.source);
@@ -210,6 +221,7 @@ function main() {
         schema: 'content-manifest-v2',
         generatedAt: new Date().toISOString(),
         sourceBaseline: {
+            target: opts.fromWine ? getTarget() : 'js-only',
             generatedBy: opts.fromWine
                 ? 'regenerate-manifest.mjs (wine+DLL truth, sections + textures)'
                 : 'regenerate-manifest.mjs (JS-only)',

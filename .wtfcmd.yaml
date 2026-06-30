@@ -22,61 +22,50 @@
 - group: test
   name: js
   desc: |
-    JS-only content-addressed parity test via the **host Node** runtime
-    (Node 20+ required). Fastest path overall — no docker startup,
+    JS-only content-addressed parity test. Tests JS port output element-
+    by-element against the committed content-manifest.json. No wine,
+    no DLL, no GRF needed.
+
+    Default : **host Node** (Node 20+ required). Fastest path overall,
     sub-second test run.
 
-    For the Docker equivalent (when host has no Node) : `wtf test jsdocker`.
+    Pass --docker to run inside the minimal alpine image (~80 MB,
+    no Node toolchain needed on the host). The first build takes ~60 s ;
+    subsequent runs are cached.
+
+    Pass --nobuild with --docker to skip the docker compose build step
+    when iterating.
+  flags:
+    - name: docker
+      desc: Run inside the minimal alpine Docker image instead of host Node.
+      default: false
+      test: $bool
+    - name: [nobuild, n]
+      desc: With --docker, skip the docker compose build step.
+      default: false
+      test: $bool
   cmd: |
+    {{ if .docker -}}
+    {{ if not .nobuild }}docker compose build test-js{{ end }}
+    docker compose run --rm test-js
+    {{- else -}}
     npm run test:js
+    {{- end }}
 
 - group: test
   name: live
   desc: |
-    Live wine-vs-JS parity check : runs `npm run bake` (wine +
-    gr2_decompress.exe on sections), `npm run bake:textures` (wine +
-    gr2_igc_export.exe on IGC), merges those outputs with JS structural
-    extracts into a temp content-addressed manifest, then runs `test-js`
-    against it.
-
-    Green = JS port reproduces granny2.dll output byte-for-byte at this
-    moment. ~3 min cold, seconds warm.
+    Live wine-vs-JS parity check, ephemeral. Runs `npm run bake` +
+    `bake:textures` (wine + DLL → fresh outputs), merges into a temp
+    manifest at tests/fixtures/manifest.live.json (gitignored), then
+    runs `test-js` against it. Green = JS + DLL agree byte-for-byte
+    on this host RIGHT NOW. Doesn't touch the committed manifest.
 
     Prerequisites :
       - Wine (Linux container has it ; macOS via Wine.app or brew)
       - RO_FOLDER set (data.grf + granny2.dll)
-
-    For the JS-only smoke (no wine) : `wtf test js`.
   cmd: |
     npm run test:live
-
-- group: test
-  name: jsdocker
-  desc: |
-    JS-only content-addressed parity test via the **minimal alpine image**
-    (~80 MB, no wine / qemu / mingw). Use this when the host doesn't have
-    a Node 20+ toolchain — Docker is the only prerequisite.
-
-    For the native host-Node equivalent : `wtf test js`.
-
-    Pass --nobuild to skip the build step when iterating.
-  flags:
-    - name: [nobuild, n]
-      desc: Skip docker compose build (use the already-built image).
-      default: false
-      test: $bool
-  cmd: |
-    {{ if not .nobuild }}docker compose build test-js{{ end }}
-    docker compose run --rm test-js
-
-- group: test
-  name: matrix
-  desc: |
-    Run the JS contract check + verify any per-target rebake artifacts
-    present in tests/fixtures/rebake-fresh/. Prints a ✓/⊘/✗ table per
-    target. No wine needed for the JS row.
-  cmd: |
-    npm run test:matrix
 
 - name: build
   desc: |
@@ -101,69 +90,68 @@
 
 - name: rebake
   desc: |
-    DLL parity re-bake : runs the wine + shim + granny2.dll pipeline
-    against the user's data.grf + tests/fixtures/source/, writes the
-    fresh manifest to tests/fixtures/rebake-fresh/<target>/manifest.json.
+    Refresh the committed tests/fixtures/content-manifest.json from
+    wine + DLL output on this host. Tags sourceBaseline.target with the
+    detected platform ('macos-wine' | 'linux-wine' | 'windows-native').
 
-    Pick the target via one of the flags. Defaults to --container.
+    After a clean rebake, `git diff tests/fixtures/content-manifest.json`
+    is empty IF your host's wine + DLL produces the same shas as the
+    pinned reference. A non-empty diff = real DLL drift OR a host-
+    specific quirk worth investigating.
 
-    Verify the diff against the committed content manifest with
-    `wtf verify` (same flags).
+    Prerequisites :
+      - Wine (Linux container has it ; macOS via Wine.app or brew ;
+        Windows native runs the shim direct, no wine needed)
+      - RO_FOLDER set (data.grf + granny2.dll)
 
-    Prerequisites depend on the target :
-      --container   wine 8 + qemu-i386 (devcontainer + heavy Docker image have it)
-      --macos       Wine 9+ via Wine.app / Wine Staging.app / brew
-      --windows     Windows native (no wine, direct exec)
-    Plus RO_FOLDER set in .env (data.grf + granny2.dll).
+    Pass --container to force the linux-wine baseline via Docker even
+    on a host with native wine (useful for cross-baseline checks on
+    macOS or to keep the canonical reference deterministic).
+
+    For the JS contract check (no wine needed) : `wtf verify`.
   flags:
     - name: container
-      desc: Re-bake inside the devcontainer / heavyweight Docker image.
-      default: false
-      test: $bool
-    - name: macos
-      desc: Re-bake on macOS host (runs scripts/rebake-host-macos.sh).
-      default: false
-      test: $bool
-    - name: windows
-      desc: Re-bake on Windows host (runs scripts/rebake-host-windows.ps1).
+      desc: Force the linux-wine baseline via `docker compose run --rm rebake`.
       default: false
       test: $bool
   cmd: |
-    {{ if .macos -}}
-    ./scripts/rebake-host-macos.sh
-    {{- else if .windows -}}
-    pwsh ./scripts/rebake-host-windows.ps1
+    {{ if .container -}}
+    docker compose run --rm rebake
     {{- else -}}
-    docker compose run --rm rebake-container
+    npm run rebake
     {{- end }}
 
 - name: verify
   desc: |
-    Diff tests/fixtures/rebake-fresh/<target>/manifest.json (produced by
-    `wtf rebake`) element-by-element against the committed content
-    manifest. Prints per-fixture per-category green / red.
+    Cross-check JS port vs wine + DLL on THIS host, ephemeral. Runs the
+    wine bake to produce a fresh content-addressed manifest at
+    tests/fixtures/manifest.live.json (gitignored, doesn't touch the
+    committed reference), then runs `test-js` against it. Green = JS
+    and wine + DLL agree byte-for-byte right now.
 
-    Pick the target via one of the flags. Defaults to --container.
+    Default : runs on host (auto-detects target — macos-wine on Mac,
+    linux-wine on Linux, windows-native on Windows).
+
+    Pass --container to force the linux-wine baseline via Docker even
+    on a host with native wine.
+
+    For the JS contract check (no wine, no DLL, just JS vs committed
+    manifest) : `wtf test js`.
+    For refreshing the committed manifest itself : `wtf rebake`.
+
+    Prerequisites :
+      - Wine (Linux container has it ; macOS via Wine.app or brew)
+      - RO_FOLDER set (data.grf + granny2.dll)
   flags:
     - name: container
-      desc: Verify the container rebake.
-      default: false
-      test: $bool
-    - name: macos
-      desc: Verify the macOS rebake (rebake-fresh/macos-host/).
-      default: false
-      test: $bool
-    - name: windows
-      desc: Verify the Windows rebake (rebake-fresh/windows-host/).
+      desc: Force the linux-wine baseline via `docker compose run --rm verify`.
       default: false
       test: $bool
   cmd: |
-    {{ if .macos -}}
-    npm run verify:rebake -- --target macos-host
-    {{- else if .windows -}}
-    npm run verify:rebake -- --target windows-host
+    {{ if .container -}}
+    docker compose run --rm verify
     {{- else -}}
-    npm run verify:rebake -- --target container
+    npm run test:live
     {{- end }}
 
 - group: publish

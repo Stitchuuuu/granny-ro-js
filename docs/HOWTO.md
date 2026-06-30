@@ -153,48 +153,53 @@ your host (use case C).
 
 ### DLL parity re-bake (use case C)
 
-#### macOS host
+The rebake refreshes the committed `tests/fixtures/content-manifest.json`
+from current wine + DLL output on your host. `git diff` afterwards
+reveals any drift vs the canonical pin.
 
 ```sh
-RO_FOLDER="$HOME/Games/iRO" ./scripts/rebake-host-macos.sh
-npm run verify:rebake -- --target macos-host
+# Refresh the manifest from wine + DLL truth on this host
+npm run rebake             # auto-detects target : macos-wine | linux-wine | windows-native
+
+# Then check whether your host's output matches the canonical pin
+git diff tests/fixtures/content-manifest.json
 ```
 
-The first command stages `granny2.dll` next to the shim binary, runs
-wine + `gr2_igc_export.exe`, and writes the result to
-`tests/fixtures/rebake-fresh/macos-host/manifest.json`. The second
-diffs that against the committed manifest sha-by-sha.
+Empty diff = your wine + DLL produces the same shas as the canonical
+reference → your host is bit-for-bit consistent with the pin.
 
-#### Linux container (devcontainer or the heavyweight Docker image)
+Non-empty diff = real DLL drift OR a host quirk. Investigate :
+
+- Is your `granny2.dll` the same version as the canonical one ?
+- Did your Wine version change ?
+- Is the diff at the same byte offsets across re-runs (deterministic)
+  or random (flaky) ?
+
+The `sourceBaseline.target` field at the top of the manifest records
+which environment produced the pinned shas (`macos-wine`, `linux-wine`,
+`windows-native`, or `js-only` for the JS-bootstrap path).
+
+#### Via Docker (when host has no wine)
+
+A Mac user with Docker but no local Wine install can run the rebake in
+the heavyweight image (`target: linux-wine` baseline) :
 
 ```sh
-npm run rebake:container
-npm run verify:rebake -- --target container
+RO_FOLDER=/path/to/iRO docker compose run --rm rebake
 ```
 
-Same flow, but inside the `wine 8 + qemu-i386-static` container. The
-container path has a known IGC divergence vs the canonical macOS path —
-this is **expected** (page-size + i386 emul drift) and the manifest
-treats container output as "sanity, not byte-exact".
+#### Verify the JS contract
 
-#### Windows native
-
-```powershell
-$env:RO_FOLDER = "C:\Games\iRO"
-.\scripts\rebake-host-windows.ps1
-npm run verify:rebake -- --target windows-host
-```
-
-No wine — the shim runs as native Win32 PE.
-
-#### Matrix view
+After rebake (or at any time), check that the JS port still matches the
+current manifest :
 
 ```sh
-npm run test:matrix
+npm run test:js     # or `npm test` (the same check runs as an integration test)
 ```
 
-Prints a per-target ✓ / ⊘ / ✗ table : `test:js` (always), then each
-`rebake:<target>` whose `rebake-fresh/<target>/manifest.json` is present.
+This is the contract gate — no wine, no DLL, no GRF needed. It tests JS
+output element-by-element against whatever is in
+`tests/fixtures/content-manifest.json`.
 
 ---
 
@@ -202,12 +207,12 @@ Prints a per-target ✓ / ⊘ / ✗ table : `test:js` (always), then each
 
 Three services are wired in `docker-compose.yml` :
 
-| Service             | Image               | Purpose                                            |
-|---------------------|---------------------|----------------------------------------------------|
-| `test-js`           | `Dockerfile.js-only` (~80 MB, alpine + node) | JS-only contract. Day-to-day iteration. |
-| `build-shim`        | `Dockerfile` (heavy) | One-shot mingw-w64 cross-compile to host fs.       |
-| `rebake-container`  | `Dockerfile` (heavy) | wine + qemu + shim re-bake against the manifest.   |
-| `test`              | `Dockerfile` (heavy) | Catch-all : runs `TEST_COMMAND` from `.env`, default `npm test`. |
+| Service       | Image               | Purpose                                            |
+|---------------|---------------------|----------------------------------------------------|
+| `test-js`     | `Dockerfile.js-only` (~80 MB, alpine + node) | JS-only contract. Day-to-day iteration. |
+| `build-shim`  | `Dockerfile` (heavy) | One-shot mingw-w64 cross-compile to host fs.       |
+| `rebake`      | `Dockerfile` (heavy) | Wine + DLL bake → overwrites content-manifest.json on the host fs (`target: linux-wine`). |
+| `test`        | `Dockerfile` (heavy) | Catch-all : runs `TEST_COMMAND` from `.env`, default `npm test`. |
 
 ```sh
 # JS-only test, fastest cold start
@@ -216,11 +221,11 @@ docker compose run --rm test-js
 # Rebuild the prebuilt shim (no host mingw needed)
 docker compose run --rm build-shim
 
-# Container re-bake (needs RO_FOLDER mounted)
-RO_FOLDER=/path/to/iRO docker compose run --rm rebake-container
+# Refresh the content manifest from wine+DLL in the container
+RO_FOLDER=/path/to/iRO docker compose run --rm rebake
 
-# Catch-all (legacy / heavyweight pipeline)
-RO_FOLDER=/path/to/iRO TEST_COMMAND='npm run bake && npm run test:live' \
+# Catch-all (heavyweight pipeline)
+RO_FOLDER=/path/to/iRO TEST_COMMAND='npm run test:live' \
   docker compose run --rm test
 ```
 
@@ -252,7 +257,7 @@ Either install wine (see [Prerequisites C](#c-i-want-to-run-the-wine--dll-re-bak
 or set `WINE_BIN` explicitly :
 
 ```sh
-WINE_BIN="/Applications/Wine Staging.app/Contents/Resources/wine/bin/wine" npm run rebake:macos-host
+WINE_BIN="/Applications/Wine Staging.app/Contents/Resources/wine/bin/wine" npm run rebake
 ```
 
 ### `granny2.dll not found at <path>`
@@ -261,7 +266,7 @@ Either set `RO_FOLDER` so `${RO_FOLDER}/granny2.dll` is your DLL path,
 or set `GRANNY2_DLL` directly to the absolute path :
 
 ```sh
-GRANNY2_DLL=/path/to/granny2.dll npm run rebake:macos-host
+GRANNY2_DLL=/path/to/granny2.dll npm run rebake
 ```
 
 ### `prebuilt shim not found at shim/prebuilt/gr2_igc_export.exe`

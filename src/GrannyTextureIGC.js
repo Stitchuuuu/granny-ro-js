@@ -1128,7 +1128,12 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
     let outBase = startY * destPitch;
     let linBase = 0;          // S16 index, low band starts at col 0
     let hinBase = srcPitch;   // high band starts at col 0 of row 1 (since each "L" row alternates with "H" row in input layout)
-    const lend = srcPitch * height;
+    // `lendCol0` = col-0 end-of-buffer marker. Per-column boundary marker is
+    // `lendCol0 + colsBase` (asm cite : granny2.dll @ 0x10008981 sets
+    // [var_1a4h], 0x1000949a advances by 2 bytes = 1 S16 per col-iteration).
+    // Without the +colsBase term, the strict-equality check at 0x100092f6
+    // misses for any group beyond colsBase=0 and the reflect never fires.
+    const lendCol0 = srcPitch * height;
     const ppitch2 = srcPitch * 2;   // we increment by 2 srcPitch per pair (one L row + one H row)
 
     if (startY) {
@@ -1148,6 +1153,7 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let youtBase = outBase + colsBase;
         let ylinBase = linBase + colsBase;
         let yhinBase = hinBase + colsBase;
+        const lend = lendCol0 + colsBase;
 
         const lp = new Int32Array((16 + 4) * 4);
         const hp = new Int32Array((16 + 5) * 4);
@@ -1297,6 +1303,7 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let youtBase = outBase + colsBase;
         let ylinBase = linBase + colsBase;
         let yhinBase = hinBase + colsBase;
+        const lend = lendCol0 + colsBase;
 
         const lp = new Int32Array(4);
         const hp = new Int32Array(5);
@@ -1989,58 +1996,29 @@ function planeDecode(buf, srcOffset, output, outOffset, width, height, rowMask) 
 // ============================================================================
 // Public API.
 
-/**
- * `_GrannyDecompressIGCTexture@12` clean-room port — **plane 0 byte-exact (SDK),
- * planes 1-3 WIP after a DLL-faithful Arith model port attempt in S3.13**.
- *
- * Status (granny-ro-js@1.1.0-a.0, rollout S3.13 closed) :
- *
- * - **What works** : plane 0 byte-exact via the SDK Arith model (radarith.c
- *   semantics) and SDK arithBitsGet/Remove. The fully-folded orchestrator
- *   is preserved as `_decodeIGCTextureWIP` for reference.
- *
- * - **What's WIP** : planes 1-3 require a DLL-faithful Arith model (16-bucket
- *   cumCounts + inline cum-sum maintenance + DLL-specific escape semantics).
- *   S3.13 ported the model (arithInitBands, arithOpen, arithUpdate, arithSearch,
- *   arithDecompress, arithRescale) and captured a 3414-call ground-truth ARITH
- *   trace via in-process detour on granny2.dll+0xE6F0 (wine-staging-11.10 on
- *   macOS native — Apple Silicon + Rosetta2 + wine32on64 — sole working setup
- *   discovered). Trace replay revealed two issues :
- *
- *   1. `arithInitBands` saturation direction was inverted (fixed S3.13 :
- *      asm `cmp eax,esi ; jae skip` means saturate UP when leftover < bucketSize,
- *      not DOWN as a naive port would assume).
- *
- *   2. **arithBits init formula differs between SDK (`(first>>1) + 3 dec_renorm
- *      iters`) and DLL** : same input bytes 88 7E 80 64 produce ab.low=0x443F4032
- *      in SDK but abT=0x8BF0093 in DLL. The DLL init lives in fcn.100052d0 or
- *      equivalent (not yet RE'd). With a hardcoded hack override at arithBitOpen
- *      to match DLL init, calls 1-4 of arithDecompress match the trace exactly,
- *      but call 5 diverges again (= arithBitsGetValue called between
- *      arithDecompress also has SDK-vs-DLL math drift). Full fix requires
- *      porting all arithBits primitives (Get, GetValue, Remove) to DLL
- *      semantics — task for S3.14.
- *
- * Until S3.14 completes the arithBits init + arithBitsGetValue port, this
- * entry point throws so `extractTextures` keeps a clear contract.
- */
+// `_GrannyDecompressIGCTexture@12` clean-room port.
+// Asm cite : `granny2.dll @ 0x100045b0` (`FromBinkTC`).
 export function decodeIGCTexture(igcImage) {
-    const { Width, Height } = igcImage;
-    throw new Error(
-        `decodeIGCTexture: arith layer DLL-faithful (S3.14 — 3414/3414 calls match ` +
-        `the macOS-wine trace, 0 divergences), but RGBA still differs from baked ` +
-        `golden starting row 83 (kg7-tex0 : 5946/32768 bytes diverge, all 4 channels). ` +
-        `Bug is downstream of arithDecompress — in varBits, planeDecode, iDWT2D, or ` +
-        `yuvToRGB. Tracked as S3.15 (downstream-rgba-diff). ` +
-        `See plans/granny-texture-igc/LOG.md § 3.14. Requested decode: ${Width}x${Height} IGC.`
-    );
-}
-
-// S3.14 — temporarily exported for the trace replay harness. Once trace
-// hits 0 divergences and byte-exact RGBA passes, this becomes the real
-// `decodeIGCTexture` body and the throw above is removed.
-export function _decodeIGCTextureWIP(igcImage) {
     const { Width: width, Height: height, Alpha: alpha, ImageData: src } = igcImage;
+
+    // Small-image fallback : granny2.dll @ fcn.10009c30 returns false when
+    // `width * height <= 256` (asm `imul edx, ecx, eax ; cmp edx, 0x100 ; jle`).
+    // The IGC dispatcher at fcn.10009e50 then bypasses BinkTC and hands the
+    // pixelBytes to ConvertPixelFormat — which is the identity for the
+    // (source RGBA8888 → dest RGBA8888) layout pair the dispatcher selects
+    // here (data.1002a228, alpha=1). Verified : the wine-baked golden for
+    // guildflag90_1.gr2:tex[1] (16×16) is byte-identical to its input
+    // pixelBytes, so the codec writes them through unchanged.
+    if (width * height <= 256) {
+        const expected = width * height * 4;
+        if (src.byteLength < expected) {
+            throw new Error(
+                `decodeIGCTexture: small-image fallback expects ${expected} ` +
+                `RGBA bytes, got ${src.byteLength} (W=${width}, H=${height})`
+            );
+        }
+        return new Uint8Array(src.buffer, src.byteOffset, expected).slice();
+    }
 
     if (width < SMALLEST_DWT_ROW || height < SMALLEST_DWT_COL ||
         (width & 15) !== 0 || (height & 15) !== 0) {
@@ -2086,7 +2064,12 @@ export function yuvToRGB(yp, up, vp, ap, width, height) {
         let b = vp[i] + PLANE_VALUE_OFFSET;
         let a = ap[i];
 
-        g -= (r + b) >> 2;
+        // Round-toward-zero integer divide by 4. Asm cite :
+        // `granny2.dll @ 0x10009aa0-0x10009aac` — `cdq ; and edx,3 ; add eax,edx ;
+        // sar eax,2` is the canonical signed-divide-by-4 idiom, NOT a plain
+        // `sar` (which would be floor-toward -∞). JS `>>` is arith right shift
+        // and diverges by 1 on negative (r+b) that aren't multiples of 4.
+        g -= ((r + b) / 4) | 0;
         r += g;
         b += g;
 

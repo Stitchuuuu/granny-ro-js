@@ -17,3 +17,6 @@ tests/**/__snapshots__/
 
 # Build output (none today, reserve for future)
 dist/
+
+# Wine shim build artifacts (cross-compiled via mingw)
+shim/*.exe

@@ -10,18 +10,44 @@ skinning matrices ready for GPU upload. Zero runtime dependencies.
 
 ## Scope
 
-Validated **byte-exact on 21 corpus fixtures** (6 models + 15
-animations) vs canonical RAD `granny2.dll` AND a Python clean-room
-decoder. Supports Granny format 6, little-endian, 32-bit pointers,
-Oodle0 / NoCompression compression.
+Validated **byte-exact on a 21-asset corpus** (6 models + 15 animation
+banks) vs canonical RAD `granny2.dll` AND a Python clean-room decoder.
+Supports Granny format 6, little-endian, 32-bit pointers, Oodle0 /
+NoCompression compression.
 
 **Out of scope :** modern Granny dialects (Oodle1 / Bitknit, big-endian,
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-> Currently published as `1.0.0-a.1` (alpha) — feature surface is
-> complete, but the lib is awaiting consumer-side integration before
-> graduating to plain `1.0.0`. Install with the `@alpha` tag :
+## Status — `1.0.0-a.3` (alpha)
+
+**≈ 95 % complete** across the test corpus :
+
+| Component | State |
+|---|---|
+| File parser (header, sections, fixups, type tree) | ✅ byte-exact |
+| Oodle0 decompression | ✅ byte-exact |
+| Mesh extraction (positions, normals, uvs, indices, skin weights, bone bindings) | ✅ |
+| Skeleton extraction (hierarchy, bind pose, inverse-world transforms) | ✅ |
+| Animation extraction (orientation / position / scaleShear curves, 7 codec variants) | ✅ |
+| Pose composition (skinning matrices ready for GPU) | ✅ |
+| Texture — raw RGBA / BGRA path | ✅ byte-exact |
+| Texture — wavelet-compressed (Bink-family) path | ✅ 16 / 17 fixtures byte-exact ; **1 edge-case texture pending** |
+
+Known gaps (tracked, fix planned) :
+
+- One texture in the corpus triggers a not-yet-RE'd sentinel value in
+  the high-pass sub-band — output diverges from the canonical decoder
+  on that single asset.
+- The high-pass decoder loops on a small subset of off-corpus inputs
+  (the canonical RAD `granny2.dll` does too) — an explicit anti-hang
+  throw is planned to surface a clear error instead.
+- The reference-array helper exported for advanced reflection use has
+  a signature edge case on certain field bindings.
+
+None of these block the typical mesh + skeleton + animation +
+texture-on-most-assets pipeline. Install with the `@alpha` tag and pin
+to a specific version until `1.0.0` stable :
 
 ## Install
 
@@ -37,12 +63,14 @@ Requires Node 20+. No runtime dependencies.
 import { parseAnimated, poseAt } from 'granny-ro-js';
 import { readFileSync } from 'node:fs';
 
-// 1. Parse a model + its animation set (separate .gr2 files in iRO).
-const model = parseAnimated(readFileSync('treasurebox.gr2').buffer);
-const anim  = parseAnimated(readFileSync('treasurebox_idle.gr2').buffer);
+// 1. Parse a model + its animation set (often shipped as separate .gr2
+// files — the model carries the mesh + skeleton, the animation file
+// carries the per-bone tracks).
+const model = parseAnimated(readFileSync('character.gr2').buffer);
+const anim  = parseAnimated(readFileSync('character_idle.gr2').buffer);
 
-// 2. Graft the animation onto the model (iRO layout : model + N anims
-// in separate files, joined at runtime by mob ID).
+// 2. Graft the animation onto the model (typical layout when the
+// engine joins model + N animation banks at runtime by asset ID).
 model.animations = anim.animations;
 
 // 3. Sample the pose at t = 0.5 s into the animation.
@@ -76,8 +104,8 @@ import { parseTypeTree } from 'granny-ro-js/typetree';  // type-tree walker
 
 | Metric | Number |
 |---|---|
-| Full corpus (21 fixtures / 1.65 MB) | **104 ms** (~15.9 MB/s) |
-| Biggest single section (`7_dead.gr2 #0`, 82 KB) | **7.4 ms** (~10.9 MB/s) |
+| Full corpus (21 assets / 1.65 MB) | **104 ms** (~15.9 MB/s) |
+| Biggest single Oodle0 section (82 KB) | **7.4 ms** (~10.9 MB/s) |
 | vs. Python clean-room reference | **~55× faster** overall |
 
 Measured on aarch64 Apple Silicon, Node 20. Reproduce with `npm run

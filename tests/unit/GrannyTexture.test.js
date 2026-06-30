@@ -1,12 +1,6 @@
 // Byte-exact parity tests for the JS texture decoder vs the S2 parity-
 // bake golden RGBA blobs.
 //
-// In `granny-ro-js@1.1.0-a.0` (the partial S3 ship — see
-// `plans/granny-texture-igc/STATUS.md` S3.5) only the Raw encoding
-// (encoding=1) is decoded byte-exact ; the IGC bitstream decoder
-// (encoding=3) throws a clear "not yet implemented" error and its
-// parametric parity entries are skipped.
-//
 // All-skipped when bake artefacts aren't present (mirrors the
 // [GrannyMesh.test.js](./GrannyMesh.test.js) describe.skipIf pattern).
 
@@ -24,10 +18,7 @@ import {
     ENCODING_RAW,
     ENCODING_IGC,
 } from '../../src/GrannyTexture.js';
-import {
-    decodeIGCTexture,
-    yuvToRGB,
-} from '../../src/GrannyTextureIGC.js';
+import { yuvToRGB } from '../../src/GrannyTextureIGC.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, '../..');
@@ -121,32 +112,27 @@ describe.skipIf(!haveBake)('extractTextures — Raw encoding byte-exact parity',
     }
 });
 
-// --- IGC (encoding=3) S3.6 partial : 4 kernel bugs fixed, planes 1-3 WIP
+// --- IGC (encoding=3) byte-exact parity vs S2 golden ----------------
 
-describe.skipIf(!haveBake)('extractTextures — IGC encoding (S3.14 arith DLL-faithful ; RGBA downstream WIP)', () => {
+describe.skipIf(!haveBake)('extractTextures — IGC encoding byte-exact parity', () => {
     const igcs = igcEntries();
     if (igcs.length === 0) {
         it.skip('no IGC fixtures in manifest', () => {});
         return;
     }
-    // S3.14 (2026-06-30) — full DLL-faithful arith port. Trace replay :
-    // 3414/3414 calls match the macOS-wine ARITH trace exactly, 0
-    // divergences. The bitstream layer is byte-exact. RGBA is NOT byte-exact :
-    // 5946/32768 bytes differ from baked golden starting row 83 (downstream
-    // bug in planeDecode / varBits / iDWT2D / yuvToRGB). The exported entry
-    // point still throws with an S3.14/S3.15 guidance message until the
-    // downstream is fixed in S3.15.
-    const sample = igcs[0];
-    it(`${sample.fixture}/tex${sample.tex_idx} throws an "RGBA downstream WIP" error`, () => {
-        const loaded = loadedFor(sample.fixture);
-        expect(() => extractTextures(loaded)).toThrow(/arith layer DLL-faithful|S3\.14|S3\.15/i);
-    });
-
-    it('decodeIGCTexture(): direct call also throws with the same guidance', () => {
-        expect(() => decodeIGCTexture({
-            Width: 16, Height: 16, Alpha: 1, ImageData: new Uint8Array(8),
-        })).toThrow(/arith layer DLL-faithful|S3\.14|S3\.15/i);
-    });
+    for (const entry of igcs) {
+        const stem = `${entry.fixture}/tex${entry.tex_idx}-img${entry.img_idx}-mip${entry.mip_idx}`;
+        it(`${stem} : sha256(pixels) === baked golden`, () => {
+            const loaded = loadedFor(entry.fixture);
+            const records = extractTextures(loaded);
+            const decoded = locate(records, entry.tex_idx, entry.img_idx, entry.mip_idx);
+            expect(decoded, `missing decoded record for ${stem}`).toBeTruthy();
+            expect(decoded.encoding).toBe(ENCODING_IGC);
+            expect(decoded.pixels.length).toBe(entry.width * entry.height * 4);
+            const actualSha = createHash('sha256').update(decoded.pixels).digest('hex');
+            expect(actualSha).toBe(entry.rgba_sha256);
+        });
+    }
 });
 
 // --- yuvToRGB kernel — synthetic-plane validation -------------------

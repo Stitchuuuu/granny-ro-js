@@ -20,6 +20,7 @@
 
 import { COMPRESSION_NONE, COMPRESSION_OODLE0 } from './GrannyFile.js';
 import { decompressOodle0 } from './GrannyOodle0.js';
+import { readTransform } from './GrannyTransform.js';
 
 // Local copy of the section-decompression dispatch from Granny.js. Kept
 // inline (instead of re-imported from Granny.js) to keep the module DAG
@@ -620,6 +621,8 @@ export function parseObject(loaded, typeTree, ref, options = {}) {
             field.value = rawView.getUint8(offset);
         } else if (t === MT_REAL32) {
             field.value = rawView.getFloat32(offset, little);
+        } else if (t === MT_TRANSFORM) {
+            field.value = readTransform(loaded, section, offset);
         } else if (t === MT_INLINE && member.referenceType) {
             const subTree = parseTypeTree(loaded, member.referenceType);
             const subRef = [section, offset];

@@ -15,13 +15,7 @@
 // Public-API types : see ./GrannySkeleton.d.ts (sibling).
 
 import { parseTypeTree, parseObject, readReferenceArrayObjects } from './GrannyTypeTree.js';
-
-const IDENTITY_TRANSFORM = Object.freeze({
-    flags: 0,
-    position: [0.0, 0.0, 0.0],
-    orientation: [0.0, 0.0, 0.0, 1.0],
-    scaleShear: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-});
+import { IDENTITY_TRANSFORM, readTransform } from './GrannyTransform.js';
 
 /**
  * Walk `root.Skeletons` and return every skeleton with its bones, local
@@ -111,29 +105,6 @@ function readBone(loaded, index, boneObject) {
         parentIndex: typeof parentValue === 'number' ? parentValue : -1,
         transform,
         inverseWorldTransform,
-    };
-}
-
-/**
- * Read the 68-byte fixed Transform struct from `loaded.sectionsOriginal`
- * at `(section, offset)`. Layout : 1 × u32 flags + 16 × f32 (position[3]
- * + orientation[4] + scaleShear[9]). Returns the identity transform if
- * the address falls outside the section.
- */
-function readTransform(loaded, section, offset) {
-    const data = loaded.sectionsOriginal[section];
-    if (!data || offset < 0 || offset + 68 > data.length) return IDENTITY_TRANSFORM;
-    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    const flags = view.getUint32(offset, true);
-    const values = new Array(16);
-    for (let i = 0; i < 16; i++) {
-        values[i] = view.getFloat32(offset + 4 + i * 4, true);
-    }
-    return {
-        flags,
-        position: [values[0], values[1], values[2]],
-        orientation: [values[3], values[4], values[5], values[6]],
-        scaleShear: [values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15]],
     };
 }
 

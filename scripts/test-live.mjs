@@ -38,6 +38,21 @@ const V1_MANIFEST   = resolve(PKG_ROOT, 'tests/fixtures/manifest.json');
 const BAKED_DIR     = resolve(PKG_ROOT, 'tests/fixtures/baked');
 const SHIM_RUNTIME  = resolve(PKG_ROOT, 'shim/runtime');
 
+// ANSI colors — honor NO_COLOR + only emit on TTY (CI logs stay plain).
+const isTTY = process.stderr.isTTY && !process.env.NO_COLOR;
+const c = (code) => (s) => isTTY ? `\x1b[${code}m${s}\x1b[0m` : s;
+const bold    = c('1');
+const dim     = c('2');
+const red     = c('31');
+const green   = c('32');
+const yellow  = c('33');
+const cyan    = c('36');
+
+const SYM_RUN  = isTTY ? '→' : '>';
+const SYM_OK   = isTTY ? '✓' : 'OK';
+const SYM_FAIL = isTTY ? '✗' : 'FAIL';
+const TAG = bold(cyan('[test-live]'));
+
 const PHASES = [
     {
         label: 'section bake (wine + gr2_decompress.exe → manifest.json)',
@@ -70,28 +85,29 @@ function fmtDuration(ms) {
 }
 
 function runPhase(idx, total, phase, startedAt) {
+    const head = `${TAG} ${cyan(SYM_RUN)} ${bold(`[${idx}/${total}]`)}`;
     const elapsed = Date.now() - startedAt;
     process.stderr.write(
-        `[test-live] [${idx}/${total}] ${phase.label} ` +
-        `(+${fmtDuration(elapsed)} elapsed)\n`
+        `${head} ${phase.label} ${dim(`(+${fmtDuration(elapsed)} elapsed)`)}\n`
     );
     const t0 = Date.now();
     const r = spawnSync(phase.cmd, phase.args, { stdio: 'inherit' });
     const dt = Date.now() - t0;
     if (r.status !== 0) {
         process.stderr.write(
-            `[test-live] [${idx}/${total}] FAILED in ${fmtDuration(dt)} ` +
-            `(exit=${r.status}) — temp artifacts kept for inspection\n`
+            `${TAG} ${red(SYM_FAIL)} ${bold(`[${idx}/${total}]`)} ` +
+            `${red('failed')} in ${fmtDuration(dt)} ${dim(`(exit=${r.status})`)}\n` +
+            `${TAG} ${yellow('temp artifacts kept for inspection')}\n`
         );
         process.exit(r.status ?? 1);
     }
     process.stderr.write(
-        `[test-live] [${idx}/${total}] done in ${fmtDuration(dt)}\n`
+        `${TAG} ${green(SYM_OK)} ${bold(`[${idx}/${total}]`)} done in ${green(fmtDuration(dt))}\n`
     );
 }
 
 function cleanup() {
-    process.stderr.write('[test-live] cleaning up temp artifacts...\n');
+    process.stderr.write(`${TAG} ${dim('cleaning up temp artifacts...')}\n`);
     for (const path of [LIVE_MANIFEST, V1_MANIFEST, BAKED_DIR, SHIM_RUNTIME]) {
         if (existsSync(path)) rmSync(path, { recursive: true, force: true });
     }
@@ -99,8 +115,8 @@ function cleanup() {
 
 const startedAt = Date.now();
 process.stderr.write(
-    `[test-live] pipeline started — ${PHASES.length} phases, ` +
-    `~3 min cold (seconds warm)\n`
+    `${TAG} pipeline started — ${bold(PHASES.length)} phases, ` +
+    `${dim('~3 min cold, seconds warm')}\n`
 );
 for (let i = 0; i < PHASES.length; i++) {
     runPhase(i + 1, PHASES.length, PHASES[i], startedAt);
@@ -110,5 +126,6 @@ cleanup();
 
 const total = Date.now() - startedAt;
 process.stderr.write(
-    `[test-live] wine bake + JS verify : green in ${fmtDuration(total)}\n`
+    `${TAG} ${green(SYM_OK)} ${green(bold('wine bake + JS verify : green'))} ` +
+    `in ${green(fmtDuration(total))}\n`
 );

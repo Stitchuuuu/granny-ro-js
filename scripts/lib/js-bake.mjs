@@ -143,7 +143,7 @@ export function buildEntry({ name, sizeBytes, bytes }) {
         extractMeshes(loaded).map((mesh, idx) => ({
             idx,
             name: mesh.name ?? null,
-            verticesCount: mesh.vertices?.length ?? null,
+            verticesCount: mesh.vertexCount ?? null,
             triangleGroupsCount: mesh.triangleGroups?.length ?? null,
             sha256: structuralSha(mesh),
         }))

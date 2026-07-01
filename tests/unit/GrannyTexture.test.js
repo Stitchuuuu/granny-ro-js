@@ -49,7 +49,7 @@ describe.skipIf(!haveFixtures)('walkTextureImages — shape', () => {
 
 // --- decodeHigh1 anti-hang guard — 1_attack off-corpus bitstream ----
 
-describe('decodeIGCTexture — anti-hang guard on degenerate bitstream', () => {
+describe.skipIf(!haveFixtures)('decodeIGCTexture — anti-hang guard on degenerate bitstream', () => {
     // The guard fires via a 64-idle-iter counter on litLen=0/zeroLen=0,
     // not a wall-clock deadline. 100 ms gives headroom for loaded CI
     // hosts while still catching real spins (which would be unbounded).

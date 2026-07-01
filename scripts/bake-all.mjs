@@ -175,7 +175,6 @@ function main() {
     for (const f of fixtures) {
         const sections = parseBakedSections(f.bakedPath).map((s, i) => ({
             index: i,
-            compression: s.compression ?? 'oodle0',
             decompressed_size: s.decompressed_size,
             decompressed_sha256: s.sha256,
         }));

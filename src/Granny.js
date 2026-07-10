@@ -23,8 +23,10 @@ import {
 } from './GrannyTypeTree.js';
 import { extractSkeletons } from './GrannySkeleton.js';
 import { extractMeshes, extractMaterials } from './GrannyMesh.js';
+import { extractModels } from './GrannyModel.js';
 import { extractTextures, walkTextureImages } from './GrannyTexture.js';
 import { extractAnimations, evaluateTransformTrack, evaluateAnimation } from './GrannyAnimation.js';
+import { readTransform, IDENTITY_TRANSFORM } from './GrannyTransform.js';
 import {
     composeLocalMatrix,
     multiplyMat4,
@@ -36,9 +38,10 @@ import {
 export { parseGR2File, COMPRESSION_NAMES, SECTION_NAMES };
 export { COMPRESSION_NONE, COMPRESSION_OODLE0 };
 export { loadGR2, parseTypeTree, parseObject, objectStorageSize, readReferenceArrayObjects };
-export { extractSkeletons, extractMeshes, extractMaterials };
+export { extractSkeletons, extractMeshes, extractMaterials, extractModels };
 export { extractTextures, walkTextureImages };
 export { extractAnimations, evaluateTransformTrack, evaluateAnimation };
+export { readTransform, IDENTITY_TRANSFORM };
 export {
     composeLocalMatrix,
     multiplyMat4,

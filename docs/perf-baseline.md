@@ -407,3 +407,70 @@ same `runs/` dir and compare side-by-side against node — no build target
 exists for those yet, so they are deferred, not built. Byte-exact
 correctness stays the job of `npm test` ; the bench only smoke-checks
 that output isn't empty.
+
+---
+
+## S3.19b result — pure-JS IGC perf (2026-07-10)
+
+Profile-driven optimization of the IGC texture codec (the 85%-of-model-load
+cost 3.19a surfaced). Two structural wins landed ; three micro-opts were
+tried and reverted as noise. **Byte-exact after every commit** (content
+manifest, 17/17 IGC textures) + a new call-by-call arith differential gate.
+
+### Headline
+
+- **IGC decode itself (`+tex`) : 2.00× faster** — 226.74 ms → 113.30 ms
+  summed across the 6 models. This is the surface the session targeted
+  (parse time is unchanged and out of scope).
+- **Full model load : 1.74×** — 265.2 ms → 152.5 ms. The full-load number
+  is below 2× only because parse (~40 ms, already optimal per the profile)
+  now dominates a larger share : model `tex %` fell from **85.0% → 74.3%**.
+- Anim packs unchanged (no IGC path — parse + Oodle0 only, already S4-tuned).
+
+### Per-fixture IGC decode (`+tex`, warm-best) vs the 3.19a baseline
+
+| Model             | base +tex ms | B2 +tex ms | speedup |
+|-------------------|-------------:|-----------:|--------:|
+| aguardian90_8.gr2 |        62.64 |      32.63 | 1.92×  |
+| empelium90_0.gr2  |        14.13 |       7.52 | 1.88×  |
+| guildflag90_1.gr2 |        14.18 |       7.51 | 1.89×  |
+| kguardian90_7.gr2 |        63.63 |      29.64 | 2.15×  |
+| sguardian90_9.gr2 |        58.53 |      28.60 | 2.05×  |
+| treasurebox_2.gr2 |        13.63 |       7.39 | 1.84×  |
+| **TOTAL**         |   **226.74** | **113.30** | **2.00×** |
+
+### Optimizations tried — what stuck, what got reverted
+
+| # | Candidate | Δ vs prior | Decision | Why |
+|---|-----------|-----------:|----------|-----|
+| A1 | Hoist the four `iDWT` ring-buffer `Int32Array`s (`iDWTrow`, `iDWTcol` main + remainder) out of their per-row / per-4-col-group loops into module-scoped pools. Sizes kept EXACTLY equal to the originals (the recenter relies on an out-of-bounds read → 0). | **−24.8%** corpus / −19..−32% models | **KEEP** | `iDWTcol` was profile #1 ; its allocation churn showed up as GC + native malloc/calloc, not JS ticks. Pooling removed it. Byte-exact : each kernel re-seeds every slot before reading it, so no clear needed. |
+| A2 | `iDWTcol` inner loop : hoist the `(lpC+n)*4+k` base indices out of the k-loop and write `dest` directly, dropping the `e1..e4`/`o1..o4` temporaries + the 4-way `if (k===…)` dispatch. | +0.7% (σ ≈ 2 ms ; models ±2% mixed sign) | **REVERT** | Below the ±1% floor. V8 already optimizes the index math + branch dispatch ; no gain, slightly worse. |
+| B2 | Drop BigInt for f64 in the 3 hot arith multiply fns (`arithBitsGet`, `arithBitsGetValue`, `arithBitsRemove`). Provably exact : `range·scale < 2^45 < 2^53`, floor exact (nearest-int distance ≥ 2^-14 ≫ f64 error ≤ 2^-22). | **−16%** vs A1 | **KEEP** | #2 IGC cost ; BigInt boxed a bigint per decoded symbol (~1.15M calls) + native alloc. Guarded by the arith differential self-check (0 divergences). |
+| B2′ | The 2 arith **shift** sites (`arithBitsGetBits`, `arithBitsGetBitsValue`). | — | **LEFT ON BIGINT** | B0 audit : **0 calls** across the whole model corpus. Converting gains nothing and adds precision risk (max `bits` unknown for lack of samples). |
+| A3 | Inline `roundS16` at the `iDWTcol` hot call site (8×/column-iteration) — the S4 "inline the 1-line wrapper" pattern. | +1.7% (σ ≈ 3.9 ms) | **REVERT** | Noise/slightly worse. Unlike S4's `u32`/`u16` wrappers, V8 was ALREADY inlining `roundS16` — hand-inlining only churned the expression. |
+| A4 | Generalize A1 : pool the per-texture plane buffers (4 × `Int16Array(w·h)`), the iDWT `temp`, rowMask, and the `arithRescale` scratch into grow-on-demand module pools. | ≈ 0% on best / mean / p95 (σ ≈ 0.15 ms) | **REVERT** | Byte-exact, but no measurable win on any metric. Unlike A1's ring buffers (which needed no clear → saved alloc + zeroing), these planes are sparse-written and must be re-`fill(0)`'d ; allocating a zeroed `Int16Array` is essentially just that same zeroing, so pooling saves only GC — and GC isn't a bottleneck here (mean/p95 flat). Large buffers, but *infrequent* (per-texture, not per-group). Complexity without benefit → dropped per §3. Would still cut peak transient memory (not measured) if a memory-bound consumer ever needs it. |
+| C | Branchless `[0,255]` clamp in `yuvToRGB`. | not attempted | **SKIP** | Only ~1.2% of profile → best case < 0.5% (below the noise floor), and it risks the asm-cited round-toward-zero `(r+b)/4|0` divide. With A2/A3 both landing as noise, not worth the risk. |
+
+### Profiled hot spots after B2 (full-load, all 21 fixtures)
+
+| Ticks | Fn | Codec | Note |
+|------:|----|-------|------|
+| 271 | `decompress` | Oodle0 | already S4-optimized (anim packs) |
+| 207 | `remove` | Oodle0 | already S4-optimized |
+| 168 | `iDWTcol` | IGC | still #1 IGC, but pure compute — A2 proved V8 is already at its ceiling here |
+| 113 | `arithDecompress` | IGC | down from 129 (BigInt gone) |
+|  96 | `arithRenorm` | IGC | pure u32 bit-shift renorm ; delicate (S4 `>>> 0` hint lesson) |
+|  78 | `iDWTrow` | IGC | same structure as `iDWTcol` |
+|  62 | `decodeHigh1` | IGC | arith symbol decode |
+
+### Ceiling reached — why we stopped at 2.00× IGC / 1.74× full-load
+
+Three separate micro-opts (A2, A3, and by extension C) all came back at or
+below the noise floor : **V8 is already optimal on the remaining hot IGC
+functions**. `iDWTcol`'s remaining cost is its cache-unfriendly column
+striding — cutting it further needs an *algorithmic* change (transpose the
+plane so the column pass runs row-major), which alters memory layout and is
+better proven under a dedicated effort or folded into the **WASM kernels
+(S3.19d)**. `arithRenorm`/`decodeHigh1` are tight u32 bit-shift loops where
+S3.19b's own §S4 lessons warn against speculative edits. The pure-JS pass
+banked its two structural wins ; the rest is a WASM story.

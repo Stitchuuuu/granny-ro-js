@@ -25,6 +25,28 @@
 
 const PLANE_VALUE_OFFSET = 0;
 
+// The arithBits multiply sites use plain f64 math instead of BigInt. This is
+// provably exact : `range ≤ 2^31` (31-bit coder) and `scale < 0x4000`
+// (ARITH_RESCALE_TRIGGER), so every product `range·scale < 2^45 < 2^53` is
+// representable exactly ; the floor is exact because the nearest-integer
+// distance of the quotient (≥ 1/scale ≥ 2^-14) dwarfs the f64 rounding error
+// (≤ 2^-22). Set IGC_ARITH_VERIFY=1 to cross-check every f64 result against
+// the BigInt reference call-by-call (see scripts/replay-arith-selfcheck.mjs).
+// The flag is a module const : when off, the guarded branches are a single
+// correctly-predicted no-op per call.
+const IGC_ARITH_VERIFY =
+    typeof process !== 'undefined' && !!process.env && process.env.IGC_ARITH_VERIFY === '1';
+
+let __arithCall = 0;
+function __arithVerify(site, fast, ref) {
+    __arithCall++;
+    if (ref !== fast) {
+        throw new Error(
+            `[IGC_ARITH_VERIFY] ${site} divergence at call #${__arithCall}: ` +
+            `f64=${fast} bigint=${ref}`);
+    }
+}
+
 const SMALLEST_DWT_ROW = 16;
 const SMALLEST_DWT_COL = 16;
 const FLIPSIZE = 8;
@@ -197,8 +219,10 @@ function arithBitsGet(ab, scale) {
     // -1 from GetValue" but the asm shows the -1 IS present (S3.17 fix).
     const range = (ab.high - ab.low + 1) >>> 0;
     const tNorm = (ab.target - ab.low + 1) >>> 0;
-    const num = BigInt(tNorm) * BigInt(scale) - 1n;
-    const v = Number(num / BigInt(range)) | 0;
+    // f64-exact : tNorm·scale < 2^45, quotient floored via `| 0` (positive,
+    // < 2^31). See the note at IGC_ARITH_VERIFY.
+    const v = ((tNorm * scale - 1) / range) | 0;
+    if (IGC_ARITH_VERIFY) __arithVerify('Get', v, Number((BigInt(tNorm) * BigInt(scale) - 1n) / BigInt(range)) | 0);
     return (v >= scale) ? (scale - 1) : v;
 }
 
@@ -209,12 +233,18 @@ function arithBitsRemove(ab, lo, count, scale) {
     //   new_low_dll  = low + new_low_offset
     //   new_high_dll = low + new_high_offset
     const range = (ab.high - ab.low + 1) >>> 0;
-    const sBig = BigInt(scale);
-    const num1 = (BigInt(range) * BigInt(lo + count)) / sBig;
-    const num2 = (BigInt(range) * BigInt(lo)) / sBig;
+    // f64-exact : range·(lo+count) < 2^45 ; quotient can reach ~2^31 so we
+    // floor with Math.floor (not `| 0`, which would wrap past int32).
+    const num1 = Math.floor((range * (lo + count)) / scale);
+    const num2 = Math.floor((range * lo) / scale);
+    if (IGC_ARITH_VERIFY) {
+        const sBig = BigInt(scale);
+        __arithVerify('Remove.num1', num1, Number((BigInt(range) * BigInt(lo + count)) / sBig));
+        __arithVerify('Remove.num2', num2, Number((BigInt(range) * BigInt(lo)) / sBig));
+    }
     const oldLow = ab.low >>> 0;
-    ab.high = (oldLow + Number(num1) - 1) >>> 0;
-    ab.low = (oldLow + Number(num2)) >>> 0;
+    ab.high = (oldLow + num1 - 1) >>> 0;
+    ab.low = (oldLow + num2) >>> 0;
     arithRenorm(ab);
 }
 
@@ -223,8 +253,9 @@ function arithBitsGetValue(ab, scale) {
     // then arithBitsRemove(ab, value, 1, scale).
     const range = (ab.high - ab.low + 1) >>> 0;
     const tNorm = (ab.target - ab.low + 1) >>> 0;
-    const num = BigInt(tNorm) * BigInt(scale) - 1n;
-    let v = Number(num / BigInt(range)) | 0;
+    // f64-exact — see the note at IGC_ARITH_VERIFY.
+    let v = ((tNorm * scale - 1) / range) | 0;
+    if (IGC_ARITH_VERIFY) __arithVerify('GetValue', v, Number((BigInt(tNorm) * BigInt(scale) - 1n) / BigInt(range)) | 0);
     if (v >= scale) v = scale - 1;
     arithBitsRemove(ab, v, 1, scale);
     return v;
@@ -863,9 +894,9 @@ function roundS16(x) {
     return ((x + (32767 ^ sign)) / 65536) | 0;
 }
 
-// S3.19b/A1 — iDWT ring buffers hoisted out of the per-row / per-4-col-group
-// loops. `iDWTcol` re-allocated `lp`/`hp` on every 4-col group (profile #1
-// hot fn) ; pooling kills that allocation churn on the hottest path.
+// iDWT ring buffers hoisted out of the per-row / per-4-col-group loops.
+// `iDWTcol` re-allocated `lp`/`hp` on every 4-col group (the hottest IGC
+// function) ; pooling kills that allocation churn on the hottest path.
 //
 // Two invariants make reuse byte-exact (verified by the content manifest
 // across all 17 IGC textures) :
@@ -905,7 +936,7 @@ function iDWTrow(dest, destPitch, src, srcPitch, width, height, rowMask, startY,
     // ringbuffer-like state for the row : lp[ 8 ] + hp[ 8 ] with -base
     // offsets. We pack into Int32Array indexed 0..7 (lp) and 0..7 (hp), using
     // offset +1 (lp) and +2 (hp) as the "center" of the kernel window.
-    // Pooled (S3.19b/A1) — fully re-seeded per row by the initial-fill below.
+    // Pooled — fully re-seeded per row by the initial-fill below.
     const lp = _rowLp;
     const hp = _rowHp;
 
@@ -1184,7 +1215,7 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let yhinBase = hinBase + colsBase;
         const lend = lendCol0 + colsBase;
 
-        const lp = _colLp;   // pooled (S3.19b/A1) — see notes above iDWTrow
+        const lp = _colLp;   // pooled — see notes above iDWTrow
         const hp = _colHp;
 
         // Initial fill — startY ? 4L+5H : 3L+3H with boundary mirror
@@ -1334,7 +1365,7 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let yhinBase = hinBase + colsBase;
         const lend = lendCol0 + colsBase;
 
-        const lp = _remLp;   // pooled (S3.19b/A1) — re-seeded per remainder col below
+        const lp = _remLp;   // pooled — re-seeded per remainder col below
         const hp = _remHp;
 
         if (startY) {

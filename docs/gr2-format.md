@@ -327,3 +327,12 @@ Validated two ways :
 Byte-for-byte parity vs `granny2.dll` for every output category lives
 in the content-addressed integration test
 (`tests/integration/manifest.test.js`).
+
+The pose/placement runtime (`poseAt`, `extractModels().initialPlacement`)
+is additionally **DLL-verified** — not just checked against the Python
+`blendergranny` twin. `tests/integration/worldpose-oracle.test.js` drives
+the real `granny2.dll` anim+skin chain through the Wine shim
+(`shim/gr2_worldpose.c --pose-json`) and asserts our JS
+`InitialPlacement` (6 models) and per-bone skinning composites (2 anim
+fixtures, every bone × sampled `t`) match the DLL within `1e-4`. Wine-gated
+— skips cleanly where wine/the corpus are absent (e.g. CI).

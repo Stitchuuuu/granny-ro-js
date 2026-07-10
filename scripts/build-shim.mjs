@@ -24,14 +24,16 @@ const GCC = 'i686-w64-mingw32-gcc';
 const FLAGS = ['-static', '-O2'];
 
 /**
- * The Win32 shims that ship in the prebuilt directory. Both are needed
- * by the wine bake pipeline (section-level decompress + IGC texture
- * export). Build all of them in one shot — if mingw is on PATH, this
- * is sub-second.
+ * The Win32 shims that ship in the prebuilt directory. The first two are
+ * needed by the wine bake pipeline (section-level decompress + IGC texture
+ * export); gr2_worldpose is the pose/placement numeric oracle (its
+ * --pose-json mode backs tests/integration/worldpose-oracle.test.js). Build
+ * all of them in one shot — if mingw is on PATH, this is sub-second.
  */
 const SHIMS = [
     { src: 'gr2_decompress.c', out: 'gr2_decompress.exe' },
     { src: 'gr2_igc_export.c', out: 'gr2_igc_export.exe' },
+    { src: 'gr2_worldpose.c', out: 'gr2_worldpose.exe' },
 ];
 
 function log(...args) { console.log('build-shim:', ...args); }

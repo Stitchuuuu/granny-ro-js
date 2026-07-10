@@ -21,10 +21,24 @@
  * granny2.dll is the Nov-2002 build shipped in every iRO era (md5
  * c4879696…, byte-identical ver12 == mars26 == rag211105).
  *
+ * --pose-json mode (numeric oracle, granny-ro-js Session B) : append the
+ * --pose-json flag to emit the raw DLL numbers instead of the bbox table, so
+ * the JS port can be asserted float-for-float against granny2.dll. It prints
+ * ONLY parseable lines to stdout (diagnostics stay on stderr) :
+ *   PLACEMENT flags=<u32> pos=<f>,<f>,<f> orient=<f>,<f>,<f>,<f> scale=<f>×9
+ *     — the model's inline InitialPlacement granny_transform @ model+8
+ *       (flags@8, pos@12, orient@24, scaleShear@40). Emitted before the mesh/
+ *       animation path, so a fixture with no matching mesh or no animation
+ *       still yields a PLACEMENT line (then exits 0 cleanly).
+ *   POSE t=<f> bone=<i> m=<16 comma-sep floats>
+ *     — the GetWorldPoseComposite4x4Array entry for each bone at each sampled
+ *       t (col-major, T@12..14 — this is the skinning composite, world×invBind).
+ * Full precision (%.9g). Without the flag the bbox table is byte-unchanged.
+ *
  * Compile (mingw-w64) :
  *   i686-w64-mingw32-gcc -static -O2 -o prebuilt/gr2_worldpose.exe gr2_worldpose.c
  * Run via Wine with granny2.dll in CWD :
- *   wine ./gr2_worldpose.exe guildflag90_1.gr2 Object08 [duration] [samples]
+ *   wine ./gr2_worldpose.exe guildflag90_1.gr2 Object08 [duration] [samples] [--pose-json]
  */
 #include <windows.h>
 #include <stdio.h>
@@ -74,10 +88,12 @@ static int32_t rdI(void* base, int off) { return *(int32_t*)((char*)base + off);
 static void*   rdP(void* base, int off) { return *(void**)((char*)base + off); }
 
 int main(int argc, char** argv) {
-    if (argc < 3) { fprintf(stderr, "usage: gr2_worldpose in.gr2 MeshName [duration] [samples]\n"); return 2; }
+    if (argc < 3) { fprintf(stderr, "usage: gr2_worldpose in.gr2 MeshName [duration] [samples] [--pose-json]\n"); return 2; }
+    int poseJson = 0;
+    for (int i = 1; i < argc; i++) if (strcmp(argv[i], "--pose-json") == 0) poseJson = 1;
     const char* meshName = argv[2];
-    float duration = argc > 3 ? (float)atof(argv[3]) : 5.6667f;
-    int   samples  = argc > 4 ? atoi(argv[4]) : 24;
+    float duration = (argc > 3 && strcmp(argv[3], "--pose-json")) ? (float)atof(argv[3]) : 5.6667f;
+    int   samples  = (argc > 4 && strcmp(argv[4], "--pose-json")) ? atoi(argv[4]) : 24;
 
     H = LoadLibraryA("granny2.dll");
     if (!H) { fprintf(stderr, "FATAL: LoadLibrary(granny2.dll) = %lu\n", (unsigned long)GetLastError()); return 3; }
@@ -127,6 +143,19 @@ int main(int argc, char** argv) {
     void* model = (modelCount > 0) ? models[0] : NULL;
     if (model) fprintf(stderr, "model[0].Name = \"%s\"\n", (char*)rdP(model, 0));
 
+    /* --pose-json : dump the inline InitialPlacement granny_transform @ model+8
+     * (flags@8, pos@12, orient@24, scaleShear@40). Emitted here — before the
+     * mesh/anim path — so placement-only fixtures still yield a line. */
+    if (poseJson && model) {
+        uint32_t plFlags = (uint32_t)rdI(model, 8);
+        float* pl = (float*)((char*)model + 12);   /* pos=pl[0..2] orient=pl[3..6] scaleShear=pl[7..15] */
+        printf("PLACEMENT flags=%u pos=%.9g,%.9g,%.9g orient=%.9g,%.9g,%.9g,%.9g "
+               "scale=%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g\n",
+               plFlags, pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6],
+               pl[7], pl[8], pl[9], pl[10], pl[11], pl[12], pl[13], pl[14], pl[15]);
+        fflush(stdout);
+    }
+
     /* locate the requested mesh by Name @ +0 */
     void* mesh = NULL;
     for (int i = 0; i < meshCount; i++) {
@@ -134,8 +163,10 @@ int main(int argc, char** argv) {
         fprintf(stderr, "mesh[%d].Name = \"%s\"\n", i, nm ? nm : "(null)");
         if (nm && strcmp(nm, meshName) == 0) mesh = meshes[i];
     }
-    if (!mesh) { fprintf(stderr, "FATAL: mesh \"%s\" not found\n", meshName); return 7; }
-    if (!model || animCount < 1) { fprintf(stderr, "FATAL: no model/animation\n"); return 7; }
+    /* In --pose-json mode PLACEMENT is already out; a missing mesh/animation is
+     * a clean exit (placement-only fixtures), not an error. */
+    if (!mesh) { fprintf(stderr, "FATAL: mesh \"%s\" not found\n", meshName); return poseJson ? 0 : 7; }
+    if (!model || animCount < 1) { fprintf(stderr, "FATAL: no model/animation\n"); return poseJson ? 0 : 7; }
 
     void* inst = Instantiate(model);
     PlayCtrl(0.0f, anims[0], inst);
@@ -156,7 +187,7 @@ int main(int argc, char** argv) {
             ((float*)(v+P_OFF))[0], ((float*)(v+P_OFF))[1], ((float*)(v+P_OFF))[2]);
 
     /* raw (un-posed) bbox */
-    {
+    if (!poseJson) {
         float mnx=1e30f,mxx=-1e30f,mny=1e30f,mxy=-1e30f,mnz=1e30f,mxz=-1e30f;
         for (int i = 0; i < vcount; i++) {
             float* p = (float*)(v + i*STRIDE + P_OFF);
@@ -169,7 +200,7 @@ int main(int argc, char** argv) {
     }
 
     /* posed+skinned bbox across the cycle */
-    printf("t(s)      Xspan    Yspan    Zspan     Xmin     Xmax\n");
+    if (!poseJson) printf("t(s)      Xspan    Yspan    Zspan     Xmin     Xmax\n");
     float maxXspan=-1e30f, minXspan=1e30f;
     for (int s = 0; s < samples; s++) {
         float t = (samples > 1) ? duration * (float)s / (float)(samples-1) : 0.0f;
@@ -177,6 +208,18 @@ int main(int argc, char** argv) {
         Sample(inst, 0, boneCount, localPose);
         Build(skel, 0, boneCount, localPose, NULL, worldPose);
         float* comp = Composite(worldPose);   /* boneCount * 16, col-major, T@12..14 */
+
+        /* --pose-json : print the raw composite (skinning) matrix per bone. */
+        if (poseJson) {
+            for (int b = 0; b < boneCount; b++) {
+                float* m = comp + b*16;
+                printf("POSE t=%.9g bone=%d m=%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,"
+                       "%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g\n",
+                       t, b, m[0],m[1],m[2],m[3], m[4],m[5],m[6],m[7],
+                       m[8],m[9],m[10],m[11], m[12],m[13],m[14],m[15]);
+            }
+            continue;
+        }
 
         float mnx=1e30f,mxx=-1e30f,mny=1e30f,mxy=-1e30f,mnz=1e30f,mxz=-1e30f;
         for (int i = 0; i < vcount; i++) {
@@ -205,7 +248,8 @@ int main(int argc, char** argv) {
         if (xs<minXspan) minXspan=xs;
         printf("%7.4f  %7.4f  %7.4f  %7.4f  %8.4f %8.4f\n", t, xs, mxy-mny, mxz-mnz, mnx, mxx);
     }
-    printf("SUMMARY  Xspan min=%.4f max=%.4f  (max/raw ratio computed by caller)\n",
-           minXspan, maxXspan);
+    if (!poseJson)
+        printf("SUMMARY  Xspan min=%.4f max=%.4f  (max/raw ratio computed by caller)\n",
+               minXspan, maxXspan);
     return 0;
 }

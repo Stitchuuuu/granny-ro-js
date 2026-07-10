@@ -31,10 +31,15 @@ dialect are welcome.
 | Mesh extraction (positions, normals, uvs, indices, skin weights, bone bindings) | ✅ |
 | Skeleton extraction (hierarchy, bind pose, inverse-world transforms) | ✅ |
 | Animation extraction (orientation / position / scaleShear curves, 7 codec variants) | ✅ |
-| Pose composition (skinning matrices ready for GPU) | ✅ |
+| Pose composition (skinning matrices ready for GPU) | ✅ DLL-verified¹ |
 | Texture — raw RGBA / BGRA path | ✅ byte-exact |
 | Texture — wavelet-compressed (Bink-family) path | ✅ 17 / 17 fixtures byte-exact |
 | Anti-hang guard on degenerate IGC bitstreams | ✅ throws within 50 ms |
+
+¹ The pose runtime (`poseAt`) is verified float-for-float against the
+real `granny2.dll` composite matrices — not just the Python clean-room
+port — by the wine-gated `tests/integration/worldpose-oracle.test.js`
+(within `1e-4`, skips cleanly without wine).
 
 Parity is locked by the content-addressed
 [`tests/fixtures/content-manifest.json`](tests/fixtures/content-manifest.json) :

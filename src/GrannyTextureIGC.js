@@ -863,6 +863,30 @@ function roundS16(x) {
     return ((x + (32767 ^ sign)) / 65536) | 0;
 }
 
+// S3.19b/A1 — iDWT ring buffers hoisted out of the per-row / per-4-col-group
+// loops. `iDWTcol` re-allocated `lp`/`hp` on every 4-col group (profile #1
+// hot fn) ; pooling kills that allocation churn on the hottest path.
+//
+// Two invariants make reuse byte-exact (verified by the content manifest
+// across all 17 IGC textures) :
+//   1. Each kernel fully (re)initialises every slot it reads before reading
+//      it — the initial-fill block seeds the first window, then the
+//      just-in-time refill writes entry (k+3) one iteration before it is
+//      read. Stale values from a prior group/row are always overwritten
+//      first, so no per-iteration `.fill(0)` is needed.
+//   2. The `iDWTcol` recenter intentionally reads one entry PAST the end
+//      (OOB → undefined → coerced to 0 on store). Sizes must stay EXACTLY
+//      the original per-iteration allocation sizes — oversizing would turn
+//      that 0 into a stale value and change decoded bytes.
+// The kernels are non-reentrant leaves (they never call each other, and
+// decode is sequential), so module-scoped pools are safe.
+const _rowLp = new Int32Array(8);
+const _rowHp = new Int32Array(8);
+const _colLp = new Int32Array((16 + 4) * 4);
+const _colHp = new Int32Array((16 + 5) * 4);
+const _remLp = new Int32Array(4);
+const _remHp = new Int32Array(5);
+
 function iDWTrow(dest, destPitch, src, srcPitch, width, height, rowMask, startY, subHeight) {
     // wavelet.c:467 — iDWTrow. Combines `halfwidth` low + `halfwidth` high
     // S16s per row into a full-width S16 row.
@@ -881,8 +905,9 @@ function iDWTrow(dest, destPitch, src, srcPitch, width, height, rowMask, startY,
     // ringbuffer-like state for the row : lp[ 8 ] + hp[ 8 ] with -base
     // offsets. We pack into Int32Array indexed 0..7 (lp) and 0..7 (hp), using
     // offset +1 (lp) and +2 (hp) as the "center" of the kernel window.
-    const lp = new Int32Array(8);
-    const hp = new Int32Array(8);
+    // Pooled (S3.19b/A1) — fully re-seeded per row by the initial-fill below.
+    const lp = _rowLp;
+    const hp = _rowHp;
 
     for (let y = 0; y < subHeight; y++) {
         let next = 1; // S16-element step (was 2 bytes in SDK)
@@ -1159,8 +1184,8 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let yhinBase = hinBase + colsBase;
         const lend = lendCol0 + colsBase;
 
-        const lp = new Int32Array((16 + 4) * 4);
-        const hp = new Int32Array((16 + 5) * 4);
+        const lp = _colLp;   // pooled (S3.19b/A1) — see notes above iDWTrow
+        const hp = _colHp;
 
         // Initial fill — startY ? 4L+5H : 3L+3H with boundary mirror
         if (startY) {
@@ -1309,8 +1334,8 @@ function iDWTcol(dest, destPitch, src, srcPitch, width, height, startY, subHeigh
         let yhinBase = hinBase + colsBase;
         const lend = lendCol0 + colsBase;
 
-        const lp = new Int32Array(4);
-        const hp = new Int32Array(5);
+        const lp = _remLp;   // pooled (S3.19b/A1) — re-seeded per remainder col below
+        const hp = _remHp;
 
         if (startY) {
             lp[-1 + 1] = src[ylinBase]; ylinBase += next;

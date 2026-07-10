@@ -58,6 +58,7 @@
     "coverage:gr2": "node scripts/coverage-report.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "bench": "vitest bench --run",
+    "bench:browser": "node scripts/bench-browser-prep.mjs",
     "perf": "node scripts/perf.mjs",
     "perf:load": "node scripts/perf-load.mjs",
     "perf:load:compare": "node scripts/perf-load-compare.mjs",

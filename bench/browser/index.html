@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>granny-ro-js — browser bench</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font: 14px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+        h1 { font-size: 1.3rem; }
+        h2 { font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+        #status { padding: 0.5rem 0.75rem; background: color-mix(in srgb, currentColor 8%, transparent); border-radius: 4px; font-variant-numeric: tabular-nums; }
+        button { font: inherit; padding: 0.3rem 0.9rem; margin-bottom: 1rem; cursor: pointer; }
+        table { border-collapse: collapse; margin: 0.25rem 0 1rem; font-variant-numeric: tabular-nums; width: 100%; }
+        th, td { padding: 0.2rem 0.6rem; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); text-align: left; }
+        td.num, th:nth-child(n+3) { text-align: right; }
+        tr.total td { font-weight: 600; border-top: 2px solid color-mix(in srgb, currentColor 30%, transparent); }
+        p.hint { opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <h1>granny-ro-js — real-browser full-load bench</h1>
+    <p class="hint">
+        Times <code>parseTextured</code> (parse + skeleton + mesh + decode every IGC texture) over the real
+        <code>.gr2</code> corpus staged from <code>GR2_FOLDER</code>, cold + warm, on two axes —
+        <strong>main thread</strong> vs a <strong>module Worker</strong> (like roBrowser). Same build, same JIT:
+        the Worker isn't faster, it keeps the main thread responsive — watch the <em>max main-thread stall</em>
+        (the render hitch) collapse on the worker axis. <code>ready()</code> instantiation is timed separately
+        (≈ 0 for pure JS; real once WASM lands). Open DevTools for <code>console.table</code> + an archive JSON
+        blob. Add <code>?warm=N</code> to change warm iterations.
+    </p>
+    <button id="run">Re-run benchmark</button>
+    <div id="status">idle</div>
+    <div id="results"></div>
+    <script type="module" src="./bench.js"></script>
+</body>
+</html>

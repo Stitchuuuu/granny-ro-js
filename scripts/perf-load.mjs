@@ -133,6 +133,7 @@ for (const { name, kind, bytes } of corpus) {
     const warmFull = [];
     for (let i = 0; i < warmIters; i++) warmFull.push(timeOnce(fullOp));
     const s = stats(warmFull);
+    /** @type {ReturnType<typeof stats> & { name: string, kind: string, bytes: number, cold: number, parseBest?: number, texDelta?: number }} */
     const row = { name, kind, bytes: bytes.length, cold, ...s };
     if (kind === 'model') {
         const warmParse = [];

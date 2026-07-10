@@ -45,7 +45,10 @@
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "bench": "vitest bench --run",
     "perf": "node scripts/perf.mjs",
-    "perf:profile": "node --prof scripts/perf-profile.mjs"
+    "perf:load": "node scripts/perf-load.mjs",
+    "perf:load:compare": "node scripts/perf-load-compare.mjs",
+    "perf:profile": "node --prof scripts/perf-profile.mjs",
+    "perf:load:profile": "node --prof scripts/perf-profile.mjs full"
   },
   "repository": {
     "type": "git",

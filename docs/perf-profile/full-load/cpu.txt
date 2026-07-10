@@ -1,0 +1,863 @@
+Statistical profiling result from ./isolate-0xffffa8240000-17607-v8.log, (2520 ticks, 0 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+    758   30.1%          /usr/local/bin/node
+    153    6.1%          /usr/lib/aarch64-linux-gnu/libc.so.6
+      8    0.3%          /usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.30
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+    293   11.6%   18.3%  JS: *decompress file:///workspace/granny-ro-js/src/GrannyOodle0.js:404:15
+    224    8.9%   14.0%  JS: *remove file:///workspace/granny-ro-js/src/GrannyOodle0.js:281:11
+    157    6.2%    9.8%  JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+    117    4.6%    7.3%  JS: *arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+     88    3.5%    5.5%  JS: *iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+     84    3.3%    5.2%  JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     64    2.5%    4.0%  JS: *arithRenorm file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:128:21
+     35    1.4%    2.2%  JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+     26    1.0%    1.6%  JS: *yuvToRGB file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2082:25
+      9    0.4%    0.6%  JS: *fillRect file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1515:18
+      9    0.4%    0.6%  JS: *bitReverse file:///workspace/granny-ro-js/src/GrannyOodle0.js:175:27
+      6    0.2%    0.4%  JS: +decompress file:///workspace/granny-ro-js/src/GrannyOodle0.js:404:15
+      6    0.2%    0.4%  JS: *u32lePadded file:///workspace/granny-ro-js/src/GrannyOodle0.js:149:21
+      5    0.2%    0.3%  JS: *get file:///workspace/granny-ro-js/src/GrannyOodle0.js:201:8
+      4    0.2%    0.2%  JS: *readPointerFixups file:///workspace/granny-ro-js/src/GrannyTypeTree.js:294:27
+      4    0.2%    0.2%  JS: *<anonymous> file:///workspace/granny-ro-js/src/GrannyTypeTree.js:186:12
+      3    0.1%    0.2%  JS: *arithUpdate file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:459:21
+      3    0.1%    0.2%  JS: *_quickIncrement file:///workspace/granny-ro-js/src/GrannyOodle0.js:481:20
+      3    0.1%    0.2%  JS: *_findPos file:///workspace/granny-ro-js/src/GrannyOodle0.js:439:13
+      2    0.1%    0.1%  JS: ^iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+      2    0.1%    0.1%  JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      2    0.1%    0.1%  JS: +iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+      2    0.1%    0.1%  JS: *readLegacyCurveMetadata file:///workspace/granny-ro-js/src/GrannyAnimation.js:488:33
+      2    0.1%    0.1%  JS: *readGrannyString file:///workspace/granny-ro-js/src/GrannyTypeTree.js:383:26
+      2    0.1%    0.1%  JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2    0.1%    0.1%  JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      2    0.1%    0.1%  JS: *arithBitsGetValue file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:221:27
+      1    0.0%    0.1%  JS: ^subarray node:buffer:1254:46
+      1    0.0%    0.1%  JS: ^readMaterial file:///workspace/granny-ro-js/src/GrannyMesh.js:496:22
+      1    0.0%    0.1%  JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1    0.0%    0.1%  JS: ^decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1    0.0%    0.1%  JS: ^blockStops file:///workspace/granny-ro-js/src/GrannyOodle0.js:87:20
+      1    0.0%    0.1%  JS: ^_rescale file:///workspace/granny-ro-js/src/GrannyOodle0.js:513:13
+      1    0.0%    0.1%  JS: ^<anonymous> file:///workspace/granny-ro-js/src/GrannyTypeTree.js:186:12
+      1    0.0%    0.1%  JS: +remove file:///workspace/granny-ro-js/src/GrannyOodle0.js:281:11
+      1    0.0%    0.1%  JS: +parseTypeTree file:///workspace/granny-ro-js/src/GrannyTypeTree.js:446:30
+      1    0.0%    0.1%  JS: +makeFakePointer file:///workspace/granny-ro-js/src/GrannyTypeTree.js:155:32
+      1    0.0%    0.1%  JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1    0.0%    0.1%  JS: +decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1    0.0%    0.1%  JS: +decode node:internal/encoding:482:9
+      1    0.0%    0.1%  JS: +arithInitBands file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:402:24
+      1    0.0%    0.1%  JS: +arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+      1    0.0%    0.1%  JS: +_incrementTotals file:///workspace/granny-ro-js/src/GrannyOodle0.js:486:21
+      1    0.0%    0.1%  JS: *varBitsGet1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:286:21
+      1    0.0%    0.1%  JS: *readFloatComponent file:///workspace/granny-ro-js/src/GrannyMesh.js:227:28
+      1    0.0%    0.1%  JS: *readEscapes file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1527:21
+      1    0.0%    0.1%  JS: *parseTypeTree file:///workspace/granny-ro-js/src/GrannyTypeTree.js:446:30
+      1    0.0%    0.1%  JS: *parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      1    0.0%    0.1%  JS: *bestShift file:///workspace/granny-ro-js/src/GrannyOodle0.js:347:19
+      1    0.0%    0.1%  JS: *arithSearch file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:506:21
+      1    0.0%    0.1%  JS: *arithPullBits file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:99:23
+      1    0.0%    0.1%  JS: *arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      1    0.0%    0.1%  JS: *arithBitsRemove file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:205:25
+      1    0.0%    0.1%  JS: *arithBitsGet file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:190:22
+      1    0.0%    0.1%  JS: *EscapeSymbol file:///workspace/granny-ro-js/src/GrannyOodle0.js:373:16
+
+ [C++]:
+   ticks  total  nonlib   name
+    125    5.0%    7.8%  __write@@GLIBC_2.17
+     82    3.3%    5.1%  __lll_lock_wake_private@@GLIBC_PRIVATE
+     44    1.7%    2.7%  syscall@@GLIBC_2.17
+     44    1.7%    2.7%  __libc_malloc@@GLIBC_2.17
+     32    1.3%    2.0%  __lll_lock_wait_private@@GLIBC_PRIVATE
+     20    0.8%    1.2%  operator new(unsigned long)@@GLIBCXX_3.4
+     19    0.8%    1.2%  __libc_calloc@@GLIBC_2.17
+     14    0.6%    0.9%  pthread_cond_signal@@GLIBC_2.17
+      6    0.2%    0.4%  __read@@GLIBC_2.17
+      5    0.2%    0.3%  node::NodeArrayBufferAllocator::Allocate(unsigned long)
+      5    0.2%    0.3%  fputc@@GLIBC_2.17
+      5    0.2%    0.3%  __madvise@@GLIBC_PRIVATE
+      4    0.2%    0.2%  std::ostream::put(char)@@GLIBCXX_3.4
+      4    0.2%    0.2%  isprint@@GLIBC_2.17
+      2    0.1%    0.1%  _init
+      2    0.1%    0.1%  __open@@GLIBC_2.17
+      1    0.0%    0.1%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)@@GLIBCXX_3.4
+      1    0.0%    0.1%  malloc_usable_size@@GLIBC_2.17
+      1    0.0%    0.1%  __munmap@@GLIBC_PRIVATE
+      1    0.0%    0.1%  __getpid@@GLIBC_2.17
+
+ [Summary]:
+   ticks  total  nonlib   name
+   1184   47.0%   74.0%  JavaScript
+    417   16.5%   26.0%  C++
+     85    3.4%    5.3%  GC
+    919   36.5%          Shared libraries
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+     82   26.8%    3.3%  __lll_lock_wake_private@@GLIBC_PRIVATE
+     56   18.3%    2.2%  __write@@GLIBC_2.17
+     44   14.4%    1.7%  __libc_malloc@@GLIBC_2.17
+     32   10.5%    1.3%  __lll_lock_wait_private@@GLIBC_PRIVATE
+     20    6.5%    0.8%  operator new(unsigned long)@@GLIBCXX_3.4
+     19    6.2%    0.8%  syscall@@GLIBC_2.17
+     19    6.2%    0.8%  __libc_calloc@@GLIBC_2.17
+      6    2.0%    0.2%  __read@@GLIBC_2.17
+      5    1.6%    0.2%  node::NodeArrayBufferAllocator::Allocate(unsigned long)
+      5    1.6%    0.2%  fputc@@GLIBC_2.17
+      4    1.3%    0.2%  std::ostream::put(char)@@GLIBCXX_3.4
+      4    1.3%    0.2%  isprint@@GLIBC_2.17
+      3    1.0%    0.1%  __madvise@@GLIBC_PRIVATE
+      2    0.7%    0.1%  pthread_cond_signal@@GLIBC_2.17
+      2    0.7%    0.1%  _init
+      2    0.7%    0.1%  __open@@GLIBC_2.17
+      1    0.3%    0.0%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)@@GLIBCXX_3.4
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+    758   30.1%  /usr/local/bin/node
+    208   27.4%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+    134   64.4%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+    134  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+    130   97.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+    130  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      4    3.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   50.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2   50.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     65   31.3%      JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     65  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     65  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     65  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      9    4.3%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      8   88.9%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      8  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      8  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   11.1%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+    143   18.9%    JS: *arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+    135   94.4%      JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     86   63.7%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     86  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     78   90.7%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      8    9.3%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     49   36.3%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     49  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     49  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      4    2.8%      JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      2   50.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   50.0%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3    2.1%      JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      3  100.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      3  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2   66.7%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1   33.3%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+    112   14.8%    JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     67   59.8%      JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     66   98.5%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     62   93.9%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     62  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      4    6.1%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   50.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2   50.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1    1.5%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     44   39.3%      JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     44  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     44  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     44  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     13    1.7%    JS: *parseTypeTree file:///workspace/granny-ro-js/src/GrannyTypeTree.js:446:30
+      7   53.8%      JS: *parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      7  100.0%        JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      4   57.1%          JS: +readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      4  100.0%            JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      3   42.9%          JS: ^readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      3  100.0%            JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      2   15.4%      JS: ^extractSkeletons file:///workspace/granny-ro-js/src/GrannySkeleton.js:25:33
+      2  100.0%        JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      2  100.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      2  100.0%            /usr/local/bin/node
+      2   15.4%      JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      1   50.0%        JS: ^extractSkeletons file:///workspace/granny-ro-js/src/GrannySkeleton.js:25:33
+      1  100.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   50.0%        JS: +readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1  100.0%          JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      1  100.0%            JS: ^extractAnimations file:///workspace/granny-ro-js/src/GrannyAnimation.js:750:34
+      1    7.7%      JS: ^summarizeMeshes file:///workspace/granny-ro-js/src/GrannyMesh.js:120:25
+      1  100.0%        JS: ^extractMeshes file:///workspace/granny-ro-js/src/GrannyMesh.js:46:30
+      1  100.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1    7.7%      JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%        JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+      9    1.2%    JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      9  100.0%      JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   22.2%        JS: ~<anonymous> node:perf_hooks:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1   11.1%        JS: ~<anonymous> node:internal/streams/operators:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/streams/duplex:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/repl/history:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/readline/interface:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/perf/timerify:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        JS: ~<anonymous> node:internal/fs/promises:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   11.1%        /usr/local/bin/node
+      1  100.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      9    1.2%    JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      9  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      9  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      9  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      6   66.7%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3   33.3%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      8    1.1%    JS: *parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      5   62.5%      JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      2   40.0%        JS: ^extractSkeletons file:///workspace/granny-ro-js/src/GrannySkeleton.js:25:33
+      1   50.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   50.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   20.0%        JS: ^walkTextureImages file:///workspace/granny-ro-js/src/GrannyTexture.js:134:34
+      1  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1   20.0%        JS: +readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1  100.0%          JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      1  100.0%            JS: ^extractAnimations file:///workspace/granny-ro-js/src/GrannyAnimation.js:750:34
+      1   20.0%        JS: +readBoneBindings file:///workspace/granny-ro-js/src/GrannyMesh.js:361:26
+      1  100.0%          JS: ^extractMeshes file:///workspace/granny-ro-js/src/GrannyMesh.js:46:30
+      1  100.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1   12.5%      JS: ^walkTextureImages file:///workspace/granny-ro-js/src/GrannyTexture.js:134:34
+      1  100.0%        JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   12.5%      JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      1  100.0%        JS: ^extractAnimations file:///workspace/granny-ro-js/src/GrannyAnimation.js:750:34
+      1  100.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   12.5%      JS: *parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      1  100.0%        JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      1  100.0%          JS: +readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1  100.0%            JS: ^readTrackGroup file:///workspace/granny-ro-js/src/GrannyAnimation.js:669:24
+      8    1.1%    JS: *<anonymous> file:///workspace/granny-ro-js/src/GrannyTypeTree.js:186:12
+      4   50.0%      JS: +readPointerFixups file:///workspace/granny-ro-js/src/GrannyTypeTree.js:294:27
+      3   75.0%        JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2   66.7%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      2  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   33.3%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   25.0%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      3   37.5%      JS: +parseTypeTree file:///workspace/granny-ro-js/src/GrannyTypeTree.js:446:30
+      1   33.3%        JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%          Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1   33.3%        JS: +parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      1  100.0%          JS: +readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      1  100.0%            JS: ^readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1   33.3%        JS: +objectStorageSize file:///workspace/granny-ro-js/src/GrannyTypeTree.js:515:34
+      1  100.0%          JS: ^readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      1  100.0%            JS: ^readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1   12.5%      JS: *parseTypeTree file:///workspace/granny-ro-js/src/GrannyTypeTree.js:446:30
+      1  100.0%        JS: ^summarizeMeshes file:///workspace/granny-ro-js/src/GrannyMesh.js:120:25
+      1  100.0%          JS: ^extractMeshes file:///workspace/granny-ro-js/src/GrannyMesh.js:46:30
+      1  100.0%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+
+    293   11.6%  JS: *decompress file:///workspace/granny-ro-js/src/GrannyOodle0.js:404:15
+    286   97.6%    JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+    175   61.2%      JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+    102   58.3%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     60   58.8%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     34   56.7%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     26   43.3%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     21   20.6%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     21  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     21   20.6%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     21  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     65   37.1%        JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+     65  100.0%          JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     41   63.1%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     18   27.7%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      6    9.2%            JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      8    4.6%        JS: ~decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      6   75.0%          JS: ^loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      6  100.0%            JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      2   25.0%          JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2  100.0%            JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+    110   38.5%      JS: +decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+    110  100.0%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     78   70.9%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     78  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     32   29.1%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     32  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+
+    224    8.9%  JS: *remove file:///workspace/granny-ro-js/src/GrannyOodle0.js:281:11
+    207   92.4%    JS: *decompress file:///workspace/granny-ro-js/src/GrannyOodle0.js:404:15
+    202   97.6%      JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+    111   55.0%        JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+     76   68.5%          JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     49   64.5%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     16   21.1%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     11   14.5%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     34   30.6%          JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+     34  100.0%            JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     91   45.0%        JS: +decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+     91  100.0%          JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     62   68.1%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     29   31.9%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      5    2.4%      JS: +decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+      5  100.0%        JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      4   80.0%          JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      4  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1   20.0%          JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      1  100.0%            JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     12    5.4%    JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+      8   66.7%      JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      5   62.5%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      3   60.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   20.0%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   20.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      3   37.5%        JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      3  100.0%          JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2   66.7%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1   33.3%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      4   33.3%      JS: +decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      4  100.0%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      3   75.0%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      3  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   25.0%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+
+    157    6.2%  JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+     93   59.2%    JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     92   98.9%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     89   96.7%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     89  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     49   55.1%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     40   44.9%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3    3.3%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   66.7%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1   33.3%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1    1.1%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     55   35.0%    JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     55  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     55  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     55  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     55  100.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      9    5.7%    JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      6   66.7%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      6  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      6  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      6  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3   33.3%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+
+    153    6.1%  /usr/lib/aarch64-linux-gnu/libc.so.6
+     94   61.4%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+     51   54.3%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     51  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     47   92.2%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     47  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      4    7.8%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3   75.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   25.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     35   37.2%      JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     35  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     35  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     35  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      8    8.5%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      7   87.5%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      7  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      7  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   12.5%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     18   11.8%    /usr/local/bin/node
+      7   38.9%      JS: +arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      6   85.7%        JS: +createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      6  100.0%          JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      6  100.0%            JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1   14.3%        JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%          JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3   16.7%      JS: +iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+      2   66.7%        JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      2  100.0%          JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1   33.3%        JS: ~iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      1  100.0%          JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   11.1%      JS: ^yuvToRGB file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2082:25
+      1   50.0%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   50.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2   11.1%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2  100.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1    5.6%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1    5.6%      JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      1  100.0%        JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      1  100.0%          JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%            JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1    5.6%      JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%        JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%          Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    5.6%      JS: +decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      1  100.0%        JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     17   11.1%    JS: *arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      7   41.2%      JS: +createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      7  100.0%        JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      4   57.1%          JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      4  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3   42.9%          JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      3  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      5   29.4%      JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      5  100.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      5  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      5  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      4   23.5%      JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      2   50.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   50.0%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1    5.9%      JS: *createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      1  100.0%        JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1  100.0%          JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      7    4.6%    JS: *yuvToRGB file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2082:25
+      7  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      7  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      7  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      5   71.4%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      2   28.6%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3    2.0%    JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2   66.7%      JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      2  100.0%        JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      2  100.0%          /usr/local/bin/node
+      2  100.0%            /usr/local/bin/node
+      1   33.3%      JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%        JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+
+    125    5.0%  __write@@GLIBC_2.17
+     12    9.6%    /usr/local/bin/node
+      4   33.3%      JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    8.3%      JS: ~readTransform file:///workspace/granny-ro-js/src/GrannyTransform.js:32:30
+      1  100.0%        JS: ^parseObject file:///workspace/granny-ro-js/src/GrannyTypeTree.js:552:28
+      1  100.0%          JS: ~readReferenceArrayObjects file:///workspace/granny-ro-js/src/GrannyTypeTree.js:679:42
+      1  100.0%            JS: ~extractSkeletons file:///workspace/granny-ro-js/src/GrannySkeleton.js:25:33
+      1    8.3%      JS: ~arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+      1  100.0%        JS: ~decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%          JS: ~planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%            JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1    8.3%      JS: ~Duplex node:internal/streams/duplex:64:16
+      1  100.0%        JS: ~Socket node:net:365:16
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1    8.3%      JS: ~<anonymous> file:///workspace/granny-ro-js/src/GrannyTypeTree.js:186:12
+      1  100.0%        JS: ~readPointerFixups file:///workspace/granny-ro-js/src/GrannyTypeTree.js:294:27
+      1  100.0%          JS: ~loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%            JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1    8.3%      JS: ^readLegacyCurveMetadata file:///workspace/granny-ro-js/src/GrannyAnimation.js:488:33
+      1  100.0%        JS: ^readCurveMetadata file:///workspace/granny-ro-js/src/GrannyAnimation.js:541:27
+      1  100.0%          JS: ^readTransformTrack file:///workspace/granny-ro-js/src/GrannyAnimation.js:595:28
+      1  100.0%            JS: ^readTransformTracks file:///workspace/granny-ro-js/src/GrannyAnimation.js:636:29
+      1    8.3%      JS: ^loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%        JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%          Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1    8.3%      JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%        /usr/local/bin/node
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            /usr/local/bin/node
+      1    8.3%      /usr/local/bin/node
+     10    8.0%    JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+     10  100.0%      JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   20.0%        JS: ~<anonymous> node:stream:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   20.0%        JS: ~<anonymous> node:internal/streams/duplex:1:1
+      2  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      2   20.0%        /usr/local/bin/node
+      1   50.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      1   50.0%          /usr/local/bin/node
+      1  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1   10.0%        JS: ~<anonymous> node:net:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   10.0%        JS: ~<anonymous> node:internal/perf/usertiming:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   10.0%        JS: ~<anonymous> node:internal/perf/resource_timing:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1   10.0%        JS: ~<anonymous> node:internal/fs/promises:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      9    7.2%    JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      2    1.6%    JS: ^realpathSync node:fs:2711:22
+      1   50.0%      JS: ^finalizeResolution node:internal/modules/esm/resolve:225:28
+      1  100.0%        JS: ^defaultResolve node:internal/modules/esm/resolve:947:24
+      1  100.0%          JS: ^#cachedDefaultResolve node:internal/modules/esm/loader:693:24
+      1  100.0%            JS: ^#resolveAndMaybeBlockOnLoaderThread node:internal/modules/esm/loader:716:38
+      1   50.0%      JS: ^#cachedDefaultResolve node:internal/modules/esm/loader:693:24
+      1  100.0%        JS: ^#resolveAndMaybeBlockOnLoaderThread node:internal/modules/esm/loader:716:38
+      1  100.0%          JS: ^resolveSync node:internal/modules/esm/loader:737:14
+      1  100.0%            JS: ^#resolve node:internal/modules/esm/loader:675:11
+      2    1.6%    JS: *remove file:///workspace/granny-ro-js/src/GrannyOodle0.js:281:11
+      2  100.0%      JS: *decompress file:///workspace/granny-ro-js/src/GrannyOodle0.js:404:15
+      1   50.0%        JS: +decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      1   50.0%        JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+      1  100.0%          JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      1  100.0%            JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      2    1.6%    JS: *iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+      1   50.0%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      1  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   50.0%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      1  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+
+    117    4.6%  JS: *arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+    111   94.9%    JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     80   72.1%      JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     80  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     66   82.5%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     66  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     14   17.5%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     12   85.7%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2   14.3%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     31   27.9%      JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     31  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     31  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     31  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    2.6%    JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      2   66.7%      JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   33.3%      JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+
+     88    3.5%  JS: *iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+     50   56.8%    JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     50  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     47   94.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     47  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     30   63.8%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     17   36.2%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3    6.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     29   33.0%    JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     29  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     29  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     29  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     29  100.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      9   10.2%    JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      6   66.7%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      6  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      6  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      6  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3   33.3%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+
+     84    3.3%  JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     55   65.5%    JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     53   96.4%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     47   88.7%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     47  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     31   66.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     16   34.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      6   11.3%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      6  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      6  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      2    3.6%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     28   33.3%    JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     28  100.0%      JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     28  100.0%        JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     28  100.0%          JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     28  100.0%            JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1    1.2%    JS: ~planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%      JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%        JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%          JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%            JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+
+     82    3.3%  __lll_lock_wake_private@@GLIBC_PRIVATE
+     80   97.6%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+     41   51.2%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     40   97.6%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     37   92.5%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     37  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    7.5%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2   66.7%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   33.3%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1    2.4%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     36   45.0%      JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     36  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     36  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     36  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    3.8%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      2   66.7%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1   33.3%        JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1    1.2%    JS: *arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      1  100.0%      JS: +createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      1  100.0%        JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1  100.0%          JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1    1.2%    /usr/local/bin/node
+      1  100.0%      JS: +arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      1  100.0%        JS: ^createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      1  100.0%          JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1  100.0%            JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+
+     64    2.5%  JS: *arithRenorm file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:128:21
+     54   84.4%    JS: *arithDecompress file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:767:25
+     51   94.4%      JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+     35   68.6%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     35  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     32   91.4%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3    8.6%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     16   31.4%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+     16  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     16  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1    1.9%      JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1    1.9%      JS: +decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1  100.0%        JS: ~planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%          JS: ~decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1    1.9%      JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      6    9.4%    JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      4   66.7%      JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      4  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      4  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      4  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      2   33.3%      JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      2  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    4.7%    JS: *arithBitsGetValue file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:221:27
+      2   66.7%      JS: +decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      2  100.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      2  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1   33.3%      JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%        JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+
+     44    1.7%  syscall@@GLIBC_2.17
+      6   13.6%    JS: *iDWTrow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:866:17
+      6  100.0%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      6  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      6  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      6  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      4    9.1%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+      4  100.0%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      4  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      4  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      4  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    6.8%    JS: ^closeSync node:fs:517:19
+      3  100.0%      JS: ^readFileSync node:fs:434:22
+      2   66.7%        JS: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:38:27
+      2  100.0%          /usr/local/bin/node
+      2  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   33.3%        JS: ^defaultLoadSync node:internal/modules/esm/load:136:25
+      1  100.0%          JS: ^#loadAndMaybeBlockOnLoaderThread node:internal/modules/esm/loader:796:35
+      1  100.0%            JS: ^#loadSync node:internal/modules/esm/loader:814:12
+      2    4.5%    JS: ^finalizeResolution node:internal/modules/esm/resolve:225:28
+      2  100.0%      JS: ^moduleResolve node:internal/modules/esm/resolve:831:23
+      2  100.0%        JS: ^defaultResolve node:internal/modules/esm/resolve:947:24
+      2  100.0%          JS: ^#cachedDefaultResolve node:internal/modules/esm/loader:693:24
+      2  100.0%            JS: ^#resolveAndMaybeBlockOnLoaderThread node:internal/modules/esm/loader:716:38
+      1    2.3%    JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    2.3%    JS: ^tryStatSync node:fs:390:21
+      1  100.0%      JS: ^readFileSync node:fs:434:22
+      1  100.0%        JS: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:38:27
+      1  100.0%          /usr/local/bin/node
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1    2.3%    JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%      JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1  100.0%        JS: ~<anonymous> node:internal/fs/streams:1:1
+      1  100.0%          JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      1  100.0%            JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+      1    2.3%    JS: ^#cachedDefaultResolve node:internal/modules/esm/loader:693:24
+      1  100.0%      JS: ^#resolveAndMaybeBlockOnLoaderThread node:internal/modules/esm/loader:716:38
+      1  100.0%        JS: ^resolveSync node:internal/modules/esm/loader:737:14
+      1  100.0%          JS: ^#resolve node:internal/modules/esm/loader:675:11
+      1  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     44    1.7%  __libc_malloc@@GLIBC_2.17
+     43   97.7%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+     23   53.5%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     23  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     23  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     23  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     17   39.5%      JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     17  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     17  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     17  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      3    7.0%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      3  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      3  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1    2.3%    JS: *arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      1  100.0%      JS: *decodeLow file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1543:19
+      1  100.0%        JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%          JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%            JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+
+     35    1.4%  JS: *decodeBlock file:///workspace/granny-ro-js/src/GrannyOodle0.js:670:21
+     18   51.4%    JS: +decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+     18  100.0%      JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+     13   72.2%        JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+     13  100.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+     13  100.0%            /usr/local/bin/node
+      5   27.8%        JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      5  100.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      5  100.0%            /usr/local/bin/node
+     16   45.7%    JS: ^decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+     13   81.3%      JS: *loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      9   69.2%        JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      6   66.7%          Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      6  100.0%            /usr/local/bin/node
+      3   33.3%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      3  100.0%            /usr/local/bin/node
+      3   23.1%        JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      3  100.0%          JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      3  100.0%            /usr/local/bin/node
+      1    7.7%        JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%          Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1  100.0%            /usr/local/bin/node
+      3   18.8%      JS: ^decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      3  100.0%        JS: +loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      2   66.7%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      2  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   33.3%          JS: ^parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1    2.9%    JS: ~decompressOodle0 file:///workspace/granny-ro-js/src/GrannyOodle0.js:638:33
+      1  100.0%      JS: ~decompressOne file:///workspace/granny-ro-js/src/GrannyTypeTree.js:29:23
+      1  100.0%        JS: ^loadGR2 file:///workspace/granny-ro-js/src/GrannyTypeTree.js:237:24
+      1  100.0%          JS: ~parseAnimated file:///workspace/granny-ro-js/src/Granny.js:140:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+
+     32    1.3%  __lll_lock_wait_private@@GLIBC_PRIVATE
+     23   71.9%    JS: *iDWTcol file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1127:17
+     13   56.5%      JS: +iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+     13  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     13  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     13  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      9   39.1%      JS: *iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      9  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      9  100.0%          JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      9  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1    4.3%      JS: ^iDWT2D file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1452:16
+      1  100.0%        JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1  100.0%          JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      1  100.0%            JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      7   21.9%    JS: *arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      6   85.7%      JS: +createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      6  100.0%        JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      3   50.0%          JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      3  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      3   50.0%          JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      3  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      1   14.3%      JS: *createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      1  100.0%        JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      1  100.0%          JS: +planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+      1  100.0%            JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+      2    6.3%    /usr/local/bin/node
+      2  100.0%      JS: +arithOpen file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:707:19
+      2  100.0%        JS: +createDecompContexts file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1626:30
+      2  100.0%          JS: *decodeHigh1 file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1640:21
+      2  100.0%            JS: ^planeDecode file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:1954:21
+
+     26    1.0%  JS: *yuvToRGB file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2082:25
+     26  100.0%    JS: ^decodeIGCTexture file:///workspace/granny-ro-js/src/GrannyTextureIGC.js:2026:33
+     20   76.9%      JS: ^decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+     20  100.0%        JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+     16   80.0%          JS: ^parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+     16  100.0%            JS: ^<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      4   20.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      4  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      6   23.1%      JS: ~decodeRecord file:///workspace/granny-ro-js/src/GrannyTexture.js:71:22
+      5   83.3%        JS: ^extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      5  100.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      5  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+      1   16.7%        JS: ~extractTextures file:///workspace/granny-ro-js/src/GrannyTexture.js:45:32
+      1  100.0%          JS: ~parseTextured file:///workspace/granny-ro-js/src/Granny.js:178:30
+      1  100.0%            Script: ~<anonymous> file:///workspace/granny-ro-js/scripts/perf-profile.mjs:1:1
+

@@ -266,3 +266,144 @@ Vitest bench is tighter (more samples) : **103.54 ms ± 0.75%**.
 
 Both metrics agree on the headline 1.4× speedup against S3' ; the
 vitest bench is the cleaner number to quote.
+
+---
+
+## S3.19 full-load baseline (2026-07-10)
+
+Everything above measures **Oodle0 decompression only**. A real consumer
+does more : parse the type-tree + skeleton + mesh, and — for models —
+**decode every texture, including the BigInt-heavy IGC codec**. This
+section is the first baseline of that **true consumer flow**, captured by
+the new `npm run perf:load` ([`scripts/perf-load.mjs`](../scripts/perf-load.mjs)).
+S3.19b optimizes against it. **Pre-optimization.**
+
+The workload per fixture : models → `parseTextured(buf)` (parse + decode
+every IGC MIP), anim packs → `parseAnimated(buf)`. Model / anim split by
+the tests' filename rule (`/^\d+_(attack|damage|dead|move)\.gr2$/`).
+
+### Headline
+
+- **Texture (IGC) decode is 85% of model-load time** — the exact cost the
+  Oodle0-only bench never saw. A model like `aguardian90_8.gr2` parses in
+  ~10.5 ms but takes **~73 ms** fully loaded ; the other ~62 ms is IGC.
+- Full corpus (best-of-N, summed) : **~352 ms**, vs the ~103 ms the
+  Oodle0-only bench reports for the same 21 files — a real consumer pays
+  **~3.4×** more than the decompression headline implied.
+
+### Environment
+
+| Component | Value |
+|---|---|
+| Container | aarch64 Linux on Apple Silicon |
+| Node.js | v24.18.0 |
+| Methodology | per fixture : 1 cold call (JIT unwarmed) + 20 warm calls ; warm reported as mean / p50 / p95 / best-of-N |
+| Throughput basis | **input `.gr2` bytes** (what the consumer feeds in), at warm-best — NOT the decompressed-bytes basis the Oodle0 tables above use |
+| Stability | 3-run TOTAL warm-best : σ ≈ 1.5 ms (`npm run perf:load:compare`) |
+| Memory | not measured |
+
+**Cold caveat** : only the first fixture's cold is truly JIT-cold for the
+parse path, and the first *model's* cold is the truly JIT-cold IGC path
+(anims sort first, models second). Later fixtures reuse warm JIT — read
+the cold column as "first-call cost", not a per-fixture cold-start.
+
+### perf:load — full consumer flow (representative run)
+
+`npm run perf:load` output :
+
+```
+perf-load — full consumer flow (parseTextured / parseAnimated)
+  target                      : node
+  warm iterations per fixture : 20 (+ 1 cold call, reported separately)
+  fixtures                    : 21 (6 models, 15 anim packs)
+  MB/s basis                  : input .gr2 bytes, at warm-best
+
+fixture            kind    in KB  cold ms  warm mean  warm p50  warm p95  warm best  MB/s
+-----------------  -----  ------  -------  ---------  --------  --------  ---------  ----
+1_attack.gr2       anim    138.5    26.99       7.57      6.98      9.50       6.17  21.9
+2_damage.gr2       anim     14.8     2.36       2.37      2.34      2.76       2.11   6.9
+2_dead.gr2         anim     24.4     4.00       4.74      4.01      8.64       3.69   6.5
+7_attack.gr2       anim     30.5     4.43       4.48      4.43      4.78       4.21   7.1
+7_damage.gr2       anim     39.2     5.79       5.91      5.87      6.14       5.67   6.7
+7_dead.gr2         anim     54.4     8.52       8.52      8.43      8.80       8.23   6.5
+7_move.gr2         anim     40.0     6.40       6.17      6.21      6.41       5.80   6.7
+8_attack.gr2       anim     49.6     9.40       8.51      8.10      8.85       7.52   6.4
+8_damage.gr2       anim     27.7    11.58       5.26      4.42     10.23       3.91   6.9
+8_dead.gr2         anim     38.7     6.26       6.02      5.97      6.44       5.77   6.5
+8_move.gr2         anim     36.4     6.10       5.58      5.56      5.86       5.28   6.7
+9_attack.gr2       anim     27.9     3.90       4.06      4.01      4.33       3.85   7.1
+9_damage.gr2       anim     34.6     5.11       5.27      5.25      5.63       4.95   6.8
+9_dead.gr2         anim     48.9     7.94       7.77      7.74      8.05       7.40   6.5
+9_move.gr2         anim     36.1     5.32       5.50      5.45      5.70       5.28   6.7
+aguardian90_8.gr2  model   139.0   149.68      88.59     83.26    118.62      72.62   1.9
+empelium90_0.gr2   model    50.6    19.27      22.59     20.91     28.20      19.27   2.6
+guildflag90_1.gr2  model    55.0    22.05      22.44     21.51     28.88      19.34   2.8
+kguardian90_7.gr2  model   132.7    76.53      85.64     82.69    102.45      75.78   1.7
+sguardian90_9.gr2  model   123.0    63.21      85.03     81.44     96.58      67.33   1.8
+treasurebox_2.gr2  model    40.6    19.57      23.61     19.64     34.67      17.87   2.2
+-----------------  -----  ------  -------  ---------  --------  --------  ---------  ----
+TOTAL                     1182.8   464.40     415.63         —         —     352.06   3.3
+```
+
+### Model breakdown — where the model-load time goes
+
+`parse ms` = `parseModel` (parse + skeleton + mesh) ; `+tex ms` =
+`parseTextured − parseModel` = the texture/IGC decode share :
+
+```
+model              in KB  parse ms  full ms  +tex ms  tex %
+-----------------  -----  --------  -------  -------  -----
+aguardian90_8.gr2  139.0     10.51    72.62    62.11  85.5%
+empelium90_0.gr2    50.6      4.95    19.27    14.31  74.3%
+guildflag90_1.gr2   55.0      4.98    19.34    14.35  74.2%
+kguardian90_7.gr2  132.7      8.68    75.78    67.10  88.5%
+sguardian90_9.gr2  123.0      8.42    67.33    58.91  87.5%
+treasurebox_2.gr2   40.6      3.26    17.87    14.61  81.8%
+-----------------  -----  --------  -------  -------  -----
+TOTAL              540.9     40.80   272.20   231.41  85.0%
+```
+
+### Profiled hot spots (sets the S3.19b track order)
+
+Full `node --prof` ranking in
+[`docs/perf-profile/full-load/README.md`](perf-profile/full-load/README.md)
+(raw in [`cpu.txt`](perf-profile/full-load/cpu.txt)). Top of the JS
+profile, across both codecs :
+
+| Ticks | % | Function | Codec |
+|------:|--:|----------|-------|
+| 293 | 11.6% | `decompress` | Oodle0 (already S4-optimized) |
+| 224 |  8.9% | `remove`     | Oodle0 (already S4-optimized) |
+| 157 |  6.2% | `iDWTcol`    | **IGC — inverse wavelet, untouched** |
+| 117 |  4.6% | `arithDecompress` | **IGC — BigInt arith, untouched** |
+|  88 |  3.5% | `iDWTrow`    | **IGC — inverse wavelet** |
+|  84 |  3.3% | `decodeHigh1` | **IGC — arith symbol decode** |
+|  64 |  2.5% | `arithRenorm` | **IGC — arith** |
+
+**S3.19b track order** (Oodle0 is already optimized, so target IGC) :
+1. **Inverse wavelet** `iDWTcol` + `iDWTrow` (~9.7% combined) — biggest
+   untouched cost.
+2. **Arith decode + BigInt removal** `arithDecompress` / `decodeHigh1` /
+   `arithRenorm` (~10.5% JS + native malloc/calloc from BigInt boxing).
+3. `yuvToRGB` / `fillRect` (~1.4%) — only if #1/#2 land.
+
+### Tooling added this session
+
+- `npm run perf:load [warmIters] [--save] [--target=<t>]` — the bench.
+  `--save` archives each run (human `.txt` + machine `.json`) under
+  [`docs/perf-profile/full-load/runs/`](perf-profile/full-load/runs/),
+  named `<target>:<sha>` (index `-NN` per repeat), so runs group by
+  commit + runtime target.
+- `npm run perf:load:compare` — averages the archived runs per
+  `<target>:<commit>` and diffs HEAD against every other benched
+  revision (per-fixture Δ%). Run `perf:load -- --save` a few times per
+  commit for a meaningful average.
+- `npm run perf:load:profile [iter]` — the same full-load workload under
+  `node --prof` (`scripts/perf-profile.mjs full`).
+
+The `--target` field is currently always `node` ; the schema is ready
+for the **browser-dist** and **wasm** benches (S3.19d) to land in the
+same `runs/` dir and compare side-by-side against node — no build target
+exists for those yet, so they are deferred, not built. Byte-exact
+correctness stays the job of `npm test` ; the bench only smoke-checks
+that output isn't empty.

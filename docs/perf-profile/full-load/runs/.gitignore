@@ -1,0 +1,6 @@
+# Local per-machine perf-load archives (machine-specific timings) — not
+# committed. They persist across git checkouts so `npm run perf:load:compare`
+# can diff your own commits locally. The curated, quotable baseline lives
+# in docs/perf-baseline.md.
+*
+!.gitignore

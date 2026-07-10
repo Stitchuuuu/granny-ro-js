@@ -15,6 +15,7 @@
  *     skeletons:  [ { idx, name, boneCount, sha256 } ],
  *     animations: [ { idx, name, duration, sha256 } ],
  *     materials:  [ { idx, name, sha256 } ],
+ *     models:     [ { idx, name, skeletonIdx, meshBindingCount, sha256 } ],
  *     errors?:    { category: errorMessage }
  *   }
  */
@@ -30,6 +31,7 @@ import { decodeIGCTexture } from '../../src/GrannyTextureIGC.js';
 import { extractMeshes, extractMaterials } from '../../src/GrannyMesh.js';
 import { extractSkeletons } from '../../src/GrannySkeleton.js';
 import { extractAnimations } from '../../src/GrannyAnimation.js';
+import { extractModels } from '../../src/GrannyModel.js';
 
 export function sha256Hex(buf) {
     return createHash('sha256').update(buf).digest('hex');
@@ -175,12 +177,23 @@ export function buildEntry({ name, sizeBytes, bytes }) {
         }))
     );
 
+    const modelResult = tryExtract(() =>
+        extractModels(loaded).map((model, idx) => ({
+            idx,
+            name: model.name ?? null,
+            skeletonIdx: model.skeletonIdx,
+            meshBindingCount: model.meshBindings.length,
+            sha256: structuralSha(model),
+        }))
+    );
+
     const errors = {};
     if (!texResult.ok)  errors.textures   = texResult.error;
     if (!meshResult.ok) errors.meshes     = meshResult.error;
     if (!skelResult.ok) errors.skeletons  = skelResult.error;
     if (!animResult.ok) errors.animations = animResult.error;
     if (!matResult.ok)  errors.materials  = matResult.error;
+    if (!modelResult.ok) errors.models    = modelResult.error;
 
     const entry = {
         sizeBytes,
@@ -191,6 +204,7 @@ export function buildEntry({ name, sizeBytes, bytes }) {
         skeletons:  skelResult.value,
         animations: animResult.value,
         materials:  matResult.value,
+        models:     modelResult.value,
     };
     if (Object.keys(errors).length > 0) entry.errors = errors;
     return entry;

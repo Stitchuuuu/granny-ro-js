@@ -119,6 +119,7 @@ function compareEntry(expected, actual) {
         skeletons:  compareCategory('skeletons',  expected.skeletons,  actual.skeletons,  ['idx']),
         animations: compareCategory('animations', expected.animations, actual.animations, ['idx']),
         materials:  compareCategory('materials',  expected.materials,  actual.materials,  ['idx']),
+        models:     compareCategory('models',     expected.models,     actual.models,     ['idx']),
     };
     const allMatch = Object.values(results).every((r) => r.match);
     return { match: allMatch, byCategory: results };

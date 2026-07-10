@@ -1,7 +1,7 @@
 {
   "version": 2,
   "schema": "content-manifest-v2",
-  "generatedAt": "2026-06-30T22:09:16.524Z",
+  "generatedAt": "2026-07-10T13:55:19.917Z",
   "sourceBaseline": {
     "target": "js-only",
     "generatedBy": "regenerate-manifest.mjs (JS-only)",
@@ -144,6 +144,15 @@
           "sha256": "36f26fac98b3e9f1532a5133ff2dab85d2eedb5b4f66a7385505d25cce9b5eb6"
         }
       ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "74bb9effff2ace9f812c6d438334630da97f5eacedc15be7904fb648a5ca0af6"
+        }
+      ],
       "errors": {
         "textures": "decodeHigh1: stuck at h=16 w=15 after 65 consecutive arith reads with litLen=0/zeroLen=0 — bitstream likely off-corpus (granny2.dll hangs on the same input). Encoding=16x16."
       }
@@ -207,6 +216,15 @@
           "name": "7 - Default",
           "sha256": "3e8595415ceb4e3205b54b8e534c338360aaff73622b5e1c9e2b268518cda70f"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "779d15d23c09c203c82523b4f908f9ff4b978dfc2e7d92d037c78b7b93341f22"
+        }
       ]
     },
     "9c22930c8b008aa7e17261d08af931ebf264432d28149e676b756350f4f42470": {
@@ -267,6 +285,15 @@
           "idx": 0,
           "name": "7 - Default",
           "sha256": "3e8595415ceb4e3205b54b8e534c338360aaff73622b5e1c9e2b268518cda70f"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "779d15d23c09c203c82523b4f908f9ff4b978dfc2e7d92d037c78b7b93341f22"
         }
       ]
     },
@@ -349,6 +376,15 @@
           "name": "19 - Default",
           "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "60c7d05daf2b8a767b719a906e5b8e5a672aa9d060606bb13a6180af6aa862bb"
+        }
       ]
     },
     "785a3019be8a0feb4aaf46949d28b5bbe6a3a19590be40f3c0d813f67a5ca5eb": {
@@ -429,6 +465,15 @@
           "idx": 4,
           "name": "19 - Default",
           "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "1217d174b84bb1b8a08aa66eab2def2f6aa2fef83914b320aae894db3e287757"
         }
       ]
     },
@@ -511,6 +556,15 @@
           "name": "19 - Default",
           "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "1217d174b84bb1b8a08aa66eab2def2f6aa2fef83914b320aae894db3e287757"
+        }
       ]
     },
     "111e893ae933afb96331adf2dfebbe141569446ed4bffc1597c7ef70ba30644e": {
@@ -592,6 +646,15 @@
           "name": "19 - Default",
           "sha256": "14c5f3e424c8520d80075a8a42d2dd9afea39637a811a98c7e6b11e21f113f98"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "e67a5a7360e67501a93134715187247f6a261af4523cc56b671dc4fbe48a34ff"
+        }
       ]
     },
     "36fa5e49a257e7afbdd5b086b728498d5b423c7b5b6d175ca278280056c00fd1": {
@@ -634,14 +697,14 @@
         {
           "idx": 0,
           "name": "Bip01 L UpperArm02",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "a988adf7930ce46b74fe4567777a59ba7c5d2e038d6336a87985bb8d6c0377df"
         },
         {
           "idx": 1,
           "name": "Bip01 L UpperArm01",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "e1241e78838d09227b96c263246fc2c87392a19767a652dcc0e415e6e8339ddf"
         }
@@ -682,6 +745,15 @@
           "idx": 3,
           "name": "7 - Default",
           "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "skeletonIdx": 0,
+          "meshBindingCount": 2,
+          "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
       ]
     },
@@ -725,14 +797,14 @@
         {
           "idx": 0,
           "name": "Bip01 L UpperArm02",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "1ea7173d8752db664b490b11cf3540daa1770fa76a56ff775377f426ce83dc06"
         },
         {
           "idx": 1,
           "name": "Bip01 L UpperArm01",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "1983943f27b13fc8eeae4e9d677d3fc7527cf28c08fea03c1706f833f4f486d4"
         }
@@ -773,6 +845,15 @@
           "idx": 3,
           "name": "7 - Default",
           "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "skeletonIdx": 0,
+          "meshBindingCount": 2,
+          "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
       ]
     },
@@ -816,14 +897,14 @@
         {
           "idx": 0,
           "name": "Bip01 L UpperArm02",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "5d260d7711c8036d791e2bd07e653d128bebbdf9abdf9fca9c5bd2b018764cc5"
         },
         {
           "idx": 1,
           "name": "Bip01 L UpperArm01",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "303e41c1b6dc8d608934b3c2fd4d43db10865ec7a629ba895820f087bdee9a21"
         }
@@ -864,6 +945,15 @@
           "idx": 3,
           "name": "7 - Default",
           "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "skeletonIdx": 0,
+          "meshBindingCount": 2,
+          "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
       ]
     },
@@ -907,14 +997,14 @@
         {
           "idx": 0,
           "name": "Bip01 L UpperArm02",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "1ceb5a1d487925e72a9752c905a77babc328344c69840566e4c7a717cb35a0b9"
         },
         {
           "idx": 1,
           "name": "Bip01 L UpperArm01",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "a52211499969654d9e99b57d0f41d68e63a0caf98fe84def470c3722a2abc1f1"
         }
@@ -955,6 +1045,15 @@
           "idx": 3,
           "name": "7 - Default",
           "sha256": "063218e6ea275b2bb5982cd0f11bf84e49038ca31cae9ea246220e88ccf5e544"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "skeletonIdx": 0,
+          "meshBindingCount": 2,
+          "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
       ]
     },
@@ -1032,6 +1131,15 @@
           "name": "Material #180",
           "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
+        }
       ]
     },
     "e1d09f70d4f9148c1939784750db1d0af083e77ca207483527b4575e0dffe0fd": {
@@ -1107,6 +1215,15 @@
           "idx": 3,
           "name": "Material #180",
           "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
         }
       ]
     },
@@ -1184,6 +1301,15 @@
           "name": "Material #180",
           "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
+        }
       ]
     },
     "ec2bbfbc4f76bfe0bb94d29f1b3ca40a7c5d2f278bbc87d671977eb86c0c3680": {
@@ -1259,6 +1385,15 @@
           "idx": 3,
           "name": "Material #180",
           "sha256": "9f5ba507b6fa997274593bcaddac94da420102999fe058dec5b7f55dd3873cf5"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 0,
+          "sha256": "fcee74929534352f1f9349e203fe9b981ba2ec92b18b8b9434f6ffc9efa0b3c1"
         }
       ]
     },
@@ -1343,42 +1478,42 @@
         {
           "idx": 0,
           "name": "Bip01 L UpperArm02",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "32b40ea8aa3a81e1eb14df559d2792297f779ce42e6aee7c83effa9f0ddb7e77"
         },
         {
           "idx": 1,
           "name": "Bip01 L UpperArm01",
-          "verticesCount": null,
+          "verticesCount": 40,
           "triangleGroupsCount": 1,
           "sha256": "1888f3c9b29a7507a3a0821c518af48a0c3879fdf0209a8274b648cb4bc762a0"
         },
         {
           "idx": 2,
           "name": "body",
-          "verticesCount": null,
+          "verticesCount": 175,
           "triangleGroupsCount": 1,
           "sha256": "1124be983b254398cd50cfce28eb83a0a34efe5d6df48cf270564ef0595aaa78"
         },
         {
           "idx": 3,
           "name": "shield",
-          "verticesCount": null,
+          "verticesCount": 175,
           "triangleGroupsCount": 1,
           "sha256": "57aedc92c3dfe7a121d58e4c3c8ad48792c8e04040bf8d466323887521bf99dd"
         },
         {
           "idx": 4,
           "name": "head",
-          "verticesCount": null,
+          "verticesCount": 231,
           "triangleGroupsCount": 1,
           "sha256": "ca73bcfb8ba7a8ddc1973ce4fa3eee3ed12547b005d6d242e1f7d442cf528af6"
         },
         {
           "idx": 5,
           "name": "leg",
-          "verticesCount": null,
+          "verticesCount": 206,
           "triangleGroupsCount": 1,
           "sha256": "f47fd643d3073ec894fad34656d983742a324ab71bb15e2dd472a449428df82c"
         }
@@ -1440,6 +1575,15 @@
           "name": "7 - Default",
           "sha256": "be6d401cb068d9e0ffdf9b960576db1bfe1359412f832d404c221b9f1046e9f1"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy03",
+          "skeletonIdx": 0,
+          "meshBindingCount": 6,
+          "sha256": "bd7c2146fd0ea1b828cb4867bb7c14c6cfe3eeb8a60c2e3585971b273ac18595"
+        }
       ]
     },
     "b850bcb443505e6b9e87196cb8b6ed3b2744dcda0fc73dd6cab8da679f42957f": {
@@ -1493,7 +1637,7 @@
         {
           "idx": 0,
           "name": "Cylinder13",
-          "verticesCount": null,
+          "verticesCount": 159,
           "triangleGroupsCount": 1,
           "sha256": "372439927fba4874702b68b8c822524910fd46da7c36de502ad630738666b767"
         }
@@ -1524,6 +1668,15 @@
           "idx": 1,
           "name": "Material #38",
           "sha256": "e8ec3b7682a1cf5cc1649d8d175f30366f161e88edafbe4d6191f696e0522b20"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 1,
+          "sha256": "331744fcdb0b80298e8b81d800c159939a5e49d7fedafb7f0c820bdb963aa640"
         }
       ]
     },
@@ -1588,14 +1741,14 @@
         {
           "idx": 0,
           "name": "Plane01",
-          "verticesCount": null,
+          "verticesCount": 8,
           "triangleGroupsCount": 1,
           "sha256": "41914c2ae08c04b5c2fbff0c19ecbb0d1d76ad8ccd7a7cd4d8aac9195940af3c"
         },
         {
           "idx": 1,
           "name": "Object08",
-          "verticesCount": null,
+          "verticesCount": 288,
           "triangleGroupsCount": 1,
           "sha256": "66f9220354f331732b2e4212b003bfd9b420244c7b69cfb51c1aef0f8cba25ef"
         }
@@ -1641,6 +1794,15 @@
           "idx": 4,
           "name": "8 - Default1",
           "sha256": "ca787e6b1527e048b54f0c7dac7944f99ad42dfbfe981b58f91a127c92c19ba1"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 2,
+          "sha256": "f441b258b23dab5abcfb10a9ca47212758be5fd24a5a2b5e4fbb126fe4f2a490"
         }
       ]
     },
@@ -1735,35 +1897,35 @@
         {
           "idx": 0,
           "name": "Object03",
-          "verticesCount": null,
+          "verticesCount": 25,
           "triangleGroupsCount": 1,
           "sha256": "3921cbf8906ac4ac6a770e8337d008471f01e9d94d4f06bdb70a61bade811ffb"
         },
         {
           "idx": 1,
           "name": "Object02",
-          "verticesCount": null,
+          "verticesCount": 160,
           "triangleGroupsCount": 1,
           "sha256": "89b35c28103a00b3ea27479b667d64cc44270998d391e593e9e2d015f10b1e8e"
         },
         {
           "idx": 2,
           "name": "Object01",
-          "verticesCount": null,
+          "verticesCount": 242,
           "triangleGroupsCount": 1,
           "sha256": "1c4df5edffa2a391b1262d2e272ea6c8348458fb6eecb7d4d82864055e27e0e8"
         },
         {
           "idx": 3,
           "name": "HEAD",
-          "verticesCount": null,
+          "verticesCount": 174,
           "triangleGroupsCount": 1,
           "sha256": "6e0c97a096fa0dd55b8ca95c18f7e0caa189d623a64465e4d7ccf65ae2b78467"
         },
         {
           "idx": 4,
           "name": "Mesh04",
-          "verticesCount": null,
+          "verticesCount": 133,
           "triangleGroupsCount": 1,
           "sha256": "0446ef7ea6439b4a037b9d5d7b8b3f26c50f0557a6f094293f1cb4a6db473242"
         }
@@ -1834,6 +1996,15 @@
           "idx": 9,
           "name": "19 - Default",
           "sha256": "9094c30bf76db2f9e7236fd934c9515a47f69a93e0a005f0c166fee79ee5634c"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 5,
+          "sha256": "382fc7c8ba5446374d3c2da6f84fa04d82a1d605d0aef0ccac8cbeea4ee1c053"
         }
       ]
     },
@@ -1918,28 +2089,28 @@
         {
           "idx": 0,
           "name": "Object02-1",
-          "verticesCount": null,
+          "verticesCount": 156,
           "triangleGroupsCount": 1,
           "sha256": "74322d9667a241f348295f4bdca119a076b939b081326e73ccc57c7ca15811ed"
         },
         {
           "idx": 1,
           "name": "Object01-1",
-          "verticesCount": null,
+          "verticesCount": 242,
           "triangleGroupsCount": 1,
           "sha256": "83397a45f7fbca67445e05c99eefc7512e00c8b9619bcc7a1bf7c3c4393741bd"
         },
         {
           "idx": 2,
           "name": "HEAD-1",
-          "verticesCount": null,
+          "verticesCount": 63,
           "triangleGroupsCount": 1,
           "sha256": "e1c9da8d089ff1bac4159cebcd614efb71868981cab3838c73a19653c88f4299"
         },
         {
           "idx": 3,
           "name": "Mesh04-1",
-          "verticesCount": null,
+          "verticesCount": 118,
           "triangleGroupsCount": 1,
           "sha256": "46205a6755ff19710755a78b657cf0745811ca227ebd7feb65c73dce67c6c868"
         }
@@ -2011,6 +2182,15 @@
           "name": "Material #180",
           "sha256": "b811ade3c52c993813fb6eb4f2061e99796649656384678aad10bfb990fd03ca"
         }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 4,
+          "sha256": "c5859cb3edf0f80817252379e2169a44d8c4703e818d41b10911c95374255bb4"
+        }
       ]
     },
     "b139dc834d9578c0a67a7ae4fcefecb0dead03b4a74f19758a099cfc1b7a4e14": {
@@ -2064,7 +2244,7 @@
         {
           "idx": 0,
           "name": "Object02",
-          "verticesCount": null,
+          "verticesCount": 217,
           "triangleGroupsCount": 1,
           "sha256": "e3055c87af40aa02ef08b9e0300a2b2856947e466e801cbbcf597512e7f5eeeb"
         }
@@ -2095,6 +2275,15 @@
           "idx": 1,
           "name": "7 - Default",
           "sha256": "66e96946d70b0b777c8c2deaeb7e7e2df2c27f1b98c689cf86a47fb6a2c04687"
+        }
+      ],
+      "models": [
+        {
+          "idx": 0,
+          "name": "Dummy01",
+          "skeletonIdx": 0,
+          "meshBindingCount": 1,
+          "sha256": "2bc6015a2df36c264a78abb00645a05567c85a834dcf715c9ba0d1765721d583"
         }
       ]
     }

@@ -139,8 +139,9 @@ export function parseAnimated(
  * Full textured-model pipeline : `parseModel(buffer)` + texture
  * extraction. Decodes every (texture, image, MIP) triple to RGBA8888,
  * ready for upload to a GPU texture. S3TC textures (encoding=2) throw
- * — no iRO ver12 asset uses them. IGC textures (encoding=3) throw in
- * `1.1.0-a.0` ; the JS bitstream decoder lands in `1.1.0-a.1`.
+ * — no iRO ver12 asset uses them. IGC textures (encoding=3) decode
+ * synchronously in the default build ; in the code-split (`./split`)
+ * build, `await loadTextureCodec()` must resolve first.
  */
 export function parseTextured(
     buffer: ArrayBuffer | Uint8Array | DataView | ArrayBufferView,
@@ -164,6 +165,24 @@ export function poseAt(
     animationIndex: number,
     t: number,
 ): PoseSnapshot;
+
+/**
+ * Idempotent async init seam. Resolves immediately in the JS-only build ;
+ * a future WASM build awaits kernel instantiation here. Await once at
+ * startup — decode calls stay synchronous afterward.
+ */
+export function ready(): Promise<void>;
+
+/** Minimal namespace facade — `ready` only (keeps `import { Granny }` free of the texture graph). */
+export const Granny: { readonly ready: typeof ready };
+
+/**
+ * Ensure the IGC texture codec is loaded. No-op in the default build (the
+ * decoder is statically bundled) ; in the code-split (`./split`) build it
+ * dynamic-imports + caches the IGC chunk. Await before the first IGC
+ * `parseTextured` / `extractTextures` in that build. Idempotent.
+ */
+export function loadTextureCodec(): Promise<void>;
 
 // Re-exports from GrannyTypeTree (advanced surface for direct walking).
 export {

@@ -24,7 +24,7 @@ import {
 import { extractSkeletons } from './GrannySkeleton.js';
 import { extractMeshes, extractMaterials } from './GrannyMesh.js';
 import { extractModels } from './GrannyModel.js';
-import { extractTextures, walkTextureImages } from './GrannyTexture.js';
+import { extractTextures, walkTextureImages, loadTextureCodec } from './GrannyTexture.js';
 import { extractAnimations, evaluateTransformTrack, evaluateAnimation } from './GrannyAnimation.js';
 import { readTransform, IDENTITY_TRANSFORM } from './GrannyTransform.js';
 import {
@@ -39,7 +39,7 @@ export { parseGR2File, COMPRESSION_NAMES, SECTION_NAMES };
 export { COMPRESSION_NONE, COMPRESSION_OODLE0 };
 export { loadGR2, parseTypeTree, parseObject, objectStorageSize, readReferenceArrayObjects };
 export { extractSkeletons, extractMeshes, extractMaterials, extractModels };
-export { extractTextures, walkTextureImages };
+export { extractTextures, walkTextureImages, loadTextureCodec };
 export { extractAnimations, evaluateTransformTrack, evaluateAnimation };
 export { readTransform, IDENTITY_TRANSFORM };
 export {
@@ -49,6 +49,32 @@ export {
     composeSkinningMatrices,
     poseSkeletonAt,
 };
+
+// --- async init seam ---------------------------------------------------
+
+const _readyPromise = Promise.resolve();
+
+/**
+ * Idempotent async init seam. In this JS-only build it resolves immediately —
+ * there is nothing to instantiate. A future WASM-accelerated build awaits
+ * kernel compilation here (browser main-thread `WebAssembly.instantiate` is
+ * async and capped at 4 KB synchronously). Await it once at startup so
+ * opting into the WASM build later needs no code change ; decode calls stay
+ * synchronous afterward.
+ *
+ * @returns {Promise<void>}
+ */
+export function ready() {
+    return _readyPromise;
+}
+
+/**
+ * Namespace facade — intentionally minimal (`ready` only) so that importing
+ * `Granny` never pulls the texture / IGC graph into a bundle, preserving
+ * tree-shaking and the `./split` code-split. Use the flat named exports
+ * (`parseModel`, `parseTextured`, …) for the decode API.
+ */
+export const Granny = { ready };
 
 /**
  * Decompress a single section, dispatching by `section.compression`.
@@ -172,8 +198,9 @@ export function parseAnimated(buffer, options = {}) {
  * pipeline entries.
  *
  * @throws Error on textures with `encoding=2` (S3TC, not in iRO corpus)
- * @throws Error on textures with `encoding=3` (IGC) in `1.1.0-a.0` —
- *   the JS bitstream port lands in `1.1.0-a.1` (S3.5).
+ * @throws Error on an IGC (`encoding=3`) decode in the code-split (`./split`)
+ *   build when `await loadTextureCodec()` has not resolved yet — the default
+ *   build decodes IGC synchronously with no warmup.
  */
 export function parseTextured(buffer, options = {}) {
     const file = parseGR2File(buffer);

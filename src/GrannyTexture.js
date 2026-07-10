@@ -25,7 +25,13 @@ import {
     parseTypeTree,
     readReferenceArrayObjects,
 } from './GrannyTypeTree.js';
-import { decodeIGCTexture } from './GrannyTextureIGC.js';
+// IGC codec is reached through an indirection module so the code-split
+// (`./split`) build can swap it for a lazy dynamic-import chunk. The default
+// build binds it statically → IGC decode stays synchronous, no warmup.
+// `loadTextureCodec()` is re-exported for consumers of the code-split build.
+import { decodeIGCTexture, loadTextureCodec } from './igc-codec.js';
+
+export { loadTextureCodec };
 
 export const ENCODING_RAW = 1;
 export const ENCODING_S3TC = 2;

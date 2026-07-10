@@ -1,37 +1,51 @@
 {
   "name": "granny-ro-js",
-  "version": "1.0.0",
-  "description": "Pure-JS reader for .gr2 (Granny3D format 6) files : Oodle0 decompression + skeleton / mesh / animation extraction + pose composition.",
+  "version": "1.1.0",
+  "description": "Pure-JS reader for .gr2 (Granny3D format 6) files : Oodle0 decompression + skeleton / mesh / animation / texture extraction + pose composition.",
   "type": "module",
-  "main": "./src/Granny.js",
-  "types": "./index.d.ts",
+  "main": "./dist/granny-ro.cjs",
+  "module": "./dist/granny-ro.esm.js",
+  "types": "./dist/granny-ro.d.ts",
+  "browser": "./dist/granny-ro.esm.js",
+  "jsdelivr": "./dist/granny-ro.esm.js",
+  "unpkg": "./dist/granny-ro.esm.js",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./src/Granny.js"
+      "types": "./dist/granny-ro.d.ts",
+      "import": "./dist/granny-ro.esm.js",
+      "require": "./dist/granny-ro.cjs"
+    },
+    "./split": {
+      "types": "./dist/granny-ro.d.ts",
+      "import": "./dist/granny-ro.split.esm.js"
     },
     "./file": {
-      "types": "./src/GrannyFile.d.ts",
-      "import": "./src/GrannyFile.js"
+      "types": "./dist/file.d.ts",
+      "import": "./dist/file.esm.js",
+      "require": "./dist/file.cjs"
     },
     "./oodle0": {
-      "types": "./src/GrannyOodle0.d.ts",
-      "import": "./src/GrannyOodle0.js"
+      "types": "./dist/oodle0.d.ts",
+      "import": "./dist/oodle0.esm.js",
+      "require": "./dist/oodle0.cjs"
     },
     "./typetree": {
-      "types": "./src/GrannyTypeTree.d.ts",
-      "import": "./src/GrannyTypeTree.js"
+      "types": "./dist/typetree.d.ts",
+      "import": "./dist/typetree.esm.js",
+      "require": "./dist/typetree.cjs"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "src/",
+    "dist/",
     "index.d.ts",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
   "scripts": {
+    "build": "node scripts/build-dist.mjs",
+    "prepack": "node scripts/build-dist.mjs",
     "bake": "node scripts/bake-all.mjs",
     "bake:textures": "node scripts/bake-textures.mjs",
     "build:shim": "node scripts/build-shim.mjs",
@@ -72,6 +86,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^26.0.1",
+    "dts-bundle-generator": "^9.5.1",
+    "rolldown": "^1.1.5",
     "typescript": "5.7",
     "vitest": "^4.1.9"
   },

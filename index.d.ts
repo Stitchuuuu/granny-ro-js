@@ -1,13 +1,8 @@
-// Public-API barrel for downstream package consumers — re-exports the
-// surface of src/Granny.js + the GrannyFile / GrannyOodle0 internals that
-// are useful for advanced use cases (custom dispatch, codec-direct, etc.).
+// Public-API type barrel — re-exports the rolled distribution types.
 //
-// Per-module .d.ts files (src/{Granny,GrannyFile,GrannyOodle0}.d.ts) are
-// the source of truth for editor intellisense ; this file just barrels
-// them for package.json `types`.
+// The per-module source .d.ts (src/*.d.ts) remain the intellisense source of
+// truth during development, but only dist/ ships (see package.json "files").
+// This stable top-level entry resolves to the bundled dist/granny-ro.d.ts so
+// `granny-ro-js/index.d.ts` stays valid in the published tarball.
 
-export * from './src/Granny.js';
-export * from './src/GrannyFile.js';
-export * from './src/GrannyOodle0.js';
-export * from './src/GrannyTypeTree.js';
-export * from './src/GrannyAnimation.js';
+export * from './dist/granny-ro.js';

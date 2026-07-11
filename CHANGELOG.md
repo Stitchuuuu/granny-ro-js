@@ -4,6 +4,60 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.3.0 — 2026-07-11
+
+**Untrusted-input hardening.** Bounds every file-controlled allocation and
+recursion in the `.gr2` parse path against resource-exhaustion denial-of-service,
+in **both** the pure-JS and the opt-in WASM builds. The parser was already
+memory-safe (no RCE, no out-of-bounds disclosure) ; the gap was that a tiny
+crafted `.gr2` could drive a multi-GB allocation or unbounded recursion and
+OOM / hang the process. Matters only when the parser is fed attacker-controlled
+input (e.g. a web tool accepting uploads) — trusted GRF assets are low-risk — but
+the caps are cheap and belong in a published library. **Decode output is
+byte-identical to `1.2.0`** (same content manifest, 21/21 fixtures) with no
+measurable perf regression. No breaking changes.
+
+### Allocation caps
+
+- **Oodle0 `expanded_size`** — an absolute 256 MiB ceiling + a 1024× compressed-
+  ratio cross-check before the decompression buffer is allocated (a ~40-byte
+  section could previously request ~2 GB).
+- **IGC texture `width × height`** — a 16 Mpix (4096²) ceiling + an
+  `ImageData`-length cross-check before the plane allocations (mirrors the raw
+  path ; `Width = Height = 16384` previously asked for ~2.7 GB).
+- **Arith alphabet fields** — the Oodle0 model and the IGC arith coder now reject
+  an over-large alphabet header (a 23-bit / 16-bit file field) before sizing
+  their tables.
+
+### Recursion guards
+
+- **`objectStorageSize`** memoizes storage size per sub-type, collapsing a DAG of
+  `INLINE` members from `Bᴰ` re-walks to `O(D)` (a `< 128 KB` file could
+  otherwise hang).
+- **`parseObject`** gained a depth cap (`MAX_INLINE_DEPTH = 64`) + a cycle guard,
+  so a self-referential or over-deep `INLINE` type throws instead of overflowing
+  the stack.
+
+### WASM-build parity
+
+- The opt-in `granny-ro-js/wasm` build previously re-read the IGC arith alphabet
+  size inside the WASM kernel, bypassing the pure-JS cap. It is now bounded
+  kernel-side at the model-open, so the WASM path enforces the same limit.
+
+### Fail mode
+
+- Every cap breach raises a **typed, catch-friendly error**
+  (`DecompressionError` / `GrannyParseError` / a descriptive texture error) —
+  never a bare `RangeError` from an oversized `new TypedArray`, a stack overflow,
+  a WASM trap, or a silent truncation. Bounds are **generous** (well above any
+  real RO asset) : no legit file trips a cap. Regression-tested by
+  `tests/unit/DosCaps.test.js` (forged-input repros, each throwing cleanly within
+  a small time/memory budget).
+
+### Breaking changes
+
+None. Legit `.gr2` files parse and decode exactly as in `1.2.0`.
+
 ## 1.2.0 — 2026-07-11
 
 Opt-in **WebAssembly texture decode**. The Bink-family wavelet decoder — the

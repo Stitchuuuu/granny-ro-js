@@ -42,7 +42,14 @@ NoCompression compression.
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-## Status — `1.2.0` (stable)
+## Status — `1.3.0` (stable)
+
+`1.3.0` is an **untrusted-input hardening** pass — every file-controlled
+allocation and recursion in the parse path is now bounded (allocation
+caps, recursion depth + cycle guards, WASM-build parity) so a crafted
+`.gr2` can't OOM or hang the process. Decode output is byte-identical to
+`1.2.0` (same manifest) with no measurable perf regression. See the
+[changelog](CHANGELOG.md).
 
 `1.2.0` adds the **opt-in WASM texture decoder** (`granny-ro-js/wasm`) —
 same API, one `await Granny.ready()`, the IGC decode runs in WebAssembly
@@ -69,6 +76,7 @@ output stays byte-identical to `1.0.0`, same content manifest.
 | Texture — raw RGBA / BGRA path | ✅ byte-exact |
 | Texture — wavelet-compressed (Bink-family) path | ✅ 17 / 17 fixtures byte-exact |
 | Anti-hang guard on degenerate IGC bitstreams | ✅ throws after >64 consecutive idle arith reads |
+| Untrusted-input DoS caps (alloc ceilings, recursion depth + cycle guards, JS + WASM) | ✅ typed throw, byte-exact on legit input |
 
 ¹ The pose runtime (`poseAt`) is verified float-for-float against the
 real `granny2.dll` composite matrices — not just the Python clean-room

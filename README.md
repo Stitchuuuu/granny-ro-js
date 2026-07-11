@@ -1,6 +1,6 @@
 # granny-ro-js
 
-[![npm](https://img.shields.io/npm/v/granny-ro-js/alpha?label=npm)](https://www.npmjs.com/package/granny-ro-js)
+[![npm](https://img.shields.io/npm/v/granny-ro-js?label=npm)](https://www.npmjs.com/package/granny-ro-js)
 [![CI](https://github.com/stitchuuuu/granny-ro-js/actions/workflows/test.yml/badge.svg)](https://github.com/stitchuuuu/granny-ro-js/actions/workflows/test.yml)
 [![license](https://img.shields.io/npm/l/granny-ro-js.svg)](LICENSE)
 
@@ -19,7 +19,12 @@ NoCompression compression.
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-## Status — `1.0.0` (stable)
+## Status — `1.1.0` (stable)
+
+`1.1.0` adds a built `dist/` (ESM / CJS / IIFE, single-file + code-split)
+and an async init seam (`Granny.ready()`, `loadTextureCodec()`) — decode
+output stays byte-identical to `1.0.0`, same content manifest. See the
+[changelog](CHANGELOG.md) for the full distribution pass.
 
 **Byte-exact** across the 21-fixture parity corpus, validated against
 `granny2.dll` :

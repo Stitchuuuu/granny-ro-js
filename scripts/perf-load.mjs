@@ -10,8 +10,9 @@
  *   - anim packs (15): `parseAnimated(buf)` — parse + skeleton + mesh +
  *                      animation extraction.
  *
- * Usage : node scripts/perf-load.mjs [warmIterations] [--save]
+ * Usage : node scripts/perf-load.mjs [warmIterations] [--save] [--label=<tag>]
  *         (or `npm run perf:load`)   default warmIterations = 20
+ *         `--label=<tag>` overrides the git-SHA archive tag (batch naming).
  *         `--save` also archives the report to
  *         docs/perf-profile/full-load/runs/<shortsha>[-dirty]-NN.txt
  *         (SHA groups by code version ; NN indexes repeated runs, so you
@@ -60,6 +61,11 @@ const warmIters = Math.max(1, parseInt(args.find((a) => /^\d+$/.test(a)) ?? '20'
 // the same runs/ dir — perf-load-compare groups by `<target>:<sha>`.
 const targetArg = args.find((a) => a.startsWith('--target='));
 const target = targetArg ? targetArg.slice('--target='.length) : 'node';
+// Explicit archive tag. Overrides the git-SHA derivation below so a batch can
+// be named by hand (e.g. --label=v1.2.0 vs --label=now) — needed when two code
+// versions share the same dirty HEAD (source-swap regression compare).
+const labelArg = args.find((a) => a.startsWith('--label='));
+const label = labelArg ? labelArg.slice('--label='.length) : null;
 
 if (!existsSync(FIXTURE_SOURCE)) {
     console.error(`[perf-load] tests/fixtures/source/ missing — run \`npm run bake\` first`);
@@ -231,12 +237,16 @@ if (save) {
     // `<shortsha>[-dirty]` groups runs by code version ; a zero-padded NN
     // suffix indexes repeats so multiple runs of the same commit coexist.
     let tag;
-    try {
-        const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PKG }).toString().trim();
-        const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: PKG }).toString().trim().length > 0;
-        tag = dirty ? `${sha}-dirty` : sha;
-    } catch {
-        tag = 'nogit';
+    if (label) {
+        tag = label;
+    } else {
+        try {
+            const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PKG }).toString().trim();
+            const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: PKG }).toString().trim().length > 0;
+            tag = dirty ? `${sha}-dirty` : sha;
+        } catch {
+            tag = 'nogit';
+        }
     }
     mkdirSync(RUNS_DIR, { recursive: true });
     const taken = new Set(readdirSync(RUNS_DIR).filter((n) => n.startsWith(`${tag}-`) && n.endsWith('.txt')));

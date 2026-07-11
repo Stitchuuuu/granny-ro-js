@@ -87,6 +87,17 @@ const $status = () => document.getElementById('status');
 const $results = () => document.getElementById('results');
 const setStatus = (text) => ($status().textContent = text);
 
+// Version stamp of the staged bundle (written by bench-browser-prep → meta.json)
+// + the last fresh run's payload, so a dropped batch can be diffed against it.
+let pageVersion = null;
+let lastPayload = null;
+// Human label for a payload's version : label|sha(-dirty) · warmIters.
+const verLabel = (p) => {
+    const v = p?.version;
+    const id = v ? `${v.label ? `${v.label} · ` : ''}${v.sha ?? '?'}${v.dirty ? '-dirty' : ''}` : (p?.generatedAt ?? 'unknown');
+    return `${id} · warm ${p?.warmIters ?? '?'}`;
+};
+
 function renderAxisTable(axis, readyMs, stallMs, rows) {
     const section = document.createElement('section');
     const h = document.createElement('h2');
@@ -177,6 +188,7 @@ function exportResults(fixtureCount, axes) {
 
     const payload = {
         generatedAt: new Date().toISOString(),
+        version: pageVersion, // { label, sha, dirty, builtAt, … } — which code version this measured
         warmIters: WARM_ITERS,
         fixtureCount,
         userAgent: navigator.userAgent,
@@ -192,6 +204,8 @@ function exportResults(fixtureCount, axes) {
         axes,
     };
     const json = JSON.stringify(payload, null, 2);
+    lastPayload = payload; // let a 1-file drop diff against this fresh run
+    const verSlug = (pageVersion?.label || pageVersion?.sha || 'run').replace(/[^A-Za-z0-9._-]/g, '-');
 
     // Summary card + toolbar, injected above the per-axis tables.
     const bar = document.createElement('section');
@@ -212,7 +226,7 @@ function exportResults(fixtureCount, axes) {
         const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
         const a = document.createElement('a');
         a.href = url;
-        a.download = `granny-bench-${payload.generatedAt.replace(/[:.]/g, '-')}.json`;
+        a.download = `granny-bench-${verSlug}-${payload.generatedAt.replace(/[:.]/g, '-')}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -312,6 +326,11 @@ async function run() {
     $results().replaceChildren();
     try {
         setStatus('loading corpus…');
+        try {
+            pageVersion = await (await fetch('./meta.json')).json();
+        } catch {
+            pageVersion = null; // meta.json absent (older staging) — non-fatal
+        }
         const index = await (await fetch('./fixtures.json')).json();
         const corpus = [];
         for (const { path } of index) {
@@ -333,6 +352,138 @@ async function run() {
         document.getElementById('run').disabled = false;
     }
 }
+
+// ---- drag-&-drop batch compare (Δ%) --------------------------------------
+// Drop 1-2 downloaded batch JSONs. Two → diff them (file0 baseline → file1
+// current). One → diff it (baseline) against this page's fresh run. All the
+// numbers are the same warm-best totals the tables above export.
+const $compare = () => document.getElementById('compare');
+const pct = (b, c) => (b && c != null ? ((c - b) / b) * 100 : null);
+const fmtPct = (v) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`);
+const pctCls = (v) => (v == null ? '' : v > 0.05 ? 'up' : v < -0.05 ? 'down' : '');
+const axisFixtures = (p, label) => p?.axes?.find((a) => a.axis === label)?.fixtures ?? [];
+
+function readJson(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+            try {
+                resolve(JSON.parse(r.result));
+            } catch (e) {
+                reject(new Error(`${file.name}: ${e.message}`));
+            }
+        };
+        r.onerror = () => reject(new Error(`${file.name}: read error`));
+        r.readAsText(file);
+    });
+}
+
+function compareTable(title, headers, rows) {
+    const section = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = title;
+    section.appendChild(h);
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const htr = document.createElement('tr');
+    for (const label of headers) {
+        const th = document.createElement('th');
+        th.textContent = label;
+        htr.appendChild(th);
+    }
+    thead.appendChild(htr);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const { cells, delta } of rows) {
+        const tr = document.createElement('tr');
+        cells.forEach((c, i) => {
+            const td = document.createElement('td');
+            td.textContent = c;
+            if (i >= 1) td.className = 'num';
+            if (i === cells.length - 1) td.classList.add(pctCls(delta));
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    section.appendChild(table);
+    return section;
+}
+
+function renderCompare(baseline, current) {
+    const root = $compare();
+    root.replaceChildren();
+    if (!baseline) return;
+    if (!current) {
+        const p = document.createElement('p');
+        p.className = 'hint';
+        p.textContent = 'Dropped 1 file but no fresh run to compare against yet — run the bench, or drop a second file.';
+        root.appendChild(p);
+        return;
+    }
+
+    const head = document.createElement('p');
+    head.className = 'hint';
+    head.textContent = `baseline: ${verLabel(baseline)}   →   current: ${verLabel(current)}   (Δ% = current vs baseline; − = faster)`;
+    root.appendChild(head);
+
+    // Per-axis total warm-best.
+    const bT = baseline.summary?.totalWarmBestMs ?? {};
+    const cT = current.summary?.totalWarmBestMs ?? {};
+    const axisKeys = [...new Set([...Object.keys(bT), ...Object.keys(cT)])];
+    root.appendChild(
+        compareTable(
+            'total warm-best per axis (ms, lower = faster)',
+            ['axis', 'baseline', 'current', 'Δ%'],
+            axisKeys.map((k) => {
+                const b = bT[k];
+                const c = cT[k];
+                const d = pct(b, c);
+                return { cells: [k, b?.toFixed(1) ?? '—', c?.toFixed(1) ?? '—', fmtPct(d)], delta: d };
+            }),
+        ),
+    );
+
+    // Per-fixture, js-esm · main axis (the pure-JS main-thread cost).
+    const bF = axisFixtures(baseline, 'js-esm · main');
+    const cF = axisFixtures(current, 'js-esm · main');
+    if (bF.length && cF.length) {
+        const cByPath = Object.fromEntries(cF.map((r) => [r.path, r]));
+        const rows = bF
+            .filter((r) => !r.error && cByPath[r.path] && !cByPath[r.path].error)
+            .map((r) => {
+                const b = r.best;
+                const c = cByPath[r.path].best;
+                const d = pct(b, c);
+                return { cells: [r.path, b.toFixed(2), c.toFixed(2), fmtPct(d)], delta: d };
+            });
+        root.appendChild(compareTable('per-fixture warm-best — js-esm · main (ms)', ['fixture', 'baseline', 'current', 'Δ%'], rows));
+    }
+}
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dz.classList.add('over');
+});
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dz.classList.remove('over');
+    const files = [...e.dataTransfer.files].filter((f) => f.name.endsWith('.json'));
+    if (!files.length) {
+        setStatus('drop: no .json files');
+        return;
+    }
+    try {
+        const payloads = await Promise.all(files.map(readJson));
+        if (payloads.length >= 2) renderCompare(payloads[0], payloads[1]);
+        else renderCompare(payloads[0], lastPayload);
+        $compare().scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+        setStatus(`drop compare failed — ${err.message}`);
+    }
+});
 
 stall.start();
 document.getElementById('run').addEventListener('click', run);

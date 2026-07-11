@@ -24,6 +24,7 @@ dist/
 bench/browser/granny-ro*.js
 bench/browser/fixtures/
 bench/browser/fixtures.json
+bench/browser/meta.json
 
 # Wine shim build artifacts (cross-compiled via mingw).
 # shim/prebuilt/ is intentionally NOT ignored — it ships the canonical

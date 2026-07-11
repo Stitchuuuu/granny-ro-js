@@ -45,14 +45,31 @@ for (const f of files) {
     (groups[key] ??= []).push(rec);
 }
 
-// Current series = node target on HEAD (same tag derivation as --save).
-let current = null;
-try {
-    const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PKG }).toString().trim();
-    const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: PKG }).toString().trim().length > 0;
-    current = `node:${dirty ? `${sha}-dirty` : sha}`;
-} catch {
-    /* no git — current stays null, nothing gets the ◀ marker */
+// Explicit series selection : --current=<label> / --baseline=<label> pin which
+// two <target>:<tag> series drive the ◀ marker + the Δ% base (bare label →
+// node target). Used by perf-regress, whose two batches share a dirty HEAD so
+// git derivation can't tell them apart. Absent → git-HEAD current (below).
+const argv = process.argv.slice(2);
+const pickArg = (name) => {
+    const a = argv.find((x) => x.startsWith(`--${name}=`));
+    if (!a) return null;
+    const v = a.slice(name.length + 3);
+    return v.includes(':') ? v : `node:${v}`;
+};
+const currentArg = pickArg('current');
+const baselineArg = pickArg('baseline');
+
+// Current series = the pinned --current, else node target on HEAD (same tag
+// derivation as --save).
+let current = currentArg;
+if (!current) {
+    try {
+        const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PKG }).toString().trim();
+        const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: PKG }).toString().trim().length > 0;
+        current = `node:${dirty ? `${sha}-dirty` : sha}`;
+    } catch {
+        /* no git — current stays null, nothing gets the ◀ marker */
+    }
 }
 
 const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
@@ -132,8 +149,8 @@ printTable(
     ['l', 'l', 'r', 'r', 'r', 'r', 'r', 'r'],
 );
 
-// Per-fixture diff : current vs the most recent OTHER commit.
-const baselineTag = tags.find((t) => t !== current);
+// Per-fixture diff : current vs the pinned --baseline, else the most recent OTHER commit.
+const baselineTag = (baselineArg && agg[baselineArg]) ? baselineArg : tags.find((t) => t !== current);
 if (cur && baselineTag) {
     const base = agg[baselineTag];
     console.log(`\nper-fixture warm-best — ${current} vs ${baselineTag} (Δ% = current vs baseline)`);

@@ -67,6 +67,7 @@
     "perf": "node scripts/perf.mjs",
     "perf:load": "node scripts/perf-load.mjs",
     "perf:load:compare": "node scripts/perf-load-compare.mjs",
+    "perf:regress": "node scripts/perf-regress.mjs",
     "perf:profile": "node --prof scripts/perf-profile.mjs",
     "perf:load:profile": "node --prof scripts/perf-profile.mjs full"
   },

@@ -16,6 +16,10 @@
         td.num, th:nth-child(n+3) { text-align: right; }
         tr.total td { font-weight: 600; border-top: 2px solid color-mix(in srgb, currentColor 30%, transparent); }
         p.hint { opacity: 0.7; }
+        #dropzone { margin: 0.5rem 0 1rem; padding: 1rem; border: 2px dashed color-mix(in srgb, currentColor 30%, transparent); border-radius: 6px; text-align: center; opacity: 0.85; }
+        #dropzone.over { border-color: currentColor; opacity: 1; background: color-mix(in srgb, currentColor 6%, transparent); }
+        td.up { color: color-mix(in srgb, #e5484d 80%, currentColor); }   /* slower */
+        td.down { color: color-mix(in srgb, #30a46c 80%, currentColor); } /* faster */
     </style>
 </head>
 <body>
@@ -31,6 +35,11 @@
     </p>
     <button id="run">Re-run benchmark</button>
     <div id="status">idle</div>
+    <div id="dropzone">
+        ⇩ Drop 1 or 2 <strong>batch JSON</strong> files here to compare (Δ%).
+        Drop <strong>one</strong> to diff it against this page's fresh run; <strong>two</strong> to diff them against each other.
+    </div>
+    <div id="compare"></div>
     <div id="results"></div>
     <script type="module" src="./bench.js"></script>
 </body>

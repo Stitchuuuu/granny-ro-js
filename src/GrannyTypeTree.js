@@ -21,6 +21,18 @@ import { COMPRESSION_NONE, COMPRESSION_OODLE0 } from './GrannyFile.js';
 import { decompressOodle0 } from './GrannyOodle0.js';
 import { readTransform } from './GrannyTransform.js';
 
+/**
+ * Typed error for malformed / hostile type-tree input (recursion breach,
+ * cycle). Catch-friendly ; mirrors `DecompressionError` so callers can
+ * distinguish a parser rejection from a bare `RangeError`.
+ */
+export class GrannyParseError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'GrannyParseError';
+    }
+}
+
 // Local copy of the section-decompression dispatch from Granny.js. Kept
 // inline (instead of re-imported from Granny.js) to keep the module DAG
 // acyclic — Granny.js itself re-exports our public surface, so importing
@@ -637,23 +649,38 @@ function memberStorageSize(member, pointerSize) {
  * to the size of one — a stride bug invisible to S5/S6 but fatal to
  * S7 animation walks, where `objectStorageSize` drives array stride.
  *
+ * A shared sub-type in a DAG of inline members is sized once and cached in
+ * `memo` (keyed by the sub-type ref), collapsing the otherwise-`B^D` re-walk
+ * a crafted file could force. The memo-hit path **adds** the cached size (it
+ * does not skip like the cycle guard), so sibling members of the same type
+ * still sum correctly — the stride correctness above is preserved. For any
+ * acyclic schema (all real assets) a type's size is context-independent, so
+ * the memoized value equals the full recursion result → byte-exact.
+ *
  * @param {LoadedGR2} loaded
  * @param {readonly TypeMember[]} members
  * @param {number} pointerSize
  * @param {Set<number>} seen — cycle guard ; pass a fresh `Set` at the call site.
+ * @param {Record<number, number>} [memo] - per-call size cache keyed by sub-type ref ; defaults to a fresh `{}`.
  * @returns {number} total storage size in bytes.
  */
-export function objectStorageSize(loaded, members, pointerSize, seen) {
+export function objectStorageSize(loaded, members, pointerSize, seen, memo = {}) {
     let size = 0;
     for (let i = 0; i < members.length; i++) {
         const member = members[i];
         if (member.memberType === MT_INLINE && member.referenceType) {
             const key = member.referenceType[0] * FAKE_SECTION_STRIDE + member.referenceType[1];
             if (seen.has(key)) continue;
+            if (memo[key] !== undefined) {
+                size += memo[key];
+                continue;
+            }
             const childSeen = new Set(seen);
             childSeen.add(key);
             const sub = parseTypeTree(loaded, member.referenceType);
-            size += objectStorageSize(loaded, sub, pointerSize, childSeen);
+            const subSize = objectStorageSize(loaded, sub, pointerSize, childSeen, memo);
+            memo[key] = subSize;
+            size += subSize;
         } else {
             size += memberStorageSize(member, pointerSize);
         }
@@ -662,6 +689,14 @@ export function objectStorageSize(loaded, members, pointerSize, seen) {
 }
 
 // --- parseObject ------------------------------------------------------
+
+// Cap on nested INLINE recursion depth in `parseObject`. INLINE members
+// have storage size 0, so the offset/length guard can never stop a
+// self-referential or pathologically deep inline chain — a crafted file
+// would recurse until the JS stack overflows. The deepest real RO asset
+// nests inline structs 1 level (measured across the 21-fixture corpus),
+// so 64 is generous headroom while staying well under any stack limit.
+export const MAX_INLINE_DEPTH = 64;
 
 /**
  * Materialize one instance against its `typeTree`, walking
@@ -684,9 +719,11 @@ export function objectStorageSize(loaded, members, pointerSize, seen) {
  * @param {readonly TypeMember[]} typeTree
  * @param {SectionRef} ref — `[section, offset]` of the instance.
  * @param {ParseObjectOptions} [options]
+ * @param {number} [depth] - internal: current INLINE recursion depth (caps at {@link MAX_INLINE_DEPTH}).
+ * @param {Set<number> | null} [seen] - internal: INLINE type-refs on the recursion stack (cycle guard); allocated lazily.
  * @returns {ParsedObject} field map keyed by member name.
  */
-export function parseObject(loaded, typeTree, ref, options = {}) {
+export function parseObject(loaded, typeTree, ref, options = {}, depth = 0, seen = null) {
     const maxArrayRefs = options.maxArrayRefs ?? 256;
     const pointerSize = loaded.pointerSize;
     const byteReversed = loaded.file.header.byte_reversed;
@@ -761,9 +798,24 @@ export function parseObject(loaded, typeTree, ref, options = {}) {
         } else if (t === MT_TRANSFORM) {
             field.value = readTransform(loaded, section, offset);
         } else if (t === MT_INLINE && member.referenceType) {
+            const key = member.referenceType[0] * FAKE_SECTION_STRIDE + member.referenceType[1];
+            if (depth >= MAX_INLINE_DEPTH) {
+                throw new GrannyParseError(
+                    `inline nesting exceeds MAX_INLINE_DEPTH (${MAX_INLINE_DEPTH}) ` +
+                    `at section ${section} offset 0x${offset.toString(16)}`,
+                );
+            }
+            if (seen !== null && seen.has(key)) {
+                throw new GrannyParseError(
+                    `self-referential inline type [${member.referenceType[0]}, ${member.referenceType[1]}] ` +
+                    `at section ${section} offset 0x${offset.toString(16)}`,
+                );
+            }
+            const childSeen = seen !== null ? new Set(seen) : new Set();
+            childSeen.add(key);
             const subTree = parseTypeTree(loaded, member.referenceType);
             const subRef = /** @type {SectionRef} */ ([section, offset]);
-            field.inline = parseObject(loaded, subTree, subRef, options);
+            field.inline = parseObject(loaded, subTree, subRef, options, depth + 1, childSeen);
             const subSize = objectStorageSize(loaded, subTree, pointerSize, new Set());
             offset += subSize;
             out[member.name] = field;

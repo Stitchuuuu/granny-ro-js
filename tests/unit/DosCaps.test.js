@@ -20,6 +20,17 @@ import {
 } from '../../src/GrannyOodle0.js';
 import { decodeIGCTexture } from '../../src/GrannyTextureIGC.js';
 import { arithOpen, IGC_MAX_ALPHABET } from '../../src/igc-arith.js';
+import {
+    parseTypeTree,
+    parseObject,
+    objectStorageSize,
+    makeFakePointer,
+    GrannyParseError,
+    MAX_INLINE_DEPTH,
+    MT_INLINE,
+    MT_UINT32,
+    MT_END,
+} from '../../src/GrannyTypeTree.js';
 
 // A section stub with the fields decompressOodle0 / blockStops read.
 function forgeSection({ expanded_size, first_16bit = 0, first_8bit = 0 }) {
@@ -110,5 +121,142 @@ describe('boundary sanity — no legit asset trips a cap', () => {
         // offset alphabet (≤ a section's byte count).
         expect(OODLE0_MAX_ALPHABET).toBeGreaterThan(98028);
         expect(IGC_MAX_ALPHABET).toBeGreaterThan(256);
+    });
+});
+
+// --- type-tree recursion guards (findings 3a/3b) ----------------------
+//
+// Forge a minimal `LoadedGR2` with one section whose bytes lay out 32-byte
+// type-member records, then drive the type-tree walk with crafted schemas:
+// a DAG of inline members (3a — must stay bounded, not exponential) and a
+// self-referential / over-deep inline chain (3b — must throw a clean typed
+// error, not overflow the JS stack).
+
+const RECORD = 32; // one member record (8 u32 slots)
+
+// Write one member record at byte `off`. Non-inline members leave typePtr 0.
+function putRecord(view, off, mt, typePtr = 0) {
+    view.setUint32(off, mt, true);       // member_type
+    view.setUint32(off + 4, 0, true);    // name_ptr (0 → name falls back to member_N)
+    view.setUint32(off + 8, typePtr, true); // type_ptr
+    // arrayWidth (off+12) + extra[3] + _unused stay 0.
+}
+
+// Wrap a filled section buffer as the minimal LoadedGR2 the walker reads.
+function forgeLoaded(buf) {
+    return /** @type {any} */ ({
+        file: { header: { byte_reversed: false } },
+        sectionsFixed: [buf],
+        sectionsOriginal: [buf],
+        pointerSize: 4,
+    });
+}
+
+describe('finding 3a — objectStorageSize exponential re-walk', () => {
+    it('sizes a DAG of shared inline sub-types in bounded time', () => {
+        // D branching levels: level k has TWO inline members both pointing at
+        // level k+1's (single, shared) type. Naive walk = 2^(D+1)-1 calls;
+        // memoized = O(D). Each level occupies 3 records (2 inline + END).
+        const D = 25;
+        const BLOCK = 3 * RECORD;
+        const buf = new Uint8Array((D + 2) * BLOCK);
+        const view = new DataView(buf.buffer);
+        for (let k = 0; k < D; k++) {
+            const base = k * BLOCK;
+            const childPtr = makeFakePointer(0, (k + 1) * BLOCK);
+            putRecord(view, base, MT_INLINE, childPtr);
+            putRecord(view, base + RECORD, MT_INLINE, childPtr);
+            putRecord(view, base + 2 * RECORD, MT_END);
+        }
+        // Leaf (level D): one uint32 (size 4) + END.
+        const leaf = D * BLOCK;
+        putRecord(view, leaf, MT_UINT32);
+        putRecord(view, leaf + RECORD, MT_END);
+
+        const loaded = forgeLoaded(buf);
+        const members = parseTypeTree(loaded, [0, 0]);
+        const t0 = performance.now();
+        const size = objectStorageSize(loaded, members, 4, new Set());
+        const elapsed = performance.now() - t0;
+        // Value is still the true DAG storage size (2^D leaf scalars × 4 B) —
+        // only the computation is collapsed. Without the memo this loop would
+        // run ~67M times and take seconds.
+        expect(size).toBe(4 * 2 ** D);
+        expect(elapsed).toBeLessThan(100);
+    });
+
+    it('preserves sibling stride — 3 same-type inline siblings sum, not collapse', () => {
+        // parent: three inline members → the same child type (one uint32).
+        // The memo must ADD the cached size per sibling (→ 12), never skip
+        // like the cycle guard (→ 4). Guards the comment at GrannyTypeTree.
+        const BLOCK = 4 * RECORD; // 3 inline + END
+        const buf = new Uint8Array(BLOCK + 2 * RECORD);
+        const view = new DataView(buf.buffer);
+        const childPtr = makeFakePointer(0, BLOCK);
+        putRecord(view, 0, MT_INLINE, childPtr);
+        putRecord(view, RECORD, MT_INLINE, childPtr);
+        putRecord(view, 2 * RECORD, MT_INLINE, childPtr);
+        putRecord(view, 3 * RECORD, MT_END);
+        putRecord(view, BLOCK, MT_UINT32);            // child: one uint32
+        putRecord(view, BLOCK + RECORD, MT_END);
+
+        const loaded = forgeLoaded(buf);
+        const members = parseTypeTree(loaded, [0, 0]);
+        expect(objectStorageSize(loaded, members, 4, new Set())).toBe(12);
+    });
+});
+
+describe('finding 3b — parseObject unguarded INLINE recursion', () => {
+    it('throws a clean typed error on a self-referential inline type', () => {
+        // type A: [inline → A (self), END]. INLINE size 0 → offset never
+        // advances → infinite recursion without the cycle guard.
+        const buf = new Uint8Array(2 * RECORD);
+        const view = new DataView(buf.buffer);
+        putRecord(view, 0, MT_INLINE, makeFakePointer(0, 0)); // → self
+        putRecord(view, RECORD, MT_END);
+
+        const loaded = forgeLoaded(buf);
+        const treeA = parseTypeTree(loaded, [0, 0]);
+        throwsFast(() => parseObject(loaded, treeA, [0, 0]), GrannyParseError);
+    });
+
+    it('throws on an acyclic inline chain deeper than MAX_INLINE_DEPTH', () => {
+        // N distinct types chained by inline (k → k+1). Distinct keys never
+        // trip the cycle guard, so the depth cap is what must fire.
+        const N = MAX_INLINE_DEPTH + 6;
+        const BLOCK = 2 * RECORD; // 1 inline + END
+        const buf = new Uint8Array((N + 1) * BLOCK);
+        const view = new DataView(buf.buffer);
+        for (let k = 0; k < N; k++) {
+            putRecord(view, k * BLOCK, MT_INLINE, makeFakePointer(0, (k + 1) * BLOCK));
+            putRecord(view, k * BLOCK + RECORD, MT_END);
+        }
+        putRecord(view, N * BLOCK, MT_UINT32);            // leaf
+        putRecord(view, N * BLOCK + RECORD, MT_END);
+
+        const loaded = forgeLoaded(buf);
+        const tree0 = parseTypeTree(loaded, [0, 0]);
+        throwsFast(() => parseObject(loaded, tree0, [0, 0]), GrannyParseError);
+    });
+
+    it('parses a legit depth-1 inline object without throwing', () => {
+        // The corpus max is depth 1 — it must still materialize the sub-object.
+        const BLOCK = 2 * RECORD;
+        const buf = new Uint8Array(2 * BLOCK);
+        const view = new DataView(buf.buffer);
+        putRecord(view, 0, MT_INLINE, makeFakePointer(0, BLOCK));
+        putRecord(view, RECORD, MT_END);
+        putRecord(view, BLOCK, MT_UINT32);
+        putRecord(view, BLOCK + RECORD, MT_END);
+
+        const loaded = forgeLoaded(buf);
+        const tree = parseTypeTree(loaded, [0, 0]);
+        const out = parseObject(loaded, tree, [0, 0]);
+        expect(out.member_0.type).toBe('inline');
+        expect(out.member_0.inline.member_0.type).toBe('uint32');
+    });
+
+    it('MAX_INLINE_DEPTH is generous vs the measured corpus max (1)', () => {
+        expect(MAX_INLINE_DEPTH).toBeGreaterThan(1);
     });
 });

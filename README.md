@@ -234,6 +234,26 @@ Prior-art that informed the port :
 
 See [LICENSE](LICENSE) for full attribution.
 
+## Building from source
+
+Consuming the published package needs only **Node ≥ 20** (zero runtime
+dependencies). **Building from source needs Node ≥ 24** — the dist bundler
+(rolldown) imports `node:util.styleText`, which older Node (including 20)
+doesn't export, so `npm run build` fails there.
+
+```bash
+npm install          # pulls the build toolchain (devDeps only — no globals)
+npm run build:wasm   # AssemblyScript → src/wasm/kernels.wasm (+ inlined base64)
+npm run build        # rolldown → dist/ (ESM / CJS / IIFE + rolled-up types)
+npm test             # vitest — byte-exact parity + untrusted-input cap repros
+```
+
+All build tooling ships as devDependencies — AssemblyScript (WASM kernel),
+rolldown (bundles), TypeScript (types), vitest (tests) — so `npm install` is
+the only setup step, no global installs. Wine 9+ / qemu are needed **only**
+for the optional `granny2.dll` parity re-bake (see
+[docs/HOWTO.md](docs/HOWTO.md)), never to build or use the library.
+
 ## Contributing
 
 See [docs/HOWTO.md](docs/HOWTO.md) for the dev setup, the live wine

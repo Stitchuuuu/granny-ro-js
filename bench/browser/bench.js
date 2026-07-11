@@ -20,9 +20,16 @@
 // separately so the WASM row's real cost is isolated.
 
 const BUILD_URL = './granny-ro.esm.js';
+const WASM_URL = './granny-ro.wasm.esm.js';
 const AXES = [
     { label: 'js-esm · main', url: BUILD_URL, mode: 'main' },
     { label: 'js-esm · worker', url: BUILD_URL, mode: 'worker' },
+    // WASM build : `await Granny.ready()` instantiation cost is timed
+    // separately (readyMs). Session 1 runs only yuvToRGB in WASM (arith / iDWT
+    // still JS + a boundary copy per decode) — a machinery smoke, not the perf
+    // verdict ; that lands when the whole pipeline is WASM.
+    { label: 'wasm-esm · main', url: WASM_URL, mode: 'main' },
+    { label: 'wasm-esm · worker', url: WASM_URL, mode: 'worker' },
 ];
 
 // Warm iterations per fixture. Override with ?warm=N for a quicker pass.

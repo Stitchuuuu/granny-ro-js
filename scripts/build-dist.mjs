@@ -36,6 +36,20 @@ const lazyIgc = {
     },
 };
 
+// Swap the pure-JS kernel seam (`./igc-kernels.js`) for the WASM flavor
+// (`./igc-kernels.wasm.js`). Applied ONLY to the `./wasm` build (stage 6) :
+// kernels dispatch to a WebAssembly module, with the JS versions kept as the
+// mandatory fallback. `Granny.js` (via `ready()`) and `GrannyTextureIGC.js`
+// both import `./igc-kernels.js`, so both resolve to the same swapped module —
+// one singleton wasm instance shared across the build.
+const wasmKernels = {
+    name: 'wasm-kernels',
+    resolveId(source, importer) {
+        if (importer && source === './igc-kernels.js') return SRC('igc-kernels.wasm.js');
+        return null;
+    },
+};
+
 async function withBundle(input, plugins, fn) {
     const b = await rolldown({ input, plugins });
     try {
@@ -124,5 +138,16 @@ for (const [outName, filePath] of DTS_ENTRIES) {
     writeFileSync(DIST(outName), dts);
 }
 rmSync(DTS_STAGE, { recursive: true, force: true });
+
+// --- 6. WASM build (opt-in ./wasm) : IGC static-inlined + kernels on WASM ----
+// Same single-file ESM as stage 2, but the `wasmKernels` plugin swaps the
+// kernel seam so kernels dispatch to the WebAssembly module. The kernel bytes
+// ride along inlined as base64 (src/wasm/kernels-b64.js, a normal ESM string
+// import → bundled, zero network fetch). `Granny.ready()` awaits instantiation ;
+// the JS kernels stay compiled in as the mandatory fallback. IGC stays
+// static-inlined (no lazyIgc here) so `loadTextureCodec()` remains a no-op.
+await withBundle(SRC('Granny.js'), [wasmKernels], async (b) => {
+    await b.write({ file: DIST('granny-ro.wasm.esm.js'), format: 'esm', minify: true });
+});
 
 console.log('dist/ built.');

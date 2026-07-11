@@ -19,6 +19,10 @@
       "types": "./dist/granny-ro.d.ts",
       "import": "./dist/granny-ro.split.esm.js"
     },
+    "./wasm": {
+      "types": "./dist/granny-ro.d.ts",
+      "import": "./dist/granny-ro.wasm.esm.js"
+    },
     "./file": {
       "types": "./dist/file.d.ts",
       "import": "./dist/file.esm.js",
@@ -45,6 +49,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-dist.mjs",
+    "build:wasm": "asc src/wasm/kernels.ts -o src/wasm/kernels.wasm --optimize --runtime stub --use abort= && node scripts/wasm-inline.mjs",
     "prepack": "node scripts/build-dist.mjs",
     "bake": "node scripts/bake-all.mjs",
     "bake:textures": "node scripts/bake-textures.mjs",
@@ -87,6 +92,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^26.0.1",
+    "assemblyscript": "^0.28.19",
     "dts-bundle-generator": "^9.5.1",
     "rolldown": "^1.1.5",
     "typescript": "5.7",

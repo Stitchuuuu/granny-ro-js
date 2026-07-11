@@ -23,6 +23,7 @@ import { extractSkeletons } from './GrannySkeleton.js';
 import { extractMeshes, extractMaterials } from './GrannyMesh.js';
 import { extractModels } from './GrannyModel.js';
 import { extractTextures, walkTextureImages, loadTextureCodec } from './GrannyTexture.js';
+import { initKernels } from './igc-kernels.js';
 import { extractAnimations, evaluateTransformTrack, evaluateAnimation } from './GrannyAnimation.js';
 import { readTransform, IDENTITY_TRANSFORM } from './GrannyTransform.js';
 import {
@@ -124,20 +125,21 @@ export {
 
 // --- async init seam ---------------------------------------------------
 
-const _readyPromise = Promise.resolve();
+let _readyPromise = null;
 
 /**
- * Idempotent async init seam. In this JS-only build it resolves immediately —
- * there is nothing to instantiate. A future WASM-accelerated build awaits
- * kernel compilation here (browser main-thread `WebAssembly.instantiate` is
- * async and capped at 4 KB synchronously). Await it once at startup so
- * opting into the WASM build later needs no code change ; decode calls stay
- * synchronous afterward.
+ * Idempotent async init seam. In the default JS-only build `initKernels()`
+ * resolves immediately — there is nothing to instantiate. The opt-in WASM
+ * build (`./wasm`) swaps the kernel seam so `initKernels()` here awaits
+ * `WebAssembly.instantiate` (browser main-thread instantiate is async and
+ * capped at 4 KB synchronously). Instantiation is lazy — deferred to the first
+ * `ready()` call and cached — so importing `Granny` never compiles wasm. Await
+ * it once at startup ; decode calls stay synchronous afterward.
  *
  * @returns {Promise<void>}
  */
 export function ready() {
-    return _readyPromise;
+    return (_readyPromise ??= initKernels());
 }
 
 /**

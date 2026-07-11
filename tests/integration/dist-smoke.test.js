@@ -24,6 +24,7 @@ const DIST_ESM = resolve(ROOT, 'dist/granny-ro.esm.js');
 const DIST_CJS = resolve(ROOT, 'dist/granny-ro.cjs');
 const DIST_GLOBAL = resolve(ROOT, 'dist/granny-ro.global.js');
 const DIST_SPLIT = resolve(ROOT, 'dist/granny-ro.split.esm.js');
+const DIST_WASM = resolve(ROOT, 'dist/granny-ro.wasm.esm.js');
 const MANIFEST = resolve(ROOT, 'tests/fixtures/content-manifest.json');
 const FIXTURE = resolve(ROOT, 'tests/fixtures/source/empelium90_0.gr2');
 
@@ -35,6 +36,7 @@ function distAndFixturesPresent() {
         existsSync(DIST_CJS) &&
         existsSync(DIST_GLOBAL) &&
         existsSync(DIST_SPLIT) &&
+        existsSync(DIST_WASM) &&
         existsSync(MANIFEST) &&
         existsSync(FIXTURE)
     );
@@ -93,6 +95,17 @@ describe('dist-smoke : built-package parity', () => {
         // anim-only / pre-warmup : the lazy codec refuses rather than returning garbage.
         expect(() => mod.parseTextured(bytes)).toThrow(/loadTextureCodec/);
         await mod.loadTextureCodec();
+        expect(decodedIGCSha(mod)).toBe(expected.rgbaSha256);
+    });
+
+    it('wasm build : Granny.ready() instantiates kernels + IGC sha matches manifest', async () => {
+        const mod = await import(pathToFileURL(DIST_WASM).href);
+        // ready() now really awaits WebAssembly.instantiate (the yuvToRGB kernel).
+        await expect(mod.Granny.ready()).resolves.toBeUndefined();
+        await mod.loadTextureCodec(); // no-op (IGC static-inlined in the wasm build)
+        // Only yuvToRGB runs in WASM ; arith / iDWT stay in JS, so the decoded
+        // pixels must be byte-identical to the pure-JS builds above — that sha
+        // parity is the proof the ABI + dispatch + instantiation are correct.
         expect(decodedIGCSha(mod)).toBe(expected.rgbaSha256);
     });
 });

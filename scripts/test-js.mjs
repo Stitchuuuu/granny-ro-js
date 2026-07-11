@@ -26,7 +26,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { walkSourceDir } from './lib/discover-gr2.mjs';
+import { walkSourceDir, walkGrf } from './lib/discover-gr2.mjs';
 import { buildEntry } from './lib/js-bake.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -153,9 +153,28 @@ function main() {
     log(opts, 'loaded manifest', opts.manifest,
         '(' + Object.keys(manifest.fixtures).length + ' pinned fixtures)');
 
-    const fixtures = walkSourceDir(opts.source);
+    // Source the .gr2 : the `--source` dir first ; if it's empty and RO_FOLDER
+    // points at a client with a data.grf, auto-extract the .gr2 from there.
+    // Either path yields the same record shape ; matching stays content-
+    // addressed (by sha), so a client of a different version just reports its
+    // .gr2 as "unknown" rather than failing. See docs/HOWTO.md § sourcing.
+    let fixtures = walkSourceDir(opts.source);
+    let grfCleanup = null;
+    if (fixtures.length === 0 && process.env.RO_FOLDER) {
+        const grf = resolve(process.env.RO_FOLDER, 'data.grf');
+        if (existsSync(grf)) {
+            log(opts, opts.source, 'empty — extracting .gr2 from', grf);
+            const extracted = walkGrf(grf);
+            fixtures = extracted.records;
+            grfCleanup = extracted.cleanup;
+        }
+    }
     if (fixtures.length === 0) {
-        const msg = `no .gr2 found under ${opts.source}.`;
+        const where = `no .gr2 found under ${opts.source}` +
+            (process.env.RO_FOLDER ? ` or in ${process.env.RO_FOLDER}/data.grf` : '');
+        const msg = `${where}. Supply fixtures one of two ways : drop .gr2 into ` +
+            `tests/fixtures/source/, or set RO_FOLDER=/path/to/iRO_client ` +
+            `(the dir containing data.grf) to auto-extract them.`;
         if (opts.json) {
             console.log(JSON.stringify({ ok: false, error: msg }, null, 2));
         } else {
@@ -163,7 +182,8 @@ function main() {
         }
         process.exit(2);
     }
-    log(opts, 'walking', fixtures.length, '.gr2 files from', opts.source);
+    log(opts, 'walking', fixtures.length, '.gr2 files from',
+        grfCleanup ? `${process.env.RO_FOLDER}/data.grf` : opts.source);
 
     const results = [];
     let matched = 0;
@@ -267,6 +287,7 @@ function main() {
         const head = failed === 0 ? green(SYM_OK) : red(SYM_FAIL);
         logForce(`${head} summary : ${passSeg}, ${failSeg}, ${skipSeg} ${dim('(not in manifest)')}`);
     }
+    grfCleanup?.(); // remove the temp extraction dir, if RO_FOLDER was used
     process.exitCode = failed === 0 ? 0 : 1;
 }
 

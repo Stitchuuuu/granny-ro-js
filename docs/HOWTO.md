@@ -98,6 +98,33 @@ Runs vitest. The new `tests/integration/manifest.test.js` invokes the
 JS test driver against the committed manifest and asserts per-element
 sha equality. ~2 s, no wine, no DLL.
 
+#### Where the `.gr2` come from (two sources)
+
+The sha test needs the actual `.gr2` on disk to decode — the manifest
+only holds the *expected* output shas, keyed by each `.gr2`'s own
+sha256. There are **two supported ways** to supply them, and the driver
+picks automatically :
+
+1. **Drop them in `tests/fixtures/source/`** (gitignored). Any `.gr2`
+   there is decoded and, if its sha is in the manifest, checked
+   element-by-element. This dir takes precedence.
+2. **Point `RO_FOLDER` at your iRO client** (the dir containing
+   `data.grf`). When `tests/fixtures/source/` is empty *and* `RO_FOLDER`
+   is set, the driver auto-extracts every `.gr2` from
+   `${RO_FOLDER}/data.grf` (via `grf-inspect`) into a temp dir, tests
+   them, and cleans up :
+
+   ```sh
+   RO_FOLDER=/path/to/your/iRO_client npm test
+   # or the verbose driver directly :
+   RO_FOLDER=/path/to/your/iRO_client npm run test:js
+   ```
+
+Matching is **content-addressed** (by sha, never by filename), so a
+client of a different version simply reports its `.gr2` as "unknown"
+(not a failure) — only the manifest-pinned ones are asserted. With no
+`.gr2` from either source, the vitest case **skips** cleanly.
+
 For a more verbose driver-level report :
 
 ```sh

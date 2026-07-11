@@ -43,6 +43,20 @@ A test that requires the manifest uses `describe.skipIf(!haveManifest)`,
 so running `npm test` without baking yields « 14 skipped, 0 failed » —
 expected and harmless.
 
+**Running the content-manifest sha parity** (the byte-exact decode gate
+inside `npm test`) needs the actual `.gr2` on disk. Supply them either
+way — the driver picks automatically :
+
+- drop `.gr2` into `tests/fixtures/source/` (gitignored), **or**
+- set `RO_FOLDER=/path/to/iRO_client` (the dir with `data.grf`) and the
+  `.gr2` are auto-extracted from it when `source/` is empty :
+  `RO_FOLDER=… npm test`.
+
+Matching is by sha256 (never filename), so a different client version
+just reports its `.gr2` as "unknown", never a failure. When neither
+source is present the gate prints a loud ⚠️ warning and skips. Full
+detail : [docs/HOWTO.md](docs/HOWTO.md#where-the-gr2-come-from-two-sources).
+
 ## Setting up the live-oracle path
 
 You need :

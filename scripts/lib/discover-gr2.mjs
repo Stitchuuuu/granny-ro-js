@@ -8,8 +8,13 @@
  */
 
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const GRF_INSPECT = resolve(dirname(fileURLToPath(import.meta.url)), 'grf-inspect.mjs');
 
 /**
  * Hex sha256 of a buffer.
@@ -44,6 +49,56 @@ export function walkSourceDir(sourceDir) {
             bytes,
         };
     });
+}
+
+/** Recursively collect `.gr2` paths under `dir` (grf extracts into subdirs). */
+function walkDirRecursiveGr2(dir) {
+    const out = [];
+    for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) out.push(...walkDirRecursiveGr2(full));
+        else if (/\.gr2$/i.test(name)) out.push(full);
+    }
+    return out;
+}
+
+/**
+ * Bulk-extract every `.gr2` from a GRF archive to a temp dir (via
+ * `grf-inspect.mjs --extract-all --ext gr2`) and return the same record shape
+ * as {@link walkSourceDir} — `{ sha256, name, sourcePath, sizeBytes, bytes }`
+ * — plus a `cleanup()` the caller MUST invoke when done to remove the temp
+ * dir. On extraction failure returns `{ records: [], cleanup }` (temp already
+ * removed). Only `.gr2` are extracted, so the footprint stays bounded to the
+ * client's model set (textures / sprites / maps are other extensions).
+ *
+ * @param {string} grfPath — path to the `.grf` archive.
+ * @returns {{ records: ReturnType<typeof walkSourceDir>, cleanup: () => void }}
+ */
+export function walkGrf(grfPath) {
+    const dir = mkdtempSync(join(tmpdir(), 'gr2-grf-'));
+    const cleanup = () => rmSync(dir, { recursive: true, force: true });
+    const r = spawnSync(
+        'node',
+        [GRF_INSPECT, grfPath, '--extract-all', dir, '--ext', 'gr2'],
+        { stdio: ['ignore', 'inherit', 'inherit'] },
+    );
+    if (r.status !== 0) {
+        cleanup();
+        return { records: [], cleanup: () => {} };
+    }
+    const records = walkDirRecursiveGr2(dir)
+        .sort()
+        .map((full) => {
+            const bytes = readFileSync(full);
+            return {
+                sha256: sha256Hex(bytes),
+                name: full.slice(dir.length + 1),
+                sourcePath: full,
+                sizeBytes: bytes.length,
+                bytes,
+            };
+        });
+    return { records, cleanup };
 }
 
 /**

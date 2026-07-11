@@ -14,8 +14,10 @@
 import { yuvToRGB as yuvJS } from './igc-yuv.js';
 import * as jsArith from './igc-arith.js';
 import * as jsPlane from './igc-plane.js';
+import * as jsIdwt from './igc-idwt.js';
 import { createArithDriver } from './wasm/arith-driver.js';
 import { createPlaneDriver } from './wasm/plane-driver.js';
+import { createIdwtDriver } from './wasm/idwt-driver.js';
 import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
 
 /**
@@ -34,6 +36,7 @@ import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
  * @property {(abPtr: number, scale: number) => number} arithBitsGet
  * @property {(abPtr: number, lo: number, count: number, scale: number) => void} arithBitsRemove
  * @property {(bufPtr: number, srcOffset: number, outPtr: number, width: number, height: number, rowMaskPtr: number, workPtr: number) => number} planeDecode
+ * @property {(outPtr: number, pitch: number, width: number, height: number, rowMaskPtr: number, tempPtr: number) => void} iDWT2D
  */
 
 /** @type {KernelExports | null} — kernel exports once instantiated. */
@@ -44,6 +47,8 @@ let base = 0;
 let arith = null;
 /** @type {ReturnType<typeof createPlaneDriver> | null} — planeDecode driver. */
 let plane = null;
+/** @type {ReturnType<typeof createIdwtDriver> | null} — iDWT2D driver. */
+let idwt = null;
 
 /** Decode a base64 string to bytes (global `atob` : Node ≥ 16 + browsers). */
 function b64ToBytes(b64) {
@@ -69,6 +74,7 @@ export async function initKernels() {
     base = wasm.scratchBase() >>> 0;
     arith = createArithDriver(instance);
     plane = createPlaneDriver(instance);
+    idwt = createIdwtDriver(instance);
 }
 
 /** Grow `memory` so `[base, base+bytes)` is addressable ; returns the buffer. */
@@ -176,4 +182,27 @@ export function planeDecode(src, srcOffset, output, outOffset, width, height, ro
     output.set(r.plane, outOffset);
     if (rowMask) rowMask.set(r.mask);
     return r.consumed;
+}
+
+// --- iDWT2D -----------------------------------------------------------------
+//
+// WASM when instantiated (a whole plane's inverse-wavelet pass runs in-wasm),
+// else the pure-JS oracle (./igc-idwt.js). Signature matches the oracle so
+// `decodeIGCTexture`'s 4×-per-plane call site is build-agnostic. The `temp`
+// scratch plane is the oracle's ; the wasm driver uses its own linear-memory
+// scratch and ignores it.
+
+/**
+ * Inverse-wavelet-transform one plane in place.
+ *
+ * @param {Int16Array} output — the plane, transformed in place.
+ * @param {number} pitch — S16-index row stride for this pass.
+ * @param {number} width @param {number} height — sub-band dimensions.
+ * @param {Uint8Array | null} rowMask — zero-row mask, or null.
+ * @param {Int16Array} temp — scratch plane (used by the JS oracle only).
+ */
+export function iDWT2D(output, pitch, width, height, rowMask, temp) {
+    if (!idwt) return jsIdwt.iDWT2D(output, pitch, width, height, rowMask, temp);
+
+    output.set(idwt.iDWT2D(output, pitch, width, height, rowMask));
 }

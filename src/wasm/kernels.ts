@@ -1158,3 +1158,573 @@ export function planeDecode(bufPtr: usize, srcOffset: i32, outPtr: usize, width:
   const varbitsLen: u32 = load<u32>(bufPtr + <usize>(srcOffset + 4));
   return <i32>arithLen + <i32>varbitsLen + 8;
 }
+
+// ============================================================================
+// iDWT — inverse wavelet transform. Byte-exact port of src/igc-idwt.js (the JS
+// oracle). RAD reversible-integer lifting DWT + Haar fallbacks, run in-place on
+// a whole plane (`outPtr`) using a same-length scratch plane (`tempPtr`). The
+// JS `decodeIGCTexture` calls the seam `iDWT2D` 4× per plane at increasing
+// resolution ; the driver (src/wasm/idwt-driver.js) copies the plane in, calls
+// this, copies it back.
+//
+// Two structural invariants from the oracle (see its comment block) :
+//   1. The iDWTcol ring pools are re-seeded before every read (no per-group
+//      zeroing needed).
+//   2. The iDWTcol recenter deliberately reads ONE entry past the logical pool
+//      end — in JS an OOB Int32Array read yields 0. Here the col pools carry a
+//      4-i32 zeroed guard (never written) so that read returns 0 and does not
+//      alias the next pool. Sizes must stay EXACT.
+//
+// Arithmetic (mirror each `|0`) : every `(sum * coeff)` term is i32 (== JS
+// `|0` ; all products stay < 2^31 for S16 inputs, so no wrap occurs), the first
+// term `lp0 * 51674` is un-truncated f64, and the `e`/`o` accumulators are f64
+// (sum of exact ints < 2^53). `roundS16` divides by 65536 (a power of two →
+// exact in f64) and derives its bias from `ToInt32(x)`'s sign bit.
+// Asm cite : `granny2.dll @ 0x10009700`, leaked-SDK `wavelet.c:1328`.
+// ============================================================================
+
+// @inline
+const SMALLEST_DWT_ROW: i32 = 16;
+// @inline
+const SMALLEST_DWT_COL: i32 = 16;
+// @inline
+const FLIPSIZE: i32 = 8;
+
+// Ring pools — static, zero-initialised, non-reentrant (single-threaded wasm).
+// Row : lp[8]/hp[8], exactly sized (max index used is 6/7, no past-end read).
+// Col : lp[(16+4)*4=80] + 4-i32 guard, hp[(16+5)*4=84] + 4-i32 guard (the
+// recenter reads lp[80..83]/hp[84..87] → guard = 0). Rem : lp[4]/hp[5].
+const ROWLP_PTR: usize = memory.data(8 * 4);
+const ROWHP_PTR: usize = memory.data(8 * 4);
+const COLLP_PTR: usize = memory.data((80 + 4) * 4);
+const COLHP_PTR: usize = memory.data((84 + 4) * 4);
+const REMLP_PTR: usize = memory.data(4 * 4);
+const REMHP_PTR: usize = memory.data(5 * 4);
+
+// S16 plane element load (sign-extends) / store (truncates low 16 bits, ==
+// Int16Array store). Element index → byte offset ×2.
+// @inline
+function iwLd(p: usize, i: i32): i32 { return <i32>load<i16>(p + (<usize>i << 1)); }
+// @inline
+function iwSt(p: usize, i: i32, v: i32): void { store<i16>(p + (<usize>i << 1), <i16>v); }
+// i32 ring-pool load / store. Element index → byte offset ×4.
+// @inline
+function iwPl(base: usize, i: i32): i32 { return load<i32>(base + (<usize>i << 2)); }
+// @inline
+function iwPs(base: usize, i: i32, v: i32): void { store<i32>(base + (<usize>i << 2), v); }
+
+// (x + (32767 ^ (x >> 31))) / 65536, truncated — signed round-half-away-from
+// -zero. `x >> 31` in JS = ToInt32(x) then arithmetic shift ; replicate via
+// <i32>(<i64>x) (exact: |x| < 2^53). /65536 is exact in f64 (power of two).
+// @inline
+function roundS16(x: f64): i32 {
+  const sign: i32 = (<i32>(<i64>x)) >> 31;
+  return <i32>((x + <f64>(32767 ^ sign)) / 65536.0);
+}
+
+function iDWTrow(destPtr: usize, destPitch: i32, srcPtr: usize, srcPitch: i32, width: i32, height: i32, rowMaskPtr: usize, startY: i32, subHeight: i32): void {
+  const halfwidth = width >> 1;
+
+  let outBase = startY * destPitch;
+  let linBase = startY * srcPitch;
+  let hinBase = startY * srcPitch + halfwidth;
+  let maskIdx = startY;
+
+  for (let y = 0; y < subHeight; y++) {
+    let next = 1;
+
+    let xoutIdx = outBase;
+    let xlinIdx = linBase;
+    let xhinIdx = hinBase;
+    const linEnd = linBase + halfwidth;
+
+    // Initial population : 6 lp + 6 hp values, with boundary mirror.
+    iwPs(ROWLP_PTR, 0 + 1, iwLd(srcPtr, xlinIdx + 0));
+    { const v = iwLd(srcPtr, xlinIdx + 1); iwPs(ROWLP_PTR, -1 + 1, v); iwPs(ROWLP_PTR, 1 + 1, v); }
+    iwPs(ROWLP_PTR, 2 + 1, iwLd(srcPtr, xlinIdx + 2));
+    iwPs(ROWLP_PTR, 2 + 1 + 1, iwLd(srcPtr, xlinIdx + 3));
+    iwPs(ROWLP_PTR, 2 + 1 + 2, iwLd(srcPtr, xlinIdx + 4));
+    iwPs(ROWLP_PTR, 2 + 1 + 3, iwLd(srcPtr, xlinIdx + 5));
+    xlinIdx += 6;
+
+    iwPs(ROWHP_PTR, 0 + 2, iwLd(srcPtr, xhinIdx + 0));
+    iwPs(ROWHP_PTR, 1 + 2, iwLd(srcPtr, xhinIdx + 1));
+    iwPs(ROWHP_PTR, 2 + 2, iwLd(srcPtr, xhinIdx + 2));
+    iwPs(ROWHP_PTR, 2 + 2 + 1, iwLd(srcPtr, xhinIdx + 3));
+    iwPs(ROWHP_PTR, 2 + 2 + 2, iwLd(srcPtr, xhinIdx + 4));
+    iwPs(ROWHP_PTR, 2 + 2 + 3, iwLd(srcPtr, xhinIdx + 5));
+    iwPs(ROWHP_PTR, -2 + 2, iwPl(ROWHP_PTR, 1 + 2));
+    iwPs(ROWHP_PTR, -1 + 2, iwPl(ROWHP_PTR, 0 + 2));
+    xhinIdx += 6;
+
+    const isNonZero = (rowMaskPtr == 0) || (load<u8>(rowMaskPtr + <usize>maskIdx) != 0);
+
+    let x = (halfwidth < 8) ? 0 : (halfwidth - 8) / 4;
+
+    if (isNonZero) {
+      while (x-- > 0) {
+        // 4 output pairs from a sliding window (lp/hp not mutated until after).
+        for (let i = 0; i < 4; i++) {
+          const e: f64 = <f64>iwPl(ROWLP_PTR, 0 + 1 + i) * 51674.0
+            - <f64>((iwPl(ROWLP_PTR, -1 + 1 + i) + iwPl(ROWLP_PTR, 1 + 1 + i)) * 2667)
+            - <f64>((iwPl(ROWHP_PTR, -2 + 2 + i) + iwPl(ROWHP_PTR, 1 + 2 + i)) * 1563)
+            + <f64>((iwPl(ROWHP_PTR, -1 + 2 + i) + iwPl(ROWHP_PTR, 0 + 2 + i)) * 24733);
+          const o: f64 = <f64>((iwPl(ROWLP_PTR, 0 + 1 + i) + iwPl(ROWLP_PTR, 1 + 1 + i)) * 27400)
+            - <f64>((iwPl(ROWLP_PTR, -1 + 1 + i) + iwPl(ROWLP_PTR, 2 + 1 + i)) * 4230)
+            - <f64>(iwPl(ROWHP_PTR, 0 + 2 + i) * 55882)
+            - <f64>((iwPl(ROWHP_PTR, -2 + 2 + i) + iwPl(ROWHP_PTR, 2 + 2 + i)) * 2479)
+            + <f64>((iwPl(ROWHP_PTR, -1 + 2 + i) + iwPl(ROWHP_PTR, 1 + 2 + i)) * 7250);
+          iwSt(destPtr, xoutIdx + (i << 1) + 0, roundS16(e));
+          iwSt(destPtr, xoutIdx + (i << 1) + 1, roundS16(o));
+        }
+        xoutIdx += 8;
+
+        iwPs(ROWLP_PTR, 0, iwPl(ROWLP_PTR, 4));
+        iwPs(ROWLP_PTR, 1, iwPl(ROWLP_PTR, 5));
+        iwPs(ROWLP_PTR, 2, iwPl(ROWLP_PTR, 6));
+        iwPs(ROWLP_PTR, 3, iwLd(srcPtr, xlinIdx + 0));
+        iwPs(ROWLP_PTR, 4, iwLd(srcPtr, xlinIdx + 1));
+        iwPs(ROWLP_PTR, 5, iwLd(srcPtr, xlinIdx + 2));
+        iwPs(ROWLP_PTR, 6, iwLd(srcPtr, xlinIdx + 3));
+
+        iwPs(ROWHP_PTR, 0, iwPl(ROWHP_PTR, 4));
+        iwPs(ROWHP_PTR, 1, iwPl(ROWHP_PTR, 5));
+        iwPs(ROWHP_PTR, 2, iwPl(ROWHP_PTR, 6));
+        iwPs(ROWHP_PTR, 3, iwPl(ROWHP_PTR, 7));
+        iwPs(ROWHP_PTR, 4, iwLd(srcPtr, xhinIdx + 0));
+        iwPs(ROWHP_PTR, 5, iwLd(srcPtr, xhinIdx + 1));
+        iwPs(ROWHP_PTR, 6, iwLd(srcPtr, xhinIdx + 2));
+        iwPs(ROWHP_PTR, 7, iwLd(srcPtr, xhinIdx + 3));
+
+        xlinIdx += 4;
+        xhinIdx += 4;
+      }
+
+      let xRem = (halfwidth < 8) ? halfwidth : ((halfwidth & 3) + 8);
+      while (xRem-- > 0) {
+        if (xlinIdx === linEnd) {
+          xlinIdx -= next;
+          xhinIdx -= next + next;
+          next = -next;
+        }
+
+        const e: f64 = <f64>iwPl(ROWLP_PTR, 0 + 1) * 51674.0
+          - <f64>((iwPl(ROWLP_PTR, -1 + 1) + iwPl(ROWLP_PTR, 1 + 1)) * 2667)
+          - <f64>((iwPl(ROWHP_PTR, -2 + 2) + iwPl(ROWHP_PTR, 1 + 2)) * 1563)
+          + <f64>((iwPl(ROWHP_PTR, -1 + 2) + iwPl(ROWHP_PTR, 0 + 2)) * 24733);
+        const o: f64 = <f64>((iwPl(ROWLP_PTR, 0 + 1) + iwPl(ROWLP_PTR, 1 + 1)) * 27400)
+          - <f64>((iwPl(ROWLP_PTR, -1 + 1) + iwPl(ROWLP_PTR, 2 + 1)) * 4230)
+          - <f64>(iwPl(ROWHP_PTR, 0 + 2) * 55882)
+          - <f64>((iwPl(ROWHP_PTR, -2 + 2) + iwPl(ROWHP_PTR, 2 + 2)) * 2479)
+          + <f64>((iwPl(ROWHP_PTR, -1 + 2) + iwPl(ROWHP_PTR, 1 + 2)) * 7250);
+
+        iwSt(destPtr, xoutIdx + 0, roundS16(e));
+        iwSt(destPtr, xoutIdx + 1, roundS16(o));
+        xoutIdx += 2;
+
+        iwPs(ROWLP_PTR, 0, iwPl(ROWLP_PTR, 1));
+        iwPs(ROWLP_PTR, 1, iwPl(ROWLP_PTR, 2));
+        iwPs(ROWLP_PTR, 2, iwPl(ROWLP_PTR, 3));
+        iwPs(ROWLP_PTR, 3, iwPl(ROWLP_PTR, 4));
+        iwPs(ROWLP_PTR, 4, iwPl(ROWLP_PTR, 5));
+        iwPs(ROWLP_PTR, 5, iwPl(ROWLP_PTR, 6));
+        iwPs(ROWLP_PTR, 6, iwLd(srcPtr, xlinIdx));
+
+        iwPs(ROWHP_PTR, 0, iwPl(ROWHP_PTR, 1));
+        iwPs(ROWHP_PTR, 1, iwPl(ROWHP_PTR, 2));
+        iwPs(ROWHP_PTR, 2, iwPl(ROWHP_PTR, 3));
+        iwPs(ROWHP_PTR, 3, iwPl(ROWHP_PTR, 4));
+        iwPs(ROWHP_PTR, 4, iwPl(ROWHP_PTR, 5));
+        iwPs(ROWHP_PTR, 5, iwPl(ROWHP_PTR, 6));
+        iwPs(ROWHP_PTR, 6, iwPl(ROWHP_PTR, 7));
+        iwPs(ROWHP_PTR, 7, iwLd(srcPtr, xhinIdx));
+
+        xlinIdx += next;
+        xhinIdx += next;
+      }
+    } else {
+      while (x-- > 0) {
+        for (let i = 0; i < 4; i++) {
+          const e: f64 = <f64>iwPl(ROWLP_PTR, 0 + 1 + i) * 51674.0
+            - <f64>((iwPl(ROWLP_PTR, -1 + 1 + i) + iwPl(ROWLP_PTR, 1 + 1 + i)) * 2667);
+          const o: f64 = <f64>((iwPl(ROWLP_PTR, 0 + 1 + i) + iwPl(ROWLP_PTR, 1 + 1 + i)) * 27400)
+            - <f64>((iwPl(ROWLP_PTR, -1 + 1 + i) + iwPl(ROWLP_PTR, 2 + 1 + i)) * 4230);
+          iwSt(destPtr, xoutIdx + (i << 1) + 0, roundS16(e));
+          iwSt(destPtr, xoutIdx + (i << 1) + 1, roundS16(o));
+        }
+        xoutIdx += 8;
+
+        iwPs(ROWLP_PTR, 0, iwPl(ROWLP_PTR, 4));
+        iwPs(ROWLP_PTR, 1, iwPl(ROWLP_PTR, 5));
+        iwPs(ROWLP_PTR, 2, iwPl(ROWLP_PTR, 6));
+        iwPs(ROWLP_PTR, 3, iwLd(srcPtr, xlinIdx + 0));
+        iwPs(ROWLP_PTR, 4, iwLd(srcPtr, xlinIdx + 1));
+        iwPs(ROWLP_PTR, 5, iwLd(srcPtr, xlinIdx + 2));
+        iwPs(ROWLP_PTR, 6, iwLd(srcPtr, xlinIdx + 3));
+
+        xlinIdx += 4;
+      }
+
+      let xRem = (halfwidth < 8) ? halfwidth : ((halfwidth & 3) + 8);
+      while (xRem-- > 0) {
+        if (xlinIdx === linEnd) {
+          xlinIdx -= 1;
+          next = -1;
+        }
+
+        const e: f64 = <f64>iwPl(ROWLP_PTR, 0 + 1) * 51674.0
+          - <f64>((iwPl(ROWLP_PTR, -1 + 1) + iwPl(ROWLP_PTR, 1 + 1)) * 2667);
+        const o: f64 = <f64>((iwPl(ROWLP_PTR, 0 + 1) + iwPl(ROWLP_PTR, 1 + 1)) * 27400)
+          - <f64>((iwPl(ROWLP_PTR, -1 + 1) + iwPl(ROWLP_PTR, 2 + 1)) * 4230);
+
+        iwSt(destPtr, xoutIdx + 0, roundS16(e));
+        iwSt(destPtr, xoutIdx + 1, roundS16(o));
+        xoutIdx += 2;
+
+        iwPs(ROWLP_PTR, 0, iwPl(ROWLP_PTR, 1));
+        iwPs(ROWLP_PTR, 1, iwPl(ROWLP_PTR, 2));
+        iwPs(ROWLP_PTR, 2, iwPl(ROWLP_PTR, 3));
+        iwPs(ROWLP_PTR, 3, iwPl(ROWLP_PTR, 4));
+        iwPs(ROWLP_PTR, 4, iwPl(ROWLP_PTR, 5));
+        iwPs(ROWLP_PTR, 5, iwPl(ROWLP_PTR, 6));
+        iwPs(ROWLP_PTR, 6, iwLd(srcPtr, xlinIdx));
+
+        xlinIdx += next;
+      }
+    }
+
+    outBase += destPitch;
+    linBase += srcPitch;
+    hinBase += srcPitch;
+    ++maskIdx;
+  }
+}
+
+function iDWTcol(destPtr: usize, destPitch: i32, srcPtr: usize, srcPitch: i32, width: i32, height: i32, startY: i32, subHeight: i32): void {
+  const halfheight = subHeight >> 1;
+
+  let outBase = startY * destPitch;
+  let linBase = 0;
+  let hinBase = srcPitch;
+  const lendCol0 = srcPitch * height;
+  const ppitch2 = srcPitch * 2;
+
+  if (startY) {
+    linBase += ((startY / 2) - 1) * ppitch2;
+    hinBase += ((startY / 2) - 2) * ppitch2;
+  }
+
+  let colsBase = 0;
+  const groupCount = width / 4;
+
+  for (let g = 0; g < groupCount; g++) {
+    let next = ppitch2;
+    let youtBase = outBase + colsBase;
+    let ylinBase = linBase + colsBase;
+    let yhinBase = hinBase + colsBase;
+    const lend = lendCol0 + colsBase;
+
+    // Initial fill — startY ? 4L+5H : 3L+3H with boundary mirror.
+    if (startY) {
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (-1 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (0 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (1 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (2 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (-2 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (-1 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (0 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (1 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (2 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+    } else {
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (0 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+      for (let k = 0; k < 4; k++) {
+        const v = iwLd(srcPtr, ylinBase + k);
+        iwPs(COLLP_PTR, (-1 + 1) * 4 + k, v);
+        iwPs(COLLP_PTR, (1 + 1) * 4 + k, v);
+      }
+      ylinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (2 + 1) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      ylinBase += next;
+
+      for (let k = 0; k < 4; k++) {
+        const v = iwLd(srcPtr, yhinBase + k);
+        iwPs(COLHP_PTR, (-1 + 2) * 4 + k, v);
+        iwPs(COLHP_PTR, (0 + 2) * 4 + k, v);
+      }
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) {
+        const v = iwLd(srcPtr, yhinBase + k);
+        iwPs(COLHP_PTR, (-2 + 2) * 4 + k, v);
+        iwPs(COLHP_PTR, (1 + 2) * 4 + k, v);
+      }
+      yhinBase += next;
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (2 + 2) * 4 + k, iwLd(srcPtr, yhinBase + k));
+      yhinBase += next;
+    }
+
+    let lpOff = 0;
+    let hpOff = 0;
+
+    for (let y = 0; y < halfheight; y++) {
+      if (ylinBase === lend) {
+        ylinBase -= next;
+        yhinBase -= next + next;
+        next = -next;
+      }
+
+      const lpC = lpOff;
+      const hpC = hpOff;
+
+      for (let k = 0; k < 4; k++) {
+        const lpm1 = iwPl(COLLP_PTR, (lpC + 0) * 4 + k);
+        const lp0 = iwPl(COLLP_PTR, (lpC + 1) * 4 + k);
+        const lp1 = iwPl(COLLP_PTR, (lpC + 2) * 4 + k);
+        const lp2 = iwPl(COLLP_PTR, (lpC + 3) * 4 + k);
+
+        const hpm2 = iwPl(COLHP_PTR, (hpC + 0) * 4 + k);
+        const hpm1 = iwPl(COLHP_PTR, (hpC + 1) * 4 + k);
+        const hp0 = iwPl(COLHP_PTR, (hpC + 2) * 4 + k);
+        const hp1 = iwPl(COLHP_PTR, (hpC + 3) * 4 + k);
+        const hp2 = iwPl(COLHP_PTR, (hpC + 4) * 4 + k);
+
+        const e: f64 = <f64>lp0 * 51674.0
+          - <f64>((lpm1 + lp1) * 2667)
+          - <f64>((hpm2 + hp1) * 1563)
+          + <f64>((hpm1 + hp0) * 24733);
+        const o: f64 = <f64>((lp0 + lp1) * 27400)
+          - <f64>((lpm1 + lp2) * 4230)
+          - <f64>(hp0 * 55882)
+          - <f64>((hpm2 + hp2) * 2479)
+          + <f64>((hpm1 + hp1) * 7250);
+
+        iwSt(destPtr, youtBase + k, roundS16(e));
+        iwSt(destPtr, youtBase + destPitch + k, roundS16(o));
+      }
+
+      youtBase += destPitch + destPitch;
+
+      ++lpOff;
+      ++hpOff;
+
+      // Recenter : reads lp[(lpOff+3)*4]=lp[80..83] / hp[(hpOff+4)*4]=hp[84..87]
+      // one entry past the logical pool → the zeroed guard (== JS OOB → 0).
+      if (lpOff + 3 === 16 + 4) {
+        for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, 0 * 4 + k, iwPl(COLLP_PTR, (lpOff + 1) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, 1 * 4 + k, iwPl(COLLP_PTR, (lpOff + 2) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, 2 * 4 + k, iwPl(COLLP_PTR, (lpOff + 3) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, 0 * 4 + k, iwPl(COLHP_PTR, (hpOff + 1) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, 1 * 4 + k, iwPl(COLHP_PTR, (hpOff + 2) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, 2 * 4 + k, iwPl(COLHP_PTR, (hpOff + 3) * 4 + k));
+        for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, 3 * 4 + k, iwPl(COLHP_PTR, (hpOff + 4) * 4 + k));
+        lpOff = 0;
+        hpOff = 0;
+      }
+
+      for (let k = 0; k < 4; k++) iwPs(COLLP_PTR, (lpOff + 3) * 4 + k, iwLd(srcPtr, ylinBase + k));
+      for (let k = 0; k < 4; k++) iwPs(COLHP_PTR, (hpOff + 4) * 4 + k, iwLd(srcPtr, yhinBase + k));
+
+      ylinBase += next;
+      yhinBase += next;
+    }
+
+    colsBase += 4;
+  }
+
+  const remCols = width & 3;
+  for (let g = 0; g < remCols; g++) {
+    let next = ppitch2;
+    let youtBase = outBase + colsBase;
+    let ylinBase = linBase + colsBase;
+    let yhinBase = hinBase + colsBase;
+    const lend = lendCol0 + colsBase;
+
+    if (startY) {
+      iwPs(REMLP_PTR, -1 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      iwPs(REMLP_PTR, 0 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      iwPs(REMLP_PTR, 1 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      iwPs(REMLP_PTR, 2 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      iwPs(REMHP_PTR, -2 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+      iwPs(REMHP_PTR, -1 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+      iwPs(REMHP_PTR, 0 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+      iwPs(REMHP_PTR, 1 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+      iwPs(REMHP_PTR, 2 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+    } else {
+      iwPs(REMLP_PTR, 0 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      { const v = iwLd(srcPtr, ylinBase); iwPs(REMLP_PTR, -1 + 1, v); iwPs(REMLP_PTR, 1 + 1, v); ylinBase += next; }
+      iwPs(REMLP_PTR, 2 + 1, iwLd(srcPtr, ylinBase)); ylinBase += next;
+      { const v = iwLd(srcPtr, yhinBase); iwPs(REMHP_PTR, -1 + 2, v); iwPs(REMHP_PTR, 0 + 2, v); yhinBase += next; }
+      { const v = iwLd(srcPtr, yhinBase); iwPs(REMHP_PTR, -2 + 2, v); iwPs(REMHP_PTR, 1 + 2, v); yhinBase += next; }
+      iwPs(REMHP_PTR, 2 + 2, iwLd(srcPtr, yhinBase)); yhinBase += next;
+    }
+
+    for (let y = 0; y < halfheight; y++) {
+      if (ylinBase === lend) {
+        ylinBase -= next;
+        yhinBase -= next + next;
+        next = -next;
+      }
+
+      const e: f64 = <f64>iwPl(REMLP_PTR, 0 + 1) * 51674.0
+        - <f64>((iwPl(REMLP_PTR, -1 + 1) + iwPl(REMLP_PTR, 1 + 1)) * 2667)
+        - <f64>((iwPl(REMHP_PTR, -2 + 2) + iwPl(REMHP_PTR, 1 + 2)) * 1563)
+        + <f64>((iwPl(REMHP_PTR, -1 + 2) + iwPl(REMHP_PTR, 0 + 2)) * 24733);
+      const o: f64 = <f64>((iwPl(REMLP_PTR, 0 + 1) + iwPl(REMLP_PTR, 1 + 1)) * 27400)
+        - <f64>((iwPl(REMLP_PTR, -1 + 1) + iwPl(REMLP_PTR, 2 + 1)) * 4230)
+        - <f64>(iwPl(REMHP_PTR, 0 + 2) * 55882)
+        - <f64>((iwPl(REMHP_PTR, -2 + 2) + iwPl(REMHP_PTR, 2 + 2)) * 2479)
+        + <f64>((iwPl(REMHP_PTR, -1 + 2) + iwPl(REMHP_PTR, 1 + 2)) * 7250);
+
+      iwSt(destPtr, youtBase, roundS16(e));
+      iwSt(destPtr, youtBase + destPitch, roundS16(o));
+
+      youtBase += destPitch + destPitch;
+
+      iwPs(REMLP_PTR, 0, iwPl(REMLP_PTR, 1));
+      iwPs(REMLP_PTR, 1, iwPl(REMLP_PTR, 2));
+      iwPs(REMLP_PTR, 2, iwPl(REMLP_PTR, 3));
+      iwPs(REMLP_PTR, 3, iwLd(srcPtr, ylinBase));
+
+      iwPs(REMHP_PTR, 0, iwPl(REMHP_PTR, 1));
+      iwPs(REMHP_PTR, 1, iwPl(REMHP_PTR, 2));
+      iwPs(REMHP_PTR, 2, iwPl(REMHP_PTR, 3));
+      iwPs(REMHP_PTR, 3, iwPl(REMHP_PTR, 4));
+      iwPs(REMHP_PTR, 4, iwLd(srcPtr, yhinBase));
+
+      ylinBase += next;
+      yhinBase += next;
+    }
+
+    colsBase += 1;
+  }
+}
+
+function iHarrrow(destPtr: usize, destPitch: i32, srcPtr: usize, srcPitch: i32, width: i32, height: i32, rowMaskPtr: usize, startY: i32, subHeight: i32): void {
+  const halfwidth = width >> 1;
+
+  let outBase = startY * destPitch;
+  let linBase = startY * srcPitch;
+  let hinBase = startY * srcPitch + halfwidth;
+  let maskIdx = startY;
+
+  for (let y = 0; y < subHeight; y++) {
+    let xoutIdx = outBase;
+    let xlinIdx = linBase;
+    let xhinIdx = hinBase;
+
+    const isNonZero = (rowMaskPtr == 0) || (load<u8>(rowMaskPtr + <usize>maskIdx) != 0);
+
+    if (isNonZero) {
+      for (let x = 0; x < halfwidth; x++) {
+        const lv = iwLd(srcPtr, xlinIdx);
+        const hv = iwLd(srcPtr, xhinIdx);
+        let e = lv * 2 + hv;
+        let o = lv * 2 - hv;
+        e = (e + (1 ^ (e >> 31))) / 2;
+        o = (o + (1 ^ (o >> 31))) / 2;
+        iwSt(destPtr, xoutIdx + 0, e);
+        iwSt(destPtr, xoutIdx + 1, o);
+        xoutIdx += 2;
+        xlinIdx += 1;
+        xhinIdx += 1;
+      }
+    } else {
+      for (let x = 0; x < halfwidth; x++) {
+        const e = iwLd(srcPtr, xlinIdx);
+        iwSt(destPtr, xoutIdx + 0, e);
+        iwSt(destPtr, xoutIdx + 1, e);
+        xoutIdx += 2;
+        xlinIdx += 1;
+      }
+    }
+
+    outBase += destPitch;
+    linBase += srcPitch;
+    hinBase += srcPitch;
+    ++maskIdx;
+  }
+}
+
+function iHarrcol(destPtr: usize, destPitch: i32, srcPtr: usize, srcPitch: i32, width: i32, height: i32, startY: i32, subHeight: i32): void {
+  const halfheight = subHeight >> 1;
+
+  let outBase = startY * destPitch;
+  let linBase = 0;
+  let hinBase = srcPitch;
+  const ppitch2 = srcPitch * 2;
+
+  if (startY) {
+    linBase += (startY / 2) * ppitch2;
+    hinBase += (startY / 2) * ppitch2;
+  }
+
+  for (let x = 0; x < width; x++) {
+    let youtBase = outBase + x;
+    let ylinBase = linBase + x;
+    let yhinBase = hinBase + x;
+
+    for (let y = 0; y < halfheight; y++) {
+      const lv = iwLd(srcPtr, ylinBase);
+      const hv = iwLd(srcPtr, yhinBase);
+      let e = lv * 2 + hv;
+      let o = lv * 2 - hv;
+      e = (e + (1 ^ (e >> 31))) / 2;
+      o = (o + (1 ^ (o >> 31))) / 2;
+      iwSt(destPtr, youtBase, e);
+      iwSt(destPtr, youtBase + destPitch, o);
+      youtBase += destPitch + destPitch;
+      ylinBase += ppitch2;
+      yhinBase += ppitch2;
+    }
+  }
+}
+
+/**
+ * Inverse wavelet transform of one plane, in place. Byte-exact port of the JS
+ * `iDWT2D` dispatcher : picks DWT vs Haar per axis by size, tiles the plane in
+ * `FLIPSIZE` row/col bands, ping-pongs `outPtr` ↔ `tempPtr`.
+ *
+ * @param outPtr - the plane, S16, read+write (`pitch`-strided sub-band).
+ * @param pitch - S16-index row stride.
+ * @param width, height - sub-band dimensions.
+ * @param rowMaskPtr - zero-row mask (`height` bytes), or 0 for no mask.
+ * @param tempPtr - scratch plane, same length as the plane.
+ */
+export function iDWT2D(outPtr: usize, pitch: i32, width: i32, height: i32, rowMaskPtr: usize, tempPtr: usize): void {
+  const useRowDwt = width >= SMALLEST_DWT_ROW;
+  const useColDwt = height >= SMALLEST_DWT_COL;
+
+  let ry = (height <= (FLIPSIZE + 4 + 4)) ? height : (FLIPSIZE + 4);
+  let rh = height - ry;
+  let cy = 0;
+  let ch = height;
+
+  if (useRowDwt) iDWTrow(tempPtr, pitch, outPtr, pitch, width, height, rowMaskPtr, 0, ry);
+  else iHarrrow(tempPtr, pitch, outPtr, pitch, width, height, rowMaskPtr, 0, ry);
+
+  do {
+    let next = (ch <= (FLIPSIZE + 4)) ? ch : FLIPSIZE;
+    if (useColDwt) iDWTcol(outPtr, pitch, tempPtr, pitch, width, height, cy, next);
+    else iHarrcol(outPtr, pitch, tempPtr, pitch, width, height, cy, next);
+    cy += next;
+    ch -= next;
+
+    if (rh) {
+      next = (rh <= (FLIPSIZE + 4)) ? rh : FLIPSIZE;
+      if (useRowDwt) iDWTrow(tempPtr, pitch, outPtr, pitch, width, height, rowMaskPtr, ry, next);
+      else iHarrrow(tempPtr, pitch, outPtr, pitch, width, height, rowMaskPtr, ry, next);
+      ry += next;
+      rh -= next;
+    }
+  } while (ch);
+}

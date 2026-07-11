@@ -20,6 +20,7 @@ export { yuvToRGB };
 // tee (the oracle imports arith from './igc-kernels.js' = this module) and get
 // compared JS-vs-WASM. So the plane loop feeds the per-symbol arith gate.
 export { planeDecode } from '../src/igc-plane.js';
+export { iDWT2D } from '../src/igc-idwt.js';
 
 let driver = null;
 let callNo = 0;

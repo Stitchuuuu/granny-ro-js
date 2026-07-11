@@ -19,6 +19,7 @@ import KERNELS_WASM_B64 from '../src/wasm/kernels-b64.js';
 // The JS plane oracle's arith calls resolve to './igc-kernels.js' = this module,
 // so re-export the pure-JS arith + yuv to make decode complete on the JS side.
 export { yuvToRGB } from '../src/igc-yuv.js';
+export { iDWT2D } from '../src/igc-idwt.js';
 export {
     arithBitOpen,
     arithOpen,

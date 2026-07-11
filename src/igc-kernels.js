@@ -12,6 +12,7 @@
 
 export { yuvToRGB } from './igc-yuv.js';
 export { planeDecode } from './igc-plane.js';
+export { iDWT2D } from './igc-idwt.js';
 export {
     arithBitOpen,
     arithOpen,

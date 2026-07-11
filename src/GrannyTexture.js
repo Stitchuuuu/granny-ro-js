@@ -7,18 +7,18 @@
 //                  Swizzle BGRA → RGBA in JS (no shim, no codec).
 //   - `2` (S3TC) — Not in the iRO ver12 corpus ; throws « not supported ».
 //   - `3` (IGC)  — RAD BinkTC (the codec exposed as
-//                  `_GrannyDecompressIGCTexture@12` in granny2.dll).
-//                  Bitstream decode lives in
-//                  [./GrannyTextureIGC.js](./GrannyTextureIGC.js) ; pending
-//                  in `1.1.0-a.0` (see plans/granny-texture-igc/STATUS.md S3.5).
+//                  `_GrannyDecompressIGCTexture@12` in granny2.dll). The full
+//                  JS bitstream decode lives in
+//                  [./GrannyTextureIGC.js](./GrannyTextureIGC.js). The default
+//                  build binds it statically → IGC decodes synchronously ; the
+//                  code-split (`./split`) build needs `await loadTextureCodec()`
+//                  once before the first IGC decode.
 //
 // Public surface : `extractTextures(loaded, options)`. The walker is
 // also exported as `walkTextureImages(loaded)` for tooling that needs
 // the raw pre-decode records (the bake driver lifts this).
 //
 // Pre-condition : `loaded` must come from `GrannyTypeTree.loadGR2(file)`.
-//
-// Public-API types : see ./GrannyTexture.d.ts (sibling).
 
 import {
     parseObject,
@@ -33,9 +33,57 @@ import { decodeIGCTexture, loadTextureCodec } from './igc-codec.js';
 
 export { loadTextureCodec };
 
+/** Raw = 32 bpp BGRA stored verbatim, no codec. */
 export const ENCODING_RAW = 1;
+/** S3TC = DXT-N block compression. Not in iRO corpus ; throws on decode. */
 export const ENCODING_S3TC = 2;
+/** IGC = RAD BinkTC (wavelet + arithmetic + YUV→RGB). The iRO ver12 default. */
 export const ENCODING_IGC = 3;
+
+/**
+ * One decoded (texture, image, MIP) entry returned by {@link extractTextures}.
+ *
+ * @typedef {object} TextureRecord
+ * @property {number} texIdx — 0-based texture index within `root.Textures`.
+ * @property {number} imgIdx — 0-based image index within the texture's `Images` array (iRO uses 0).
+ * @property {number} mipIdx — 0-based MIP-level index within the image's `MIPLevels` array (iRO uses 0).
+ * @property {string} name — texture authored name (defaults to `tex<texIdx>` when `FromFileName` is empty).
+ * @property {string} fromFileName — original `FromFileName` from the Granny struct (may include Windows paths).
+ * @property {number} width — MIP width in pixels.
+ * @property {number} height — MIP height in pixels.
+ * @property {1 | 2 | 3} encoding — encoding tag (`1` = Raw, `2` = S3TC, `3` = IGC).
+ * @property {number} subFormat — S3TC subformat (`0..3` = DXT-N) ; meaningful only for `encoding === 2`.
+ * @property {0 | 1} alpha — `1` when the texture carries an alpha channel ; `0` for opaque.
+ * @property {Uint8Array} pixels — decoded RGBA8888 bytes, length = `width * height * 4`.
+ */
+
+/**
+ * One pre-decode record yielded by {@link walkTextureImages}.
+ *
+ * @typedef {object} TextureWalkRecord
+ * @property {number} texIdx
+ * @property {number} imgIdx
+ * @property {number} mipIdx
+ * @property {number} width
+ * @property {number} height
+ * @property {number} encoding
+ * @property {number} subFormat
+ * @property {0 | 1} alpha
+ * @property {string} fromFileName
+ * @property {Uint8Array | null} pixelBytes — raw `Pixels` bytes from the .gr2 ;
+ *   `null` when the pixel array can't be resolved.
+ * @property {number} pixelCount — length declared in the Granny `Pixels` /
+ *   `PixelBytes` reference (may differ from `pixelBytes?.length` on broken assets).
+ */
+
+/**
+ * Options for {@link extractTextures} and {@link walkTextureImages}.
+ *
+ * @typedef {object} ExtractTexturesOptions
+ * @property {number} [maxTextures] - cap on the number of textures walked (default 256).
+ * @property {number} [maxImages] - cap on the number of images per texture (default 8).
+ * @property {number} [maxMips] - cap on the number of MIP levels per image (default 32 ; iRO corpus uses 1).
+ */
 
 // --- extractTextures --------------------------------------------------
 
@@ -46,7 +94,14 @@ export const ENCODING_IGC = 3;
  * exact parity tests can join by `(texIdx, imgIdx, mipIdx)`.
  *
  * Texture-less fixtures (animation-only files in the iRO corpus) resolve
- * to `[]`. S3TC textures throw (no asset uses them).
+ * to `[]`. IGC textures decode synchronously in the default build (the
+ * code-split build needs `await loadTextureCodec()` first) ; S3TC throws
+ * (no iRO asset uses it).
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded — output of `loadGR2(file)`.
+ * @param {ExtractTexturesOptions} [options]
+ * @returns {TextureRecord[]}
+ * @throws {Error} on S3TC textures (encoding=2) — no iRO asset uses them.
  */
 export function extractTextures(loaded, options = {}) {
     const records = walkTextureImages(loaded, options);
@@ -136,6 +191,10 @@ function describeRecord(record) {
  *
  * Animation-only fixtures (or any fixture where `root.Textures` is
  * empty / absent) resolve to `[]`.
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded — output of `loadGR2(file)`.
+ * @param {ExtractTexturesOptions} [options]
+ * @returns {TextureWalkRecord[]}
  */
 export function walkTextureImages(loaded, options = {}) {
     const maxTextures = options.maxTextures ?? 256;
@@ -206,7 +265,7 @@ export function walkTextureImages(loaded, options = {}) {
                         pixelBytes = section.subarray(pixelTarget.offset, pixelTarget.offset + pixelCount);
                     }
                 }
-                records.push({
+                records.push(/** @type {TextureWalkRecord} */ ({
                     texIdx: ti,
                     imgIdx: ii,
                     mipIdx: mi,
@@ -218,7 +277,7 @@ export function walkTextureImages(loaded, options = {}) {
                     fromFileName,
                     pixelBytes,
                     pixelCount,
-                });
+                }));
             }
         }
     }

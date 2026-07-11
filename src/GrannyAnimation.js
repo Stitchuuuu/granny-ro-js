@@ -25,8 +25,6 @@
 // blend per `degree` (1 = linear, 2 = quadratic, ≥3 = nearest control),
 // quaternion (dimension = 4) results re-normalized. `t <= knots[0]`
 // clamps to first knot ; `t >= knots[n-1]` clamps to last knot.
-//
-// Public-API types : see ./GrannyAnimation.d.ts (sibling).
 
 import {
     parseTypeTree,
@@ -44,6 +42,98 @@ import {
     MT_REFERENCE_TO_VARIANT_ARRAY,
     MT_TRANSFORM,
 } from './GrannyTypeTree.js';
+
+/**
+ * Supported curve format names ; mirrors blendergranny + LegacyCurve32f.
+ * The `(string & {})` member keeps the literal-completion list while still
+ * accepting `*Constant32f` and future codec names.
+ *
+ * @typedef {'D3K16uC16u' | 'D3I1K16uC16u' | 'D4nK8uC7u' | 'D4nK16uC15u'
+ *   | 'LegacyCurve32f' | 'DaIdentity' | (string & {})} CurveCodec
+ */
+
+/**
+ * Compressed B-spline curve. Decoded knots + controls live in `Float32Array`s ;
+ * `controls` is flattened so consumers read it as
+ * `controls[knotIndex * dimension + dim]`. For constant codecs (`*Constant32f`)
+ * and identity codecs (`DaIdentity`), `knots` and `controls` are both empty and
+ * `sampleValue` carries the fixed value (length = dimension).
+ *
+ * @typedef {object} Curve
+ * @property {CurveCodec} codec — codec name decoded from the curve type's first member.
+ * @property {number} format — Granny-encoded format byte (≥0 for modern codecs, -1 for legacy).
+ * @property {number} degree — B-spline degree (0 = step, 1 = linear, 2 = quadratic, higher = nearest).
+ * @property {number} dimension — per-knot value width (3 position, 4 orientation, 9 scale-shear).
+ * @property {number} knotControlCount — combined knot + control count from the on-disk header.
+ * @property {Float32Array} sampleValue — fallback value for constant / identity curves (length = dimension).
+ * @property {Float32Array} knots — time-axis values in source order. Empty for constant / identity codecs.
+ * @property {Float32Array} controls — flattened controls in `[knot * dimension + dim]` order.
+ */
+
+/**
+ * One bone's local-Transform timeline. The three curves drive position (dim 3),
+ * orientation (dim 4 quaternion), and scale-shear (dim 9 3×3 matrix)
+ * independently. A curve is `null` only when the file omits it —
+ * `evaluateTransformTrack` substitutes identity in that case.
+ *
+ * @typedef {object} TransformTrack
+ * @property {number} index — index within the parent TrackGroup's `transformTracks` array.
+ * @property {string} name — ASCII name from the GR2 file (joins to `skeleton.bones[i].name`).
+ * @property {number} flags — Granny SDK flags (typically 0 — interpretation deferred).
+ * @property {Curve | null} orientationCurve — quaternion orientation curve at this bone, or `null` if absent.
+ * @property {Curve | null} positionCurve — position curve at this bone, or `null` if absent.
+ * @property {Curve | null} scaleShearCurve — scale + shear curve at this bone, or `null` if absent.
+ */
+
+/**
+ * A coherent set of TransformTracks. Multiple animations may share a single
+ * TrackGroup (e.g. character idle + walk both reference the same skeleton's tracks).
+ *
+ * @typedef {object} TrackGroup
+ * @property {number} index — index within the top-level `track_groups` array.
+ * @property {string} name — track group name — animations reference it via this name.
+ * @property {number} vectorTrackCount — reported count of vector tracks (values not decoded).
+ * @property {number} transformTrackCount — reported count of transform tracks (must equal `transformTracks.length`).
+ * @property {number} textTrackCount — reported count of text tracks (not decoded).
+ * @property {number} accumulationFlags — Granny SDK accumulation flags.
+ * @property {number} loopTranslation — per-loop translation offset along the dominant axis.
+ * @property {readonly string[]} vectorTrackNames — vector-track names (decoded — values not yet).
+ * @property {readonly TransformTrack[]} transformTracks — per-bone Transform timelines decoded for this group.
+ */
+
+/**
+ * One playable animation : duration + references to TrackGroups by name.
+ *
+ * @typedef {object} Animation
+ * @property {number} index — index within the top-level `animations` array.
+ * @property {string} name — animation name (e.g. `attack`, `dead`, `move` for iRO assets).
+ * @property {number} duration — total duration in seconds.
+ * @property {number} timeStep — suggested per-frame time step (`0` when the file doesn't carry one).
+ * @property {number} oversampling — curve-sampling oversampling factor (typically `1.0`).
+ * @property {number} defaultLoopCount — default loop count (`0` one-shot, `-1` infinite by convention).
+ * @property {number} flags — Granny SDK flags.
+ * @property {readonly string[]} trackGroupNames — TrackGroup names referenced by this animation.
+ * @property {readonly TrackGroup[]} trackGroups — TrackGroup objects resolved by name lookup (may be `[]`).
+ */
+
+/**
+ * Options for {@link extractAnimations}.
+ *
+ * @typedef {object} ExtractAnimationsOptions
+ * @property {number} [maxTrackGroups] - cap on the number of TrackGroups extracted (default 64).
+ * @property {number} [maxTracksPerGroup] - cap on the number of TransformTracks per TrackGroup (default 512).
+ * @property {number} [maxAnimations] - cap on the number of Animations extracted (default 64).
+ */
+
+/**
+ * Local Transform produced by {@link evaluateTransformTrack} at a given time.
+ *
+ * @typedef {object} EvaluatedTransform
+ * @property {readonly [number, number, number]} position — bone position in parent space (x, y, z).
+ * @property {readonly [number, number, number, number]} orientation — bone orientation quaternion
+ *   (x, y, z, w) ; re-normalized after blend.
+ * @property {readonly number[]} scaleShear — bone scale + shear matrix (3×3 row-major, 9 floats).
+ */
 
 // --- constants --------------------------------------------------------
 
@@ -746,6 +836,10 @@ function readAnimation(loaded, index, ref, typeMembers, trackGroupByName) {
  * Returns `[]` for fixtures that don't expose any animation (typical of
  * pure model files — though some iRO model files bundle a single rest
  * animation).
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded
+ * @param {ExtractAnimationsOptions} [options]
+ * @returns {readonly Animation[]}
  */
 export function extractAnimations(loaded, options = {}) {
     const maxTrackGroups = options.maxTrackGroups ?? 64;
@@ -792,7 +886,7 @@ export function extractAnimations(loaded, options = {}) {
         }
     }
 
-    return animations;
+    return /** @type {readonly Animation[]} */ (animations);
 }
 
 // --- evaluate ---------------------------------------------------------
@@ -929,16 +1023,20 @@ function shapeTransformComponent(values, targetLength, identity) {
  *
  * Uniform-scale tracks (dim 3) are expanded to a diagonal 3×3 matrix
  * so callers don't need to branch on the original codec dimension.
+ *
+ * @param {TransformTrack | null | undefined} track
+ * @param {number} t — sample time.
+ * @returns {EvaluatedTransform}
  */
 export function evaluateTransformTrack(track, t) {
     const positionRaw = evaluateCurve(track?.positionCurve, t);
     const orientationRaw = evaluateCurve(track?.orientationCurve, t);
     const scaleShearRaw = evaluateCurve(track?.scaleShearCurve, t);
-    return {
+    return /** @type {EvaluatedTransform} */ ({
         position: shapeTransformComponent(positionRaw, 3, [...IDENTITY_TRANSFORM.position]),
         orientation: shapeTransformComponent(orientationRaw, 4, [...IDENTITY_TRANSFORM.orientation]),
         scaleShear: shapeTransformComponent(scaleShearRaw, 9, [...IDENTITY_TRANSFORM.scaleShear]),
-    };
+    });
 }
 
 /**
@@ -947,6 +1045,10 @@ export function evaluateTransformTrack(track, t) {
  * will use to join against `skeleton.bones[i].name`). Track-group
  * boundaries are flattened — caller doesn't typically care which group
  * a track came from once the names are resolved.
+ *
+ * @param {Animation | null | undefined} animation
+ * @param {number} t — sample time.
+ * @returns {{ readonly [trackName: string]: EvaluatedTransform }}
  */
 export function evaluateAnimation(animation, t) {
     const out = Object.create(null);

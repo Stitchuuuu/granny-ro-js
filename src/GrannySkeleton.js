@@ -11,16 +11,49 @@
 //
 // Animation-only fixtures (no `root.Skeletons` ; or empty `element_refs`)
 // resolve to `[]` — assertion target for the parametric test suite.
-//
-// Public-API types : see ./GrannySkeleton.d.ts (sibling).
 
 import { parseTypeTree, parseObject, readReferenceArrayObjects } from './GrannyTypeTree.js';
 import { IDENTITY_TRANSFORM, readTransform } from './GrannyTransform.js';
 
 /**
+ * One bone in a skeleton (parent-index linked into the same skeleton).
+ *
+ * @typedef {object} SkeletonBone
+ * @property {number} index — 0-based index within the parent skeleton's `bones` array.
+ * @property {string} name — ASCII bone name from the GR2 file (defaults to `Bone_<index>`).
+ * @property {number} parentIndex — index of the parent bone, or a negative value for root bones.
+ * @property {import('./GrannyTransform.js').Transform} transform — local-space
+ *   Transform applied at this bone.
+ * @property {number[]} inverseWorldTransform — inverse bind-pose 4×4 matrix
+ *   (16 floats, row-major) used for skinning.
+ */
+
+/**
+ * A skeleton : ordered bones + LOD type.
+ *
+ * @typedef {object} Skeleton
+ * @property {string} name — skeleton name from the GR2 file (defaults to `Skeleton_<index>`).
+ * @property {SkeletonBone[]} bones — bones in source order ; `parentIndex`
+ *   references entries within this array.
+ * @property {number} lodType — Granny LOD type field (0 for standard skeletons).
+ */
+
+/**
+ * Options for {@link extractSkeletons}.
+ *
+ * @typedef {object} ExtractSkeletonsOptions
+ * @property {number} [maxSkeletons] - cap on the number of skeletons extracted (default 16).
+ * @property {number} [maxBones] - cap on the number of bones extracted per skeleton (default 4096).
+ */
+
+/**
  * Walk `root.Skeletons` and return every skeleton with its bones, local
  * Transforms, and InverseWorldTransform 4×4. Returns `[]` for fixtures
  * that don't carry any skeleton (animation-only files in the iRO corpus).
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded — output of `loadGR2(file)`.
+ * @param {ExtractSkeletonsOptions} [options]
+ * @returns {Skeleton[]}
  */
 export function extractSkeletons(loaded, options = {}) {
     const maxSkeletons = options.maxSkeletons ?? 16;

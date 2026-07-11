@@ -10,8 +10,43 @@
 // the leaked sgzwiz/misc_microsoft_gamedev_source_code path
 // //jeffr/granny/rt/granny_oodle0_compression.cpp byte-matches our DLL.
 //
-// Public-API types : see ./GrannyOodle0.d.ts. Binary reference :
-// docs/gr2-format.md § Oodle0 bitstream.
+// Binary reference : docs/gr2-format.md § Oodle0 bitstream.
+
+/**
+ * Structural subset of {@link import('./GrannyFile.js').GR2Section} actually
+ * consumed by the Oodle0 codec. A full `GR2Section` is assignable wherever
+ * this is expected — but a hand-built object with just these 4 fields works
+ * too (useful for unit tests that don't want to mock the full section table).
+ *
+ * @typedef {object} Oodle0SectionInput
+ * @property {number} index
+ * @property {number} expanded_size
+ * @property {number} first_16bit — decoded-byte offset where the 16-bit length context block ends.
+ * @property {number} first_8bit — decoded-byte offset where the 8-bit length context block ends.
+ */
+
+/**
+ * One of the three blocks an Oodle0 section is split into.
+ *
+ * @typedef {object} Oodle0Block
+ * @property {0 | 1 | 2} index
+ * @property {number} output_start — decoded-byte offset where this block starts emitting.
+ * @property {number} output_end — decoded-byte offset where this block stops.
+ * @property {number} output_size — `max(0, output_end - output_start)`.
+ * @property {boolean} is_empty
+ * @property {Oodle0LZHeader} header
+ */
+
+/**
+ * Decode plan for one Oodle0 section — 3 blocks back-to-back.
+ *
+ * @typedef {object} Oodle0Plan
+ * @property {number} section_index
+ * @property {number} expanded_size
+ * @property {readonly Oodle0Block[]} blocks — always {@link OODLE0_BLOCK_COUNT} (3) entries.
+ * @property {36} bitstream_offset — constant 36 ; bitstream begins right after
+ *   the 3 × 12-byte block headers.
+ */
 
 /** Size of the Oodle0 LZ header block (3 × 12 bytes = 9 × u32). */
 export const OODLE0_HEADER_SIZE = 36;
@@ -53,6 +88,11 @@ export class DecompressionError extends Error {
  * Oodle0 bitstream for the field-by-field bit split.
  */
 export class Oodle0LZHeader {
+    /**
+     * @param {number} maxOffsetAndByte — raw u32 ; low 9 bits = max literal value, high 23 = max back-distance.
+     * @param {number} uniqOffsetAndByte — raw u32 ; low 9 bits = literal alphabet size, high 23 = offset alphabet size.
+     * @param {number} uniqLens — raw u32 ; 4 × u8 unique-symbol count, one per length-context group.
+     */
     constructor(maxOffsetAndByte, uniqOffsetAndByte, uniqLens) {
         this.max_offset_and_byte = maxOffsetAndByte >>> 0;
         this.uniq_offset_and_byte = uniqOffsetAndByte >>> 0;
@@ -71,6 +111,9 @@ export class Oodle0LZHeader {
      * (`0..MAX_LENS`) split into 4 groups of 16 ; each group gets its
      * own arith-model sizing taken from one of the 4 bytes of `uniq_lens`
      * (MSB-first per group).
+     *
+     * @param {number} index — 0-based length symbol (`0..MAX_LENS`).
+     * @returns {number} unique-symbol count for the containing group.
      */
     length_unique(index) {
         const group = Math.min((index / (MAX_LENS / 4)) | 0, 3);
@@ -104,6 +147,10 @@ function clampStop(value, expandedSize) {
  * arith-model sizing + the decoded-byte ranges each block must emit.
  *
  * Used internally by {@link decompressOodle0} ; exposed for unit testing.
+ *
+ * @param {Oodle0SectionInput} section
+ * @param {Uint8Array} compressed — the 36-byte LZ header + bitstream.
+ * @returns {Oodle0Plan}
  */
 export function parseOodle0Plan(section, compressed) {
     if (compressed.length < OODLE0_HEADER_SIZE) {
@@ -170,7 +217,9 @@ function u32lePadded(data, offset) {
  * `code = bitReverse(get(31), 31)` on init, plus byte / nibble swaps
  * inside `ArithBits.remove()`. Missing one bit-reverse = silent mismatch.
  *
- * @param nbits 0..31
+ * @param {number} value
+ * @param {number} nbits — 0..31.
+ * @returns {number}
  */
 export function bitReverse(value, nbits) {
     let result = 0;
@@ -630,10 +679,10 @@ function readModelSymbol(model, bits, escapeScale) {
  * doesn't match `section.expanded_size` — full byte-exact check, no
  * "close enough" per [`feedback_no_empirical_closure_re`].
  *
- * @param section section header from `parseGR2File(...).sections[i]`
- * @param compressed raw section bytes (`file.sectionBytes(section)`)
- * @returns Uint8Array of length `section.expanded_size`
- * @throws DecompressionError on malformed input or length mismatch
+ * @param {Oodle0SectionInput} section — section header from `parseGR2File(...).sections[i]`.
+ * @param {Uint8Array} compressed — raw section bytes (`file.sectionBytes(section)`).
+ * @returns {Uint8Array} of length `section.expanded_size`.
+ * @throws {DecompressionError} on malformed input or length mismatch.
  */
 export function decompressOodle0(section, compressed) {
     if (section.expanded_size === 0) return new Uint8Array(0);

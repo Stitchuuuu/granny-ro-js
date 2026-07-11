@@ -15,8 +15,6 @@
 // vertices) resolve to `[]`.
 //
 // Pre-condition : `loaded` must come from `GrannyTypeTree.loadGR2(file)`.
-//
-// Public-API types : see ./GrannyMesh.d.ts (sibling).
 
 import {
     MT_BINORMAL_INT8,
@@ -35,6 +33,87 @@ import {
     readReferenceArrayObjects,
 } from './GrannyTypeTree.js';
 
+/**
+ * One declared component of a vertex row (Position, Normal, BoneWeights, …).
+ *
+ * @typedef {object} VertexComponent
+ * @property {string} name — component name from the Granny vertex type tree.
+ * @property {number} offset — byte offset within one vertex row at which this component starts.
+ * @property {number} width — declared element width (typically 3 for Position, 2 for UV, 4 for weights).
+ * @property {import('./GrannyTypeTree.js').MemberTypeConstant} memberType — raw `MT_*` enum value the component is stored as.
+ */
+
+/**
+ * A skeleton-bone reference a mesh declares it depends on (skinning slot).
+ *
+ * @typedef {object} BoneBinding
+ * @property {number} index — 0-based slot index within the mesh's `boneBindings` array.
+ * @property {string} name — bone name (matches a `SkeletonBone.name` in the model's skeleton).
+ */
+
+/**
+ * One per-vertex (bone, weight) entry for skinning.
+ *
+ * @typedef {object} VertexBoneWeight
+ * @property {number} boneIndex — index into the mesh's `boneBindings` array (NOT a global bone index).
+ * @property {number} weight — skinning weight in `[0, 1]` (already normalized for normal-uint encodings).
+ */
+
+/**
+ * One material-bucketed triangle range within the mesh.
+ *
+ * @typedef {object} MeshTriangleGroup
+ * @property {number} materialIndex — index into the mesh's `materials` array.
+ * @property {number} triFirst — first triangle of the batch (index into the mesh's triangle list).
+ * @property {number} triCount — number of triangles in the batch.
+ */
+
+/**
+ * Material metadata + the first associated texture (file name + size).
+ *
+ * @typedef {object} MaterialInfo
+ * @property {number} index — 0-based index in the GR2 file's Materials array.
+ * @property {string} name — material name (defaults to `Material_<index>` if missing).
+ * @property {string} textureFile — texture file name as authored (empty when no Texture / Maps).
+ * @property {readonly [number, number] | null} textureSize — `[width, height]` in pixels when the
+ *   Texture sub-object declares them ; `null` otherwise.
+ */
+
+/**
+ * A fully decoded mesh ready for the renderer.
+ *
+ * @typedef {object} MeshGeometry
+ * @property {string} name — mesh name (defaults to `Mesh_<index>` if missing).
+ * @property {number} vertexCount — number of vertices in the vertex buffer.
+ * @property {number} indexCount — number of indices (always divisible by 3 for triangle meshes).
+ * @property {number} vertexStride — bytes per vertex row in the source vertex buffer.
+ * @property {readonly VertexComponent[]} components — declared vertex layout components in source order.
+ * @property {ReadonlyArray<readonly number[]>} positions — per-vertex `[x, y, z]` positions.
+ * @property {ReadonlyArray<readonly number[]>} normals — per-vertex `[x, y, z]` normals.
+ * @property {ReadonlyArray<readonly number[]>} uvs — per-vertex `[u, v]` texture coordinates.
+ * @property {readonly number[]} indices — index buffer (16- or 32-bit indices, decoded to JS numbers).
+ * @property {readonly BoneBinding[]} boneBindings — mesh-local bone binding table.
+ * @property {ReadonlyArray<readonly VertexBoneWeight[]>} vertexWeights — per-vertex bone-weight list.
+ * @property {readonly MaterialInfo[]} materials — material references the mesh declares it uses.
+ * @property {readonly MeshTriangleGroup[]} triangleGroups — triangle batches grouped by material.
+ */
+
+/**
+ * Options for {@link extractMeshes}.
+ *
+ * @typedef {object} ExtractMeshesOptions
+ * @property {number} [maxMeshes] - cap on the number of meshes extracted (default 32).
+ * @property {number} [maxMaterials] - cap on the number of materials looked up (default 4096).
+ * @property {number} [maxBones] - cap on the number of bone / material bindings per mesh (default 4096).
+ */
+
+/**
+ * Options for {@link extractMaterials}.
+ *
+ * @typedef {object} ExtractMaterialsOptions
+ * @property {number} [maxMaterials] - cap on the number of materials extracted (default 4096).
+ */
+
 // --- extractMeshes ----------------------------------------------------
 
 /**
@@ -42,6 +121,10 @@ import {
  * `MeshGeometry`. Returns `[]` for fixtures without any mesh (animation-
  * only files in the iRO corpus) and skips meshes whose vertex buffer is
  * unparseable (null ref / zero count / vertex type missing).
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded
+ * @param {ExtractMeshesOptions} [options]
+ * @returns {readonly MeshGeometry[]}
  */
 export function extractMeshes(loaded, options = {}) {
     const maxMeshes = options.maxMeshes ?? 32;
@@ -91,7 +174,7 @@ export function extractMeshes(loaded, options = {}) {
         const uvs = readFloatComponent(vertexBytes, vertexCount, stride, components, 'TextureCoordinates', 2, true);
         const vertexWeights = readVertexWeights(vertexBytes, vertexCount, stride, components, boneBindings.length);
 
-        meshes.push({
+        meshes.push(/** @type {MeshGeometry} */ ({
             name: summary.name,
             vertexCount,
             indexCount: indices.length,
@@ -105,7 +188,7 @@ export function extractMeshes(loaded, options = {}) {
             vertexWeights,
             materials,
             triangleGroups,
-        });
+        }));
     }
     return meshes;
 }
@@ -487,10 +570,14 @@ function materialMap(loaded, maxMaterials) {
  *
  * For consumers that want material binding per mesh, use `extractMeshes` —
  * it already resolves materials per face-group via the shared cache.
+ *
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded
+ * @param {ExtractMaterialsOptions} [options]
+ * @returns {readonly MaterialInfo[]}
  */
 export function extractMaterials(loaded, options = {}) {
     const maxMaterials = options.maxMaterials ?? 4096;
-    return walkRootMaterials(loaded, maxMaterials).materials;
+    return /** @type {readonly MaterialInfo[]} */ (walkRootMaterials(loaded, maxMaterials).materials);
 }
 
 function readMaterial(loaded, ref, materialType, index, cache, seen) {

@@ -15,7 +15,8 @@
 
 import { rolldown } from 'rolldown';
 import { generateDtsBundle } from 'dts-bundle-generator';
-import { rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync, readdirSync, copyFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,16 +84,37 @@ for (const [name, src] of SUBS) {
 }
 
 // --- 5. rolled-up types (main barrel + one per sub-entry) ---------------
+// Two-stage roll. dts-bundle-generator cannot parse .js function bodies
+// (its usage evaluator throws on index-signature access like `fields.Name`),
+// so it never sees the source .js. Instead tsc first emits per-file .d.ts
+// from the inline JSDoc — the single source of truth — into dist/.types/,
+// then dts-bundle-generator bundles those bodyless .d.ts.
+//
+// Carve-out .d.ts (the src/index.d.ts barrel, plus any hand fragment such as
+// a CurveCodec union) are NOT emitted by tsc — it consumes them as inputs —
+// so copy every remaining src/*.d.ts into the stage dir to complete the graph
+// the roll entries resolve against.
+const DTS_STAGE = DIST('.types');
+execFileSync(
+    process.execPath,
+    [resolve(ROOT, 'node_modules/typescript/bin/tsc'), '-p', resolve(ROOT, 'tsconfig.dts.json')],
+    { cwd: ROOT, stdio: 'inherit' },
+);
+for (const f of readdirSync(SRC(''))) {
+    if (f.endsWith('.d.ts')) copyFileSync(SRC(f), resolve(DTS_STAGE, f));
+}
+
 // One generateDtsBundle call PER entry : a single multi-entry call shares
 // dedup state across bundles and hoists the shared symbols out of the main
 // barrel (leaving `export {}`), so each entry must roll independently.
+const STAGED = (p) => resolve(DTS_STAGE, p);
 const DTS_ENTRIES = [
-    // src-relative barrel (src/index.d.ts) — NOT the root index.d.ts, which
+    // src-relative barrel (index.d.ts) — NOT the root index.d.ts, which
     // re-exports the dist bundle we're generating (would roll to `export {}`).
-    ['granny-ro.d.ts', SRC('index.d.ts')],
-    ['file.d.ts', SRC('GrannyFile.d.ts')],
-    ['oodle0.d.ts', SRC('GrannyOodle0.d.ts')],
-    ['typetree.d.ts', SRC('GrannyTypeTree.d.ts')],
+    ['granny-ro.d.ts', STAGED('index.d.ts')],
+    ['file.d.ts', STAGED('GrannyFile.d.ts')],
+    ['oodle0.d.ts', STAGED('GrannyOodle0.d.ts')],
+    ['typetree.d.ts', STAGED('GrannyTypeTree.d.ts')],
 ];
 for (const [outName, filePath] of DTS_ENTRIES) {
     const [dts] = generateDtsBundle(
@@ -101,5 +123,6 @@ for (const [outName, filePath] of DTS_ENTRIES) {
     );
     writeFileSync(DIST(outName), dts);
 }
+rmSync(DTS_STAGE, { recursive: true, force: true });
 
 console.log('dist/ built.');

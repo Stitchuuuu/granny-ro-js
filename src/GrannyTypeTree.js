@@ -10,8 +10,7 @@
 //   3. parseTypeTree(...)  : walk a DataTypeDefinition chain
 //   4. parseObject(...)    : materialize one instance against a type tree
 //
-// Public-API types : see ./GrannyTypeTree.d.ts (sibling, picked up
-// automatically by tsc / VS Code). Binary reference : docs/gr2-format.md §8.
+// Binary reference : docs/gr2-format.md §8.
 //
 // Pre-condition assumed across the file : `header.version >= 7` (12-byte
 // fixup entries, 16-byte mixed-marshalling entries). Every iRO ver12 .gr2
@@ -41,6 +40,115 @@ function decompressOne(section, compressed) {
     }
     throw new Error(`unsupported compression ${section.compression}`);
 }
+
+/**
+ * `[section_index, offset_within_section]` pair used everywhere as a ref.
+ * @typedef {readonly [number, number]} SectionRef
+ */
+
+/**
+ * `{section, offset}` dict shape returned for caller convenience.
+ * @typedef {object} RefDict
+ * @property {number} section
+ * @property {number} offset
+ */
+
+/**
+ * One MEMBER_TYPE constant value (0–22). See {@link MEMBER_TYPE_NAMES}.
+ * @typedef {number} MemberTypeConstant
+ */
+
+/**
+ * Member descriptor read from one 32-byte record of a DataTypeDefinition chain.
+ *
+ * @typedef {object} TypeMember
+ * @property {MemberTypeConstant} memberType — raw `MT_*` enum value (0–22).
+ * @property {string} memberTypeName — human name for {@link TypeMember.memberType}.
+ * @property {string} name — member name (ASCII, decoded from the string-pointer slot).
+ * @property {SectionRef | null} referenceType — decoded sub-type ref, or `null` for scalar / terminal members.
+ * @property {number} arrayWidth — array width (default 1 for non-array members).
+ * @property {readonly [number, number, number]} extra — three extra u32 slots in the on-disk record.
+ * @property {number} offset — byte offset of this record within its containing section.
+ */
+
+/**
+ * One pointer-fixup entry : rebases a writer-side pointer to a `[section, offset]` ref.
+ *
+ * @typedef {object} PointerFixup
+ * @property {number} source_section
+ * @property {number} source_offset
+ * @property {SectionRef} target
+ */
+
+/**
+ * One mixed-marshalling entry : describes an endian-flip the writer expects.
+ *
+ * @typedef {object} MixedMarshallingFixup
+ * @property {number} source_section
+ * @property {number} count
+ * @property {number} offset
+ * @property {SectionRef} type_ref
+ */
+
+/**
+ * Bundle of decompressed sections + applied pointer fixups ready for walking.
+ *
+ * @typedef {object} LoadedGR2
+ * @property {import('./GrannyFile.js').GR2File} file — the originating GR2 file (header + section table).
+ * @property {readonly Uint8Array[]} sectionsOriginal — one `Uint8Array` per section, decompressed, untouched (scalar reads).
+ * @property {readonly Uint8Array[]} sectionsFixed — one `Uint8Array` per section, with pointer-fixup slots overwritten by fake pointers.
+ * @property {readonly PointerFixup[]} pointerFixups — all pointer fixups parsed from the file (flattened across sections).
+ * @property {readonly MixedMarshallingFixup[]} mixedFixups — all mixed-marshalling fixups (typically empty for LE corpus).
+ * @property {4 | 8} pointerSize — pointer width in bytes (4 for 32-bit files, 8 for 64-bit).
+ */
+
+/**
+ * Common shape of a materialized field returned by {@link parseObject}.
+ *
+ * @typedef {object} ParsedField
+ * @property {string} type — `memberTypeName` from the source {@link TypeMember}.
+ * @property {number} offset — byte offset of the field inside its parent struct.
+ * @property {RefDict} [reference_type] - sub-type ref, if the source member had one.
+ * @property {number | string} [value] - decoded scalar value (`int*` / `uint*` / `real32` / `string`).
+ * @property {RefDict | null} [target] - resolved target ref (`reference` / `*_to_array` / `*_of_references`).
+ * @property {number} [count] - element count (`*_to_array` / `*_of_references` / `*_variant_array`).
+ * @property {boolean} [truncated] - true when {@link ParsedField.count} exceeded `maxArrayRefs`.
+ * @property {readonly RefDict[]} [element_refs] - decoded per-element refs (only `array_of_references`).
+ * @property {RefDict | null} [variant_type] - resolved variant-type ref (`variant_reference` / `reference_to_variant_array`).
+ * @property {ParsedObject} [inline] - materialized sub-object (only `inline` members).
+ */
+
+/**
+ * Plain JS object materialized from one `[ref, typeTree]` pair, keyed by member name.
+ * @typedef {{ readonly [memberName: string]: ParsedField }} ParsedObject
+ */
+
+/**
+ * Options for {@link parseTypeTree}.
+ * @typedef {object} ParseTypeTreeOptions
+ * @property {number} [maxMembers] - cap on the number of member records walked (default 512).
+ */
+
+/**
+ * Options for {@link parseObject}.
+ * @typedef {object} ParseObjectOptions
+ * @property {number} [maxArrayRefs] - cap on the number of `element_refs` returned per array (default 256).
+ */
+
+/**
+ * Options for {@link readReferenceArrayObjects}.
+ * @typedef {object} ReadReferenceArrayObjectsOptions
+ * @property {number} [maxCount] - cap on the number of array elements walked (default 64).
+ * @property {number} [maxArrayRefs] - cap forwarded to {@link parseObject} per element (default `maxCount`).
+ */
+
+/**
+ * One element of an inline-struct array as returned by {@link readReferenceArrayObjects}.
+ *
+ * @typedef {object} ReferenceArrayObject
+ * @property {RefDict} ref — per-object `{section, offset}` within the array's section.
+ * @property {ParsedObject} fields — materialized field map for this element.
+ */
 
 // --- MEMBER_TYPE constants --------------------------------------------
 // Verbatim from blendergranny io_scene_gr2/gr2/types.py:11–33.
@@ -92,7 +200,8 @@ export const MT_REAL16 = 21;
 /** Null reference marker (occupies one pointer slot, never resolves). */
 export const MT_EMPTY_REFERENCE = 22;
 
-/** MEMBER_TYPE constant → human name. */
+/** MEMBER_TYPE constant → human name.
+ * @type {Readonly<Record<number, string>>} */
 export const MEMBER_TYPE_NAMES = {
     0: 'end',
     1: 'inline',
@@ -151,6 +260,10 @@ export const FAKE_SECTION_STRIDE = 0x100000;
 /**
  * Encode a `[section, offset]` ref as a single u32 fake pointer.
  * Round-trips with {@link decodeFakePointer}.
+ *
+ * @param {number} section
+ * @param {number} offset
+ * @returns {number}
  */
 export function makeFakePointer(section, offset) {
     return (FAKE_POINTER_BASE + section * FAKE_SECTION_STRIDE + offset) >>> 0;
@@ -160,6 +273,10 @@ export function makeFakePointer(section, offset) {
  * Decode a fake pointer back into `[section, offset]`. Returns `null`
  * for pointers outside the fake-pointer range or pointing at a section
  * index that doesn't exist.
+ *
+ * @param {number} pointer
+ * @param {number} sectionCount
+ * @returns {SectionRef | null}
  */
 export function decodeFakePointer(pointer, sectionCount) {
     if (pointer < FAKE_POINTER_BASE) return null;
@@ -233,6 +350,9 @@ function writePointer(bytes, offset, value, pointerSize, byteReversed) {
  *   in-section scalars, which the iRO corpus never requires. (LE assets
  *   carry empty mixed-marshalling tables ; the throw catches accidental
  *   silent corruption on a future BE asset.)
+ *
+ * @param {import('./GrannyFile.js').GR2File} file
+ * @returns {LoadedGR2}
  */
 export function loadGR2(file) {
     const sections = file.sections;
@@ -313,7 +433,7 @@ function readPointerFixups(file) {
             fixups.push({
                 source_section: s,
                 source_offset: u32(data, base),
-                target: [u32(data, base + 4), u32(data, base + 8)],
+                target: /** @type {SectionRef} */ ([u32(data, base + 4), u32(data, base + 8)]),
             });
         }
     }
@@ -351,7 +471,7 @@ function readMixedMarshallingFixups(file) {
                 source_section: s,
                 count: u32(data, base),
                 offset: u32(data, base + 4),
-                type_ref: [u32(data, base + 8), u32(data, base + 12)],
+                type_ref: /** @type {SectionRef} */ ([u32(data, base + 8), u32(data, base + 12)]),
             });
         }
     }
@@ -442,6 +562,11 @@ function readStringPointer(loaded, pointer) {
  *
  * Note : the on-disk pointer slots are pointer-sized (4 or 8 bytes), but
  * for the all-32-bit iRO corpus they fit exactly in 32 bits.
+ *
+ * @param {LoadedGR2} loaded
+ * @param {SectionRef} ref — `[section, offset]` of the type-definition chain.
+ * @param {ParseTypeTreeOptions} [options]
+ * @returns {readonly TypeMember[]} member descriptors in source order.
  */
 export function parseTypeTree(loaded, ref, options = {}) {
     const maxMembers = options.maxMembers ?? 512;
@@ -471,7 +596,7 @@ export function parseTypeTree(loaded, ref, options = {}) {
             name,
             referenceType,
             arrayWidth: arrayWidth || 1,
-            extra: [extra0, extra1, extra2],
+            extra: /** @type {[number, number, number]} */ ([extra0, extra1, extra2]),
             offset,
         });
         offset += 32;
@@ -511,6 +636,12 @@ function memberStorageSize(member, pointerSize) {
  * TransformTrack's three identical CurveData inline members) collapse
  * to the size of one — a stride bug invisible to S5/S6 but fatal to
  * S7 animation walks, where `objectStorageSize` drives array stride.
+ *
+ * @param {LoadedGR2} loaded
+ * @param {readonly TypeMember[]} members
+ * @param {number} pointerSize
+ * @param {Set<number>} seen — cycle guard ; pass a fresh `Set` at the call site.
+ * @returns {number} total storage size in bytes.
  */
 export function objectStorageSize(loaded, members, pointerSize, seen) {
     let size = 0;
@@ -548,6 +679,12 @@ export function objectStorageSize(loaded, members, pointerSize, seen) {
  * Scalars are read from `sectionsOriginal` (unmodified bytes) ; pointers
  * are read from `sectionsFixed` (rewritten with fake pointers by
  * `loadGR2`).
+ *
+ * @param {LoadedGR2} loaded
+ * @param {readonly TypeMember[]} typeTree
+ * @param {SectionRef} ref — `[section, offset]` of the instance.
+ * @param {ParseObjectOptions} [options]
+ * @returns {ParsedObject} field map keyed by member name.
  */
 export function parseObject(loaded, typeTree, ref, options = {}) {
     const maxArrayRefs = options.maxArrayRefs ?? 256;
@@ -555,7 +692,7 @@ export function parseObject(loaded, typeTree, ref, options = {}) {
     const byteReversed = loaded.file.header.byte_reversed;
     const section = ref[0];
     const startOffset = ref[1];
-    if (section >= loaded.sectionsFixed.length) return {};
+    if (section >= loaded.sectionsFixed.length) return /** @type {ParsedObject} */ ({});
     const fixed = loaded.sectionsFixed[section];
     const raw = loaded.sectionsOriginal[section];
     const sectionCount = loaded.sectionsFixed.length;
@@ -563,7 +700,7 @@ export function parseObject(loaded, typeTree, ref, options = {}) {
     const rawView = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
     const little = !byteReversed;
 
-    const out = {};
+    const out = /** @type {Record<string, ParsedField>} */ ({});
     let offset = startOffset;
     for (let i = 0; i < typeTree.length; i++) {
         const member = typeTree[i];
@@ -625,7 +762,7 @@ export function parseObject(loaded, typeTree, ref, options = {}) {
             field.value = readTransform(loaded, section, offset);
         } else if (t === MT_INLINE && member.referenceType) {
             const subTree = parseTypeTree(loaded, member.referenceType);
-            const subRef = [section, offset];
+            const subRef = /** @type {SectionRef} */ ([section, offset]);
             field.inline = parseObject(loaded, subTree, subRef, options);
             const subSize = objectStorageSize(loaded, subTree, pointerSize, new Set());
             offset += subSize;
@@ -675,6 +812,13 @@ function readArrayReferences(loaded, arrayRef, count, maxCount) {
  *
  * Port of blendergranny `types.read_reference_array_objects`. Null-safe :
  * returns `[]` when either ref is null or count is non-positive.
+ *
+ * @param {LoadedGR2} loaded
+ * @param {RefDict | null} arrayRef
+ * @param {number} count
+ * @param {RefDict | null} typeRef
+ * @param {ReadReferenceArrayObjectsOptions} [options]
+ * @returns {readonly ReferenceArrayObject[]}
  */
 export function readReferenceArrayObjects(loaded, arrayRef, count, typeRef, options = {}) {
     if (arrayRef === null || typeRef === null || count <= 0) return [];

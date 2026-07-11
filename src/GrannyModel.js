@@ -17,11 +17,37 @@
 // produced by `extractSkeletons` / `extractMeshes` are resolved by
 // matching the on-disk pointer targets — consumers can cross-reference
 // without re-walking the type tree.
-//
-// Public-API types : see ./GrannyModel.d.ts (sibling).
 
 import { parseObject, parseTypeTree, readReferenceArrayObjects } from './GrannyTypeTree.js';
 import { IDENTITY_TRANSFORM, readTransform } from './GrannyTransform.js';
+
+/**
+ * One binding of a Mesh to a Model. Indices into the array returned by
+ * `extractMeshes(loaded)`. The skinning bone-table is inherited from the
+ * Model's `skeletonIdx` ; per-binding `ToBoneIndices` is supported by
+ * newer Granny SDK versions but absent in the iRO ver12 corpus and
+ * therefore not surfaced here.
+ *
+ * @typedef {object} ModelMeshBinding
+ * @property {number} meshIdx — index into `extractMeshes(loaded)` ; -1 if the
+ *   on-disk pointer doesn't resolve to any extracted mesh (defensive fallback).
+ */
+
+/**
+ * Materialized `GrannyModel` — the canonical instance struct that binds
+ * a `GrannySkeleton` to a list of `GrannyMesh` with an initial world
+ * placement Transform. Returned in order matching `root.Models.element_refs`.
+ *
+ * @typedef {object} ModelInfo
+ * @property {string} name — Model.Name, or `Model_<i>` when the name string is empty.
+ * @property {number} skeletonIdx — index into `extractSkeletons(loaded)` ; -1 when
+ *   the on-disk pointer doesn't resolve.
+ * @property {import('./GrannyTransform.js').Transform} initialPlacement — 68-byte
+ *   Granny Transform decoded into `{ flags, position, orientation, scaleShear }`.
+ *   Identity when the address falls outside the section.
+ * @property {ModelMeshBinding[]} meshBindings — one entry per
+ *   `GrannyModelMeshBinding` in the model.
+ */
 
 /**
  * Build a `{ "section:offset" → index }` lookup from a `root.<Key>` field
@@ -44,8 +70,9 @@ function buildRefIndex(field) {
  * initial placement Transform, and its mesh-binding list. Returns `[]`
  * for fixtures that don't carry any model (animation-only files).
  *
- * @param {object} loaded — output of `loadGR2(file)`
+ * @param {import('./GrannyTypeTree.js').LoadedGR2} loaded — output of `loadGR2(file)`.
  * @param {{ maxModels?: number, maxBindings?: number }} [options]
+ * @returns {ModelInfo[]}
  */
 export function extractModels(loaded, options = {}) {
     const maxModels = options.maxModels ?? 64;

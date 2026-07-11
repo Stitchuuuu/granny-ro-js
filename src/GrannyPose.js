@@ -19,10 +19,44 @@
 // so the smoke test (composeSkinningMatrices at bind pose returns I) is
 // the canonical check — if it passes, no transpose is needed ; if it
 // fails, flip `IWT_TRANSPOSE_ON_LOAD` below.
-//
-// Public-API types : see ./GrannyPose.d.ts (sibling).
 
 import { evaluateAnimation } from './GrannyAnimation.js';
+
+/**
+ * One bone's local Transform at a sampled instant : either a `Transform`
+ * read from the bind pose, an `EvaluatedTransform` produced by
+ * `evaluateAnimation`, or any structurally-compatible shape (length-3
+ * position, length-4 quaternion, length-9 scale-shear — checked at
+ * runtime ; the type only constrains the shape, not tuple length).
+ *
+ * @typedef {object} LooseTransform
+ * @property {number} [flags]
+ * @property {ArrayLike<number>} [position]
+ * @property {ArrayLike<number>} [orientation]
+ * @property {ArrayLike<number>} [scaleShear]
+ */
+
+/**
+ * @typedef {import('./GrannyTransform.js').Transform
+ *   | import('./GrannyAnimation.js').EvaluatedTransform
+ *   | LooseTransform} SampledTransform
+ */
+
+/**
+ * Output of {@link poseSkeletonAt} : per-bone snapshots ready for the GPU.
+ *
+ * @typedef {object} PoseSnapshot
+ * @property {SampledTransform[]} localTransforms — per-bone local Transform :
+ *   evaluated from the animation when the bone has a matching track, bind-pose
+ *   fallback otherwise. Indexed by `bone.index`.
+ * @property {Float32Array[]} worldMatrices — per-bone world matrix
+ *   (`Mworld[i] = Mworld[parent] × Mlocal[i]`), column-major Float32Array(16).
+ *   Indexed by `bone.index`.
+ * @property {Float32Array[]} skinningMatrices — per-bone skinning matrix
+ *   (`Mskin[i] = Mworld[i] × IWT[i]`), column-major Float32Array(16). The GPU
+ *   vertex shader uses these directly to push bind-pose vertices into the
+ *   frame's world space. Indexed by `bone.index`.
+ */
 
 const IDENTITY_MAT4 = Object.freeze([
     1, 0, 0, 0,
@@ -49,6 +83,9 @@ const IWT_TRANSPOSE_ON_LOAD = false;
  * normalized defensively before the rotation matrix is built ; the
  * 9-float scale-shear (row-major 3×3) is lifted into the upper-left
  * 3×3 of the column-major 4×4. Output is a fresh Float32Array(16).
+ *
+ * @param {SampledTransform | null | undefined} transform
+ * @returns {Float32Array} fresh column-major 4×4.
  */
 export function composeLocalMatrix(transform) {
     const t = transform ?? IDENTITY_TRANSFORM;
@@ -103,6 +140,13 @@ export function composeLocalMatrix(transform) {
  * written into the supplied `out` array (caller may pre-allocate for
  * hot-path reuse) ; pass `null` for `out` to allocate a fresh Float32Array.
  * `a` and `b` may alias `out`.
+ *
+ * @param {ArrayLike<number>} a — column-major 4×4.
+ * @param {ArrayLike<number>} b — column-major 4×4.
+ * @param {Float32Array | number[] | null} [out] - destination ; a plain
+ *   `number[]` is accepted for the internal f64 cascade. Fresh Float32Array(16)
+ *   when null/omitted.
+ * @returns {Float32Array | number[]} `out` (or the freshly allocated result).
  */
 export function multiplyMat4(a, b, out) {
     const dst = out ?? new Float32Array(16);
@@ -135,6 +179,11 @@ export function multiplyMat4(a, b, out) {
  * to keep f64 precision through deep skeletons (10+ level chains
  * accumulate ~5e-4 of f32 ULP otherwise — well above the 1e-4 parity
  * target). Returns a fresh array of Float32Array(16) (GPU-ready).
+ *
+ * @param {import('./GrannySkeleton.js').Skeleton} skeleton
+ * @param {readonly ArrayLike<number>[]} localMatrices — one column-major 4×4
+ *   per bone, in `skeleton.bones` order.
+ * @returns {Float32Array[]} fresh per-bone world matrices.
  */
 export function composeWorldPose(skeleton, localMatrices) {
     const bones = skeleton.bones;
@@ -168,6 +217,11 @@ export function composeWorldPose(skeleton, localMatrices) {
  * row-major → column-major conversion. The bind-pose smoke test
  * (`composeSkinningMatrices(skeleton, composeWorldPose(skeleton, bind))`
  * returns identity per bone) is the canonical check.
+ *
+ * @param {import('./GrannySkeleton.js').Skeleton} skeleton
+ * @param {readonly ArrayLike<number>[]} worldMatrices — per-bone world matrices
+ *   from {@link composeWorldPose}.
+ * @returns {Float32Array[]} fresh per-bone skinning matrices.
  */
 export function composeSkinningMatrices(skeleton, worldMatrices) {
     const bones = skeleton.bones;
@@ -194,6 +248,11 @@ export function composeSkinningMatrices(skeleton, worldMatrices) {
  *
  * `animation` may be `null` to request the bind pose (no animation
  * driver, every bone uses its bind-pose Transform).
+ *
+ * @param {import('./GrannySkeleton.js').Skeleton} skeleton
+ * @param {import('./GrannyAnimation.js').Animation | null | undefined} animation
+ * @param {number} t — sample time.
+ * @returns {PoseSnapshot}
  */
 export function poseSkeletonAt(skeleton, animation, t) {
     const bones = skeleton.bones;

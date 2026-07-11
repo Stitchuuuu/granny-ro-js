@@ -1,0 +1,17 @@
+// Declaration-emit config for the two-stage type roll (scripts/build-dist.mjs).
+// tsc generates per-file .d.ts from each src/*.js inline JSDoc into dist/.types/
+// (robust to .js function bodies, which dts-bundle-generator cannot parse). The
+// build then bundles those bodyless .d.ts into the shipped dist/*.d.ts.
+{
+    "extends": "./jsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "declarationMap": false,
+        "rootDir": "./src",
+        "outDir": "./dist/.types"
+    },
+    "include": ["src/**/*.js", "src/**/*.d.ts"],
+    "exclude": ["node_modules"]
+}

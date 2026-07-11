@@ -4,20 +4,98 @@
 // (subset : header + section table only ; DataTypeDefinition / RootObject
 // walking is granny-pipeline session S5).
 //
-// Public-API types : see ./GrannyFile.d.ts (sibling, picked up automatically
-// by tsc / VS Code). Binary reference : docs/gr2-format.md.
+// Binary reference : docs/gr2-format.md.
+
+/** Acceptable input shapes for the parser.
+ * @typedef {ArrayBuffer | Uint8Array | DataView | ArrayBufferView} GR2Input */
+
+/** Quad of u32 magic words (4 × 4 bytes at the file start).
+ * @typedef {readonly [number, number, number, number]} GR2Magic */
+
+/** Compression tag, see {@link COMPRESSION_NAMES}.
+ * @typedef {0 | 1 | 2 | 3 | 4} CompressionTag */
+
+/** Granny section-slot index, see {@link SECTION_NAMES}.
+ * @typedef {0 | 1 | 2 | 3 | 4 | 5 | 6 | 7} SectionIndex */
+
+/**
+ * One entry in the GR2 section table (44 bytes on disk — see
+ * `docs/gr2-format.md` § Section record). `compression_name` and
+ * `semantic_name` are computed accessors ; the rest map 1-to-1 to the
+ * on-disk u32s.
+ *
+ * @typedef {object} GR2Section
+ * @property {number} index — 0-based position in the section table.
+ * @property {number} compression — compression algorithm tag (0=none, 1=Oodle0, 2=Oodle1, 3=BitKnit, 4=BitKnit2).
+ * @property {number} data_offset — offset of this section's compressed bytes, relative to the file start.
+ * @property {number} data_size — length of this section's compressed bytes on disk.
+ * @property {number} expanded_size — target length of the section once decompressed.
+ * @property {number} internal_alignment — required alignment for this section's data buffer (4 / 8 / …).
+ * @property {number} first_16bit — Oodle0 block-stop 1 : decoded-byte offset where the 16-bit length context ends.
+ * @property {number} first_8bit — Oodle0 block-stop 2 : decoded-byte offset where the 8-bit length context ends.
+ * @property {number} pointer_fixup_offset — pointer-fixup table offset (S5+).
+ * @property {number} pointer_fixup_count — pointer-fixup entry count, 12 bytes each.
+ * @property {number} mixed_marshalling_offset — mixed-marshalling table offset (S5+).
+ * @property {number} mixed_marshalling_count — mixed-marshalling entry count, 12 bytes each.
+ * @property {string} compression_name — computed : human name for {@link GR2Section.compression}.
+ * @property {string} semantic_name — computed : Granny semantic name for {@link GR2Section.index}.
+ */
+
+/**
+ * Top-level GR2 file header (~72 bytes for version ≥ 7, ~60 bytes otherwise).
+ *
+ * @typedef {object} GR2Header
+ * @property {number} version — Granny file format version — ≥ 7 across our iRO ver12 corpus.
+ * @property {number} total_size — total file size as declared by the writer.
+ * @property {number} crc — CRC32 of the file's contents.
+ * @property {number} section_array_offset — offset of the section array relative to the end of the magic.
+ * @property {number} section_count — number of entries in the section array.
+ * @property {readonly [number, number]} root_type — `[section_index, offset_within_section]`.
+ * @property {readonly [number, number]} root_object — `[section_index, offset_within_section]`.
+ * @property {number} type_tag — type-tag identifying the .gr2 schema generation.
+ * @property {readonly number[]} extra_tags — 4 user / auxiliary tag values.
+ * @property {number} string_db_crc — string-database CRC (version ≥ 7).
+ * @property {readonly number[]} reserved — 3 reserved u32 (version ≥ 7).
+ * @property {32 | 64} pointer_size — pointer width baked into the file's serialized references.
+ * @property {boolean} byte_reversed — true if u32s are stored byte-reversed.
+ */
+
+/**
+ * Parsed GR2 file, ready for section decompression.
+ *
+ * @typedef {object} GR2File
+ * @property {GR2Header} header
+ * @property {readonly GR2Section[]} sections
+ * @property {Uint8Array} data — raw input bytes — kept for sliced reads via {@link GR2File.sectionBytes}.
+ * @property {(section: GR2Section) => Uint8Array} sectionBytes — slice of `data`
+ *   carrying `section`'s on-disk compressed bytes.
+ */
+
+/**
+ * Result of magic detection (precedes a full parse).
+ *
+ * @typedef {object} GR2DetectResult
+ * @property {boolean} ok — true if the buffer's first 16 bytes match one of the known magics.
+ * @property {boolean} byteReversed — true if u32s should be read big-endian.
+ * @property {0 | 32 | 64} pointerSize — pointer width baked into the file (`0` when `ok === false`).
+ */
 
 // --- magic words (one quad per supported file variant) ----------------
 
-/** `MAGIC_OLD` — earliest Granny 2.x ; LE u32s, 32-bit pointers. */
+/** `MAGIC_OLD` — earliest Granny 2.x ; LE u32s, 32-bit pointers.
+ * @type {GR2Magic} */
 export const MAGIC_OLD  = [0xCAB067B8, 0x0FB16DF8, 0x7E8C7284, 0x1E00195E];
-/** `MAGIC_32LE` — standard Granny 2.x, LE u32s, 32-bit pointers. **All iRO ver12 .gr2 use this**. */
+/** `MAGIC_32LE` — standard Granny 2.x, LE u32s, 32-bit pointers. **All iRO ver12 .gr2 use this**.
+ * @type {GR2Magic} */
 export const MAGIC_32LE = [0xC06CDE29, 0x2B53A4BA, 0xA5B7F525, 0xEEE266F6];
-/** `MAGIC_32BE` — `MAGIC_32LE`'s u32s each byte-reversed (big-endian on disk). */
+/** `MAGIC_32BE` — `MAGIC_32LE`'s u32s each byte-reversed (big-endian on disk).
+ * @type {GR2Magic} */
 export const MAGIC_32BE = [0xB595110E, 0x4BB5A56A, 0x502828EB, 0x04B37825];
-/** `MAGIC_64LE` — 64-bit-pointer Granny 2.x, LE u32s. */
+/** `MAGIC_64LE` — 64-bit-pointer Granny 2.x, LE u32s.
+ * @type {GR2Magic} */
 export const MAGIC_64LE = [0x5E499BE5, 0x141F636F, 0xA9EB131E, 0xC4EDBE90];
-/** `MAGIC_64BE` — `MAGIC_64LE`'s u32s each byte-reversed. */
+/** `MAGIC_64BE` — `MAGIC_64LE`'s u32s each byte-reversed.
+ * @type {GR2Magic} */
 export const MAGIC_64BE = [0xE3D49531, 0x624FDC20, 0x3AD036CC, 0x89FF82B1];
 
 /** Number of bytes the magic quad occupies at the file start (16 used + 16 reserved). */
@@ -38,7 +116,8 @@ export const COMPRESSION_BITKNIT = 3;
 /** Compression tag — RAD BitKnit2 (not implemented). */
 export const COMPRESSION_BITKNIT2 = 4;
 
-/** Compression tag → human name. Used by `GR2Section.compression_name`. */
+/** Compression tag → human name. Used by `GR2Section.compression_name`.
+ * @type {Readonly<Record<number, 'none' | 'oodle0' | 'oodle1' | 'bitknit' | 'bitknit2'>>} */
 export const COMPRESSION_NAMES = {
     0: 'none',
     1: 'oodle0',
@@ -47,7 +126,8 @@ export const COMPRESSION_NAMES = {
     4: 'bitknit2',
 };
 
-/** Section-slot index → Granny semantic name. See `docs/gr2-format.md` § Section slots. */
+/** Section-slot index → Granny semantic name. See `docs/gr2-format.md` § Section slots.
+ * @type {Readonly<Record<number, 'main' | 'rigid_vertex' | 'rigid_index' | 'deformable_vertex' | 'deformable_index' | 'texture' | 'discardable' | 'unloaded'>>} */
 export const SECTION_NAMES = {
     0: 'main',
     1: 'rigid_vertex',
@@ -106,6 +186,9 @@ function magicWords(view, byteReversed) {
  * first 16 bytes. Tries LE first, then BE-with-swap. Returns the
  * endianness + pointer width baked into the file so the caller can wire
  * its u32 reader accordingly.
+ *
+ * @param {GR2Input} buffer — the candidate .gr2 bytes.
+ * @returns {GR2DetectResult}
  */
 export function detectGR2(buffer) {
     const view = bufferView(buffer);
@@ -160,6 +243,10 @@ function bufferBytes(buffer) {
  * Build a bounds-checked u32 reader closed over `view` + endianness.
  * Throws `RangeError` if the requested offset escapes the buffer ; this
  * is the single chokepoint for « truncated file » errors.
+ *
+ * @param {DataView} view
+ * @param {boolean} byteReversed
+ * @returns {(offset: number) => number}
  */
 function makeReader(view, byteReversed) {
     const little = !byteReversed;
@@ -182,8 +269,10 @@ function makeReader(view, byteReversed) {
  * payloads — call `decompressSection(section, file.sectionBytes(section))`
  * from `./Granny.js` for that.
  *
- * @throws Error on non-Granny input
- * @throws RangeError when the declared section array escapes the buffer
+ * @param {GR2Input} buffer — the .gr2 bytes.
+ * @returns {GR2File}
+ * @throws {Error} on non-Granny input.
+ * @throws {RangeError} when the declared section array escapes the buffer.
  */
 export function parseGR2File(buffer) {
     const view = bufferView(buffer);
@@ -199,8 +288,8 @@ export function parseGR2File(buffer) {
     const crc                 = u32(h + 8);
     const sectionArrayOffset  = u32(h + 12);
     const sectionCount        = u32(h + 16);
-    const rootType   = [u32(h + 20), u32(h + 24)];
-    const rootObject = [u32(h + 28), u32(h + 32)];
+    const rootType   = /** @type {[number, number]} */ ([u32(h + 20), u32(h + 24)]);
+    const rootObject = /** @type {[number, number]} */ ([u32(h + 28), u32(h + 32)]);
     const typeTag    = u32(h + 36);
 
     const extraTags = new Array(EXTRA_TAG_COUNT);
@@ -253,7 +342,7 @@ export function parseGR2File(buffer) {
         byte_reversed: detect.byteReversed,
     };
 
-    return {
+    return /** @type {GR2File} */ ({
         header,
         sections,
         data,
@@ -269,5 +358,5 @@ export function parseGR2File(buffer) {
             }
             return data.subarray(start, end);
         },
-    };
+    });
 }

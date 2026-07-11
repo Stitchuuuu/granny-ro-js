@@ -828,7 +828,7 @@ function arithDecompress(a, ab) {
                 globalThis.__igcDivergences.push({ call: exp.call, errs });
                 if (globalThis.__igcDivergences.length === 1 || globalThis.__igcStrictThrow) {
                     const e = new Error(`__igcTrace: call ${exp.call} divergence:\n  ${errs.join('\n  ')}`);
-                    e.callIdx = exp.call;
+                    /** @type {any} */ (e).callIdx = exp.call;
                     if (globalThis.__igcStrictThrow) throw e;
                     process.stderr.write(`!! First divergence at call ${exp.call}:\n  ${errs.join('\n  ')}\n`);
                 }
@@ -2076,8 +2076,36 @@ function planeDecode(buf, srcOffset, output, outOffset, width, height, rowMask) 
 
 // ============================================================================
 // Public API.
+//
+// These types are internal to the codec : `decodeIGCTexture` / `yuvToRGB` are
+// not re-exported from the package's main entry. External callers use
+// `extractTextures` from `./GrannyTexture.js`, which calls `decodeIGCTexture`.
 
-// `_GrannyDecompressIGCTexture@12` clean-room port.
+/**
+ * Input to {@link decodeIGCTexture}.
+ *
+ * @typedef {object} IGCImage
+ * @property {number} Width — image width in pixels (from the `GrannyIGCTexture` reflection struct).
+ * @property {number} Height — image height in pixels.
+ * @property {0 | 1} Alpha — alpha flag (`1` = `BinkEncodeAlpha`, `0` = no A plane in the bitstream).
+ * @property {Uint8Array} ImageData — the IGC bitstream as stored in the .gr2 `Pixels` array (see IGC-FORMAT.md § 3).
+ */
+
+/**
+ * Decode one IGC texture (RAD BinkTC : wavelet + arithmetic + YUV→RGB) to
+ * RGBA8888. Clean-room port of `_GrannyDecompressIGCTexture@12`.
+ *
+ * Images with `Width * Height <= 256` take the small-image passthrough
+ * (granny2.dll bypasses BinkTC and copies the RGBA bytes through unchanged) ;
+ * larger images run the full plane-decode → 4-level inverse DWT → YUV→RGB
+ * pipeline. Non-16-aligned dimensions are rejected — the iRO corpus walker
+ * filters those out upstream.
+ *
+ * @param {IGCImage} igcImage
+ * @returns {Uint8Array} RGBA8888 bytes, length = `Width * Height * 4`.
+ * @throws {Error} when a small-image input carries fewer than `Width*Height*4`
+ *   bytes, or when the dimensions are not 16-aligned (unsupported fallback).
+ */
 // Asm cite : `granny2.dll @ 0x100045b0` (`FromBinkTC`).
 export function decodeIGCTexture(igcImage) {
     const { Width: width, Height: height, Alpha: alpha, ImageData: src } = igcImage;
@@ -2135,6 +2163,19 @@ export function decodeIGCTexture(igcImage) {
     return yuvToRGB(planes[0], planes[1], planes[2], planes[3], width, height);
 }
 
+/**
+ * YUV-ish → RGB plane inversion (asm cite `granny2.dll @ 0x10009a30`).
+ * Internal helper — exported so the test suite can validate it independently
+ * on synthetic planes. Not part of the public package surface.
+ *
+ * @param {Int16Array | Int32Array | ReadonlyArray<number>} yp — Y plane, length `width * height`.
+ * @param {Int16Array | Int32Array | ReadonlyArray<number>} up — U plane, length `width * height`.
+ * @param {Int16Array | Int32Array | ReadonlyArray<number>} vp — V plane, length `width * height`.
+ * @param {Int16Array | Int32Array | ReadonlyArray<number>} ap — A plane, length `width * height` (values already 0..255).
+ * @param {number} width
+ * @param {number} height
+ * @returns {Uint8Array} RGBA8888 of length `width * height * 4`.
+ */
 export function yuvToRGB(yp, up, vp, ap, width, height) {
     const count = width * height;
     const out = new Uint8Array(count * 4);

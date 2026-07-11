@@ -1728,3 +1728,68 @@ export function iDWT2D(outPtr: usize, pitch: i32, width: i32, height: i32, rowMa
     }
   } while (ch);
 }
+
+/**
+ * Fused IGC decode : compressed bytes → RGBA8888 in a single JS→WASM crossing.
+ * Runs the whole per-plane loop in-wasm — each plane stays resident in linear
+ * memory across its 4 iDWT passes (no per-pass round-trip). Byte-exact port of
+ * the JS orchestration in src/GrannyTextureIGC.js `decodeIGCTexture` ; calls the
+ * in-wasm kernels (planeDecode / iDWT2D / yuvToRGB) directly.
+ *
+ * JS owns bufPtr (the copied bitstream + 32-byte pad), rgbaPtr (the RGBA8888
+ * output, count*4 bytes) and workBase (the scratch region this entry
+ * subdivides). Planes are laid out contiguously so the existing
+ * yuvToRGB(planesPtr, count, rgbaPtr) reads them at stride `count`. An 8-i16
+ * zero guard trails the plane block + the temp block, reproducing the iDWT
+ * oracle's `oob → 0` : the past-end reads are fold-bounded within a plane, and
+ * the next plane is still zero when the current plane's iDWT runs (planes are
+ * decoded 0→3 in order), so contiguous is safe.
+ *
+ * @param bufPtr - the copied IGC bitstream (whole `src` + 32-byte zero pad).
+ * @param width, height - texture dimensions in pixels (16-aligned, w*h > 256).
+ * @param alpha - 1 if the bitstream carries an A plane, else 0 (A filled 255).
+ * @param rgbaPtr - output RGBA8888, `width*height*4` bytes.
+ * @param workBase - base of the scratch region (planes + temp + rowMask + work).
+ * @returns total bytes consumed from the bitstream, or a negative planeDecode
+ *   anti-hang sentinel (bitstream off-corpus).
+ */
+export function decodeIGCTexture(bufPtr: usize, width: i32, height: i32, alpha: i32, rgbaPtr: usize, workBase: usize): i32 {
+  const count = width * height;
+  const GUARD = 8; // i16 — matches idwt-driver GUARD_I16 (oracle oob → 0).
+
+  const planesPtr: usize = workBase;                                  // 4*count i16 + guard
+  const tempPtr: usize = planesPtr + <usize>((count * 4 + GUARD) * 2); // count i16 + guard
+  const rowMaskPtr: usize = tempPtr + <usize>((count + GUARD) * 2);    // height bytes (plane 0)
+  const workPtr: usize = (rowMaskPtr + <usize>height + 3) & ~(<usize>3); // planeDecode bump region
+
+  // planeDecode expects a zeroed output plane, and the guards must read as 0.
+  // Byte fill with 0 → every i16 is 0 (covers all 4 planes + both guards).
+  memory.fill(planesPtr, 0, <usize>((count * 4 + GUARD) * 2));
+  memory.fill(tempPtr, 0, <usize>((count + GUARD) * 2));
+
+  const planeCount = alpha ? 4 : 3;
+  let cursor = 4;
+  for (let p = 0; p < planeCount; p++) {
+    const planePtr: usize = planesPtr + <usize>(p * count * 2);
+    const maskPtr: usize = (p == 0) ? rowMaskPtr : 0;
+
+    const consumed = planeDecode(bufPtr, cursor, planePtr, width, height, maskPtr, workPtr);
+    if (consumed < 0) return consumed; // planeDecode anti-hang → bubble the sentinel.
+    cursor += consumed;
+
+    iDWT2D(planePtr, width * 8, width >> 3, height >> 3, 0, tempPtr);
+    iDWT2D(planePtr, width * 4, width >> 2, height >> 2, 0, tempPtr);
+    iDWT2D(planePtr, width * 2, width >> 1, height >> 1, 0, tempPtr);
+    iDWT2D(planePtr, width, width, height, maskPtr, tempPtr);
+  }
+
+  if (!alpha) {
+    // No A plane in the bitstream : fill plane 3 opaque (255). memory.fill can't
+    // (byte 0xFF → i16 -1), so store each i16.
+    const aPtr: usize = planesPtr + <usize>(3 * count * 2);
+    for (let i = 0; i < count; i++) store<i16>(aPtr + (<usize>i) * 2, 255);
+  }
+
+  yuvToRGB(planesPtr, count, rgbaPtr);
+  return cursor;
+}

@@ -8,6 +8,29 @@ Pure-JS reader for `.gr2` (Granny3D format 6) files. Decompresses
 (Oodle0), parses bones + meshes + animations, composes per-bone
 skinning matrices ready for GPU upload. Zero runtime dependencies.
 
+## Quick start — JS or WASM
+
+```bash
+npm install granny-ro-js
+```
+
+```js
+// Pure JS — synchronous, zero deps, works everywhere.
+import { parseTextured } from 'granny-ro-js';
+const { textures } = parseTextured(gr2Bytes);
+
+// WASM — same API, texture decode ~1.3–1.4× faster (one extra `await`).
+import { parseTextured, Granny } from 'granny-ro-js/wasm';
+await Granny.ready();
+const { textures } = parseTextured(gr2Bytes);
+```
+
+**Only the texture decode is WASM** (it's the only CPU-hot numeric loop; parse
+/ mesh / skeleton / animation stay pure JS, where the engine's JIT already
+wins) — with the JS decoder as the automatic byte-exact fallback. One
+self-contained file (wasm inlined), so it also runs straight from a CDN.
+Full how-to ↓ [WASM texture decode](#wasm-texture-decode-opt-in) · [docs/wasm.md](docs/wasm.md).
+
 ## Scope
 
 Validated **byte-exact on a 21-asset corpus** (6 models + 15 animation
@@ -19,12 +42,18 @@ NoCompression compression.
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-## Status — `1.1.0` (stable)
+## Status — `1.2.0` (stable)
 
-`1.1.0` adds a built `dist/` (ESM / CJS / IIFE, single-file + code-split)
+`1.2.0` adds the **opt-in WASM texture decoder** (`granny-ro-js/wasm`) —
+same API, one `await Granny.ready()`, the IGC decode runs in WebAssembly
+with the pure-JS decoder as the byte-exact fallback (~1.3–1.4× faster
+decode in-browser). See the [WASM section](#wasm-texture-decode-opt-in)
+below, the full how-to in [docs/wasm.md](docs/wasm.md), and the
+[changelog](CHANGELOG.md).
+
+`1.1.0` added a built `dist/` (ESM / CJS / IIFE, single-file + code-split)
 and an async init seam (`Granny.ready()`, `loadTextureCodec()`) — decode
-output stays byte-identical to `1.0.0`, same content manifest. See the
-[changelog](CHANGELOG.md) for the full distribution pass.
+output stays byte-identical to `1.0.0`, same content manifest.
 
 **Byte-exact** across the 21-fixture parity corpus, validated against
 `granny2.dll` :
@@ -108,6 +137,54 @@ import { parseGR2File } from 'granny-ro-js/file';      // file-level only
 import { decompressOodle0 } from 'granny-ro-js/oodle0'; // codec direct
 import { parseTypeTree } from 'granny-ro-js/typetree';  // type-tree walker
 ```
+
+## WASM texture decode (opt-in)
+
+**Only the Bink-family wavelet texture decode is in WebAssembly** — the one
+CPU-hot inner loop (range coder + inverse wavelet + YUV→RGB). Everything
+else stays pure JS (parse, Oodle0, mesh, skeleton, animation), and the
+pure-JS decoder remains the **mandatory byte-exact fallback**.
+
+**Why only the decode?** It's the only stage that's a tight numeric inner
+loop — exactly what WASM accelerates. The rest is pointer-chasing, string
+handling and dynamic object graphs, where a JS engine's JIT + GC already
+win; porting it would be far more code for no (or negative) gain, and it
+wouldn't change the single-file story. Same API, one extra `await` :
+
+```js
+import { parseTextured, Granny } from 'granny-ro-js/wasm';
+
+await Granny.ready();                 // instantiate the wasm once (async)
+const { textures } = parseTextured(gr2Bytes);   // texture decode runs in wasm
+```
+
+- **One file, no separate `.wasm`.** The module is inlined (base64), so
+  `granny-ro-js/wasm` is a single ESM import — works from a bundler, a
+  `<script type="module">`, a userscript, or a CDN with **one** fetch.
+- **Automatic fallback.** If `Granny.ready()` is skipped or instantiation
+  fails, decode still runs (pure JS), byte-identical — the wasm path is
+  purely additive behind the same API.
+- **~1.3–1.4× faster texture decode in-browser.** Run it in a Worker to
+  keep the main thread jank-free (a full corpus decode blocks the main
+  thread ~0.6–1.1 s ; in a Worker the render loop never stalls). Pattern
+  + numbers in **[docs/wasm.md](docs/wasm.md)**.
+
+### Via CDN — no install
+
+```html
+<script type="module">
+  // esm.sh honours the package's ./wasm export (single self-contained file)
+  import { parseTextured, Granny } from 'https://esm.sh/granny-ro-js/wasm';
+  await Granny.ready();
+  const bytes = new Uint8Array(await (await fetch('model.gr2')).arrayBuffer());
+  const { textures } = parseTextured(bytes);
+</script>
+```
+
+Prefer jsDelivr with an explicit path? `https://cdn.jsdelivr.net/npm/granny-ro-js/dist/granny-ro.wasm.esm.js`.
+For the **pure-JS** build (no `await`, no wasm) drop the `/wasm` :
+`https://esm.sh/granny-ro-js`. Both require a release that ships the WASM
+build (see the [changelog](CHANGELOG.md)).
 
 ## Performance
 

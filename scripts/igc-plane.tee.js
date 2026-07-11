@@ -13,13 +13,16 @@
 // shipped.
 
 import * as jsPlane from '../src/igc-plane.js';
+import { yuvToRGB } from '../src/igc-yuv.js';
+import { iDWT2D } from '../src/igc-idwt.js';
+import { runIGCPipeline } from '../src/igc-pipeline.js';
 import { createPlaneDriver } from '../src/wasm/plane-driver.js';
 import KERNELS_WASM_B64 from '../src/wasm/kernels-b64.js';
 
 // The JS plane oracle's arith calls resolve to './igc-kernels.js' = this module,
 // so re-export the pure-JS arith + yuv to make decode complete on the JS side.
-export { yuvToRGB } from '../src/igc-yuv.js';
-export { iDWT2D } from '../src/igc-idwt.js';
+export { yuvToRGB };
+export { iDWT2D };
 export {
     arithBitOpen,
     arithOpen,
@@ -79,4 +82,9 @@ export function planeDecode(src, srcOffset, output, outOffset, width, height, ro
     }
 
     return jsConsumed;
+}
+
+/** Drive the real pipeline on the tee-wrapped planeDecode (JS-vs-WASM per plane). */
+export function decodeIGCPipeline(src, width, height, alpha) {
+    return runIGCPipeline(src, width, height, alpha, planeDecode, iDWT2D, yuvToRGB);
 }

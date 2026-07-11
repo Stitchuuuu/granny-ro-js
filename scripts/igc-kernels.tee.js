@@ -11,16 +11,25 @@
 
 import * as jsArith from '../src/igc-arith.js';
 import { yuvToRGB } from '../src/igc-yuv.js';
+import { planeDecode } from '../src/igc-plane.js';
+import { iDWT2D } from '../src/igc-idwt.js';
+import { runIGCPipeline } from '../src/igc-pipeline.js';
 import { createArithDriver } from '../src/wasm/arith-driver.js';
 import KERNELS_WASM_B64 from '../src/wasm/kernels-b64.js';
 
 export { yuvToRGB };
-// GrannyTextureIGC imports planeDecode from the seam ; the arith gate drives it
-// on the pure-JS oracle, whose per-symbol arith calls route back through this
-// tee (the oracle imports arith from './igc-kernels.js' = this module) and get
-// compared JS-vs-WASM. So the plane loop feeds the per-symbol arith gate.
-export { planeDecode } from '../src/igc-plane.js';
-export { iDWT2D } from '../src/igc-idwt.js';
+// GrannyTextureIGC drives the decode through the seam's `decodeIGCPipeline` ; the
+// arith gate runs it on the pure-JS oracles, whose per-symbol arith calls route
+// back through this tee (igc-plane.js imports arith from './igc-kernels.js' =
+// this module) and get compared JS-vs-WASM. So the plane loop feeds the
+// per-symbol arith gate.
+export { planeDecode };
+export { iDWT2D };
+
+/** Drive the real pipeline on the pure-JS oracles → their arith hits the tee. */
+export function decodeIGCPipeline(src, width, height, alpha) {
+    return runIGCPipeline(src, width, height, alpha, planeDecode, iDWT2D, yuvToRGB);
+}
 
 let driver = null;
 let callNo = 0;

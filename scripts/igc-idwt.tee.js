@@ -15,13 +15,16 @@
 // WASM path is exercised only through the iDWT driver. NOT shipped.
 
 import * as jsIdwt from '../src/igc-idwt.js';
+import { yuvToRGB } from '../src/igc-yuv.js';
+import { planeDecode } from '../src/igc-plane.js';
+import { runIGCPipeline } from '../src/igc-pipeline.js';
 import { createIdwtDriver } from '../src/wasm/idwt-driver.js';
 import KERNELS_WASM_B64 from '../src/wasm/kernels-b64.js';
 
 // The rest of the pipeline resolves its kernels to './igc-kernels.js' = this
 // module, so re-export the pure-JS oracles to make decode complete on the JS side.
-export { yuvToRGB } from '../src/igc-yuv.js';
-export { planeDecode } from '../src/igc-plane.js';
+export { yuvToRGB };
+export { planeDecode };
 export {
     arithBitOpen,
     arithOpen,
@@ -68,4 +71,9 @@ export function iDWT2D(output, pitch, width, height, rowMask, temp) {
             throw new Error(`[idwt-tee] pass #${idx} (${width}x${height} pitch=${pitch}): S16 diverges at offset ${i} — js=${output[i]} wasm=${wasmPlane[i]}`);
         }
     }
+}
+
+/** Drive the real pipeline on the tee-wrapped iDWT2D (JS-vs-WASM per pass). */
+export function decodeIGCPipeline(src, width, height, alpha) {
+    return runIGCPipeline(src, width, height, alpha, planeDecode, iDWT2D, yuvToRGB);
 }

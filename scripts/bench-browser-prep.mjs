@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG = resolve(__dirname, '..');
 const DIST_ESM = join(PKG, 'dist', 'granny-ro.esm.js');
+const DIST_WASM_ESM = join(PKG, 'dist', 'granny-ro.wasm.esm.js');
 const BENCH_DIR = join(PKG, 'bench', 'browser');
 const BENCH_FIXTURES = join(BENCH_DIR, 'fixtures');
 const PORT = 8888;
@@ -42,6 +43,7 @@ function die(msg, code = 2) {
 }
 
 if (!existsSync(DIST_ESM)) die('dist/granny-ro.esm.js missing — run `npm run build` first.');
+if (!existsSync(DIST_WASM_ESM)) die('dist/granny-ro.wasm.esm.js missing — run `npm run build` first.');
 if (!GR2_FOLDER) {
     die(
         'GR2_FOLDER is required — this bench targets real client assets.\n' +
@@ -64,8 +66,10 @@ if (rels.length === 0) die(`no .gr2 found under ${gr2Folder}`);
 rmSync(BENCH_FIXTURES, { recursive: true, force: true });
 mkdirSync(BENCH_FIXTURES, { recursive: true });
 
-// 1. the ESM bundle the page imports (one file, one import).
+// 1. the ESM bundles the page imports — pure-JS + the opt-in WASM build (the
+//    bench runs both across its main / worker axes).
 copyFileSync(DIST_ESM, join(BENCH_DIR, 'granny-ro.esm.js'));
+copyFileSync(DIST_WASM_ESM, join(BENCH_DIR, 'granny-ro.wasm.esm.js'));
 
 // 2. the corpus (paths preserved) + an index the page fetches.
 const index = rels.map((rel) => {
@@ -78,7 +82,8 @@ writeFileSync(join(BENCH_DIR, 'fixtures.json'), JSON.stringify(index, null, 2) +
 
 const totMB = (index.reduce((s, f) => s + f.bytes, 0) / (1024 * 1024)).toFixed(1);
 console.log(`[bench:browser] staged bench/browser/ from ${gr2Folder}`);
-console.log(`  granny-ro.esm.js  (pure-JS build)`);
+console.log(`  granny-ro.esm.js       (pure-JS build)`);
+console.log(`  granny-ro.wasm.esm.js  (opt-in WASM build)`);
 console.log(`  fixtures/         ${index.length} .gr2 (${totMB} MB total, recursive)`);
 console.log(`  fixtures.json     index\n`);
 console.log(`Serve it, then open the URL in Chrome / Firefox :`);

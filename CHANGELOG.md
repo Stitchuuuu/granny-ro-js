@@ -4,6 +4,61 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.2.0 — 2026-07-11
+
+Opt-in **WebAssembly texture decode**. The Bink-family wavelet decoder — the
+one CPU-hot inner loop — ships as a WASM module behind the existing
+`Granny.ready()` seam, exposed as a new `granny-ro-js/wasm` entry. The default
+build is unchanged (pure JS, synchronous, zero deps) and stays the mandatory
+byte-exact fallback. No breaking changes.
+
+### `granny-ro-js/wasm` — new opt-in build
+
+- Same named exports as `.`, plus one `await Granny.ready()` before the first
+  decode (WASM instantiation is async). Everything else — parse, Oodle0, mesh,
+  skeleton, animation — stays pure JS; **only the IGC texture decode runs in
+  WASM** (the one tight numeric loop; the rest is parse / object-graph work
+  where the JS JIT already wins).
+- The whole per-texture decode (range coder + 4× inverse-wavelet + YUV→RGB) is
+  **one JS→WASM crossing** — the planes stay resident in linear memory across
+  their wavelet passes, no per-kernel boundary copy.
+- **Single self-contained file** : the `.wasm` is inlined (base64), so
+  `granny-ro-js/wasm` is one ESM module — bundler, `<script type="module">`,
+  userscript, or CDN with a single fetch. No separate `.wasm` asset to resolve.
+- **Mandatory JS fallback** : skip `Granny.ready()` or let instantiation fail,
+  and decode still produces identical pixels in pure JS.
+- Built from AssemblyScript (`npm run build:wasm`) ; the prebuilt `.wasm` is
+  committed, so `npm run build` needs no wasm toolchain.
+
+### Performance
+
+- **Browser : ~1.37× main-thread, ~1.28× in a Worker** on the 20-`.gr2` corpus
+  (`parseTextured` end-to-end). Decoded off-thread in a Worker, the main-thread
+  stall drops from ~0.6–1.1 s to ~9 ms — no render hitch.
+- **Node : ~1.21×** (V8's JIT narrows the gap the browser shows).
+- Measured via the `bench/browser/` harness (JS/WASM × main/worker axes).
+
+### Validation
+
+- **17/17 IGC textures byte-exact** end-to-end : WASM RGBA sha === pure-JS RGBA
+  sha === pinned manifest sha, per texture.
+- Per-kernel differential gates (arithmetic call-by-call, `planeDecode`
+  per-plane, `iDWT2D` per-pass) assert WASM === JS at each stage.
+- Cross-checked against the real `granny2.dll` (Wine shim) on an out-of-corpus
+  texture : **byte-identical where the DLL decodes**, and the anti-hang guard is
+  confirmed correct — the DLL itself fails on the inputs the guard refuses.
+
+### Documentation
+
+- New [docs/wasm.md](docs/wasm.md) — full WASM how-to (usage, CDN, Worker
+  pattern, numbers, single-file rationale) — plus a README quick-start
+  contrasting the JS and WASM entries.
+
+### Breaking changes
+
+None. The default `.` entry is untouched (pure JS, synchronous, zero deps). The
+WASM path is purely additive behind `granny-ro-js/wasm`.
+
 ## 1.1.0 — 2026-07-10
 
 Distribution + performance pass. Ships a built `dist/` for every JS consumption

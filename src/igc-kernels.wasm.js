@@ -15,9 +15,11 @@ import { yuvToRGB as yuvJS } from './igc-yuv.js';
 import * as jsArith from './igc-arith.js';
 import * as jsPlane from './igc-plane.js';
 import * as jsIdwt from './igc-idwt.js';
+import { decodeIGCPipeline as jsPipeline } from './igc-pipeline.js';
 import { createArithDriver } from './wasm/arith-driver.js';
 import { createPlaneDriver } from './wasm/plane-driver.js';
 import { createIdwtDriver } from './wasm/idwt-driver.js';
+import { createPipelineDriver } from './wasm/pipeline-driver.js';
 import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
 
 /**
@@ -37,6 +39,7 @@ import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
  * @property {(abPtr: number, lo: number, count: number, scale: number) => void} arithBitsRemove
  * @property {(bufPtr: number, srcOffset: number, outPtr: number, width: number, height: number, rowMaskPtr: number, workPtr: number) => number} planeDecode
  * @property {(outPtr: number, pitch: number, width: number, height: number, rowMaskPtr: number, tempPtr: number) => void} iDWT2D
+ * @property {(bufPtr: number, width: number, height: number, alpha: number, rgbaPtr: number, workBase: number) => number} decodeIGCTexture — fused whole-pipeline entry (compressed bytes → RGBA8888, one crossing).
  */
 
 /** @type {KernelExports | null} — kernel exports once instantiated. */
@@ -49,6 +52,8 @@ let arith = null;
 let plane = null;
 /** @type {ReturnType<typeof createIdwtDriver> | null} — iDWT2D driver. */
 let idwt = null;
+/** @type {ReturnType<typeof createPipelineDriver> | null} — fused-decode driver. */
+let pipeline = null;
 
 /** Decode a base64 string to bytes (global `atob` : Node ≥ 16 + browsers). */
 function b64ToBytes(b64) {
@@ -75,6 +80,7 @@ export async function initKernels() {
     arith = createArithDriver(instance);
     plane = createPlaneDriver(instance);
     idwt = createIdwtDriver(instance);
+    pipeline = createPipelineDriver(instance);
 }
 
 /** Grow `memory` so `[base, base+bytes)` is addressable ; returns the buffer. */
@@ -205,4 +211,28 @@ export function iDWT2D(output, pitch, width, height, rowMask, temp) {
     if (!idwt) return jsIdwt.iDWT2D(output, pitch, width, height, rowMask, temp);
 
     output.set(idwt.iDWT2D(output, pitch, width, height, rowMask));
+}
+
+// --- decodeIGCPipeline (fused) ----------------------------------------------
+//
+// The whole per-plane decode (planeDecode + 4× iDWT2D + yuvToRGB) as one
+// JS→WASM crossing — each plane stays resident in linear memory, no per-kernel
+// boundary copies. WASM when instantiated, else the pure-JS pipeline oracle
+// (./igc-pipeline.js). The fallback is mandatory : if instantiation was skipped
+// or failed, decode still produces byte-exact pixels.
+
+/**
+ * Decode one IGC texture (compressed bytes → RGBA8888) — WASM fused entry when
+ * instantiated, else the JS pipeline oracle. Signature matches the oracle so
+ * `decodeIGCTexture`'s call site is build-agnostic.
+ *
+ * @param {Uint8Array} src — the IGC bitstream.
+ * @param {number} width @param {number} height — texture dimensions.
+ * @param {0 | 1 | boolean} alpha — whether the bitstream carries an A plane.
+ * @returns {Uint8Array} RGBA8888, length = width*height*4.
+ */
+export function decodeIGCPipeline(src, width, height, alpha) {
+    return pipeline
+        ? pipeline.decode(src, width, height, alpha)
+        : jsPipeline(src, width, height, alpha);
 }

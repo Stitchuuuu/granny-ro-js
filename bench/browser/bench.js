@@ -25,9 +25,9 @@ const AXES = [
     { label: 'js-esm · main', url: BUILD_URL, mode: 'main' },
     { label: 'js-esm · worker', url: BUILD_URL, mode: 'worker' },
     // WASM build : `await Granny.ready()` instantiation cost is timed
-    // separately (readyMs). Session 1 runs only yuvToRGB in WASM (arith / iDWT
-    // still JS + a boundary copy per decode) — a machinery smoke, not the perf
-    // verdict ; that lands when the whole pipeline is WASM.
+    // separately (readyMs). The whole IGC decode now runs as one fused WASM
+    // entry (planeDecode + 4× iDWT2D + yuvToRGB, planes resident) — a single
+    // JS→WASM crossing per texture. These two axes are the perf verdict.
     { label: 'wasm-esm · main', url: WASM_URL, mode: 'main' },
     { label: 'wasm-esm · worker', url: WASM_URL, mode: 'worker' },
 ];
@@ -158,6 +158,85 @@ function renderAxisTable(axis, readyMs, stallMs, rows) {
     );
 }
 
+// ---- results export : summary + Download / Copy + auto-POST capture -------
+// Renders a headline summary (per-axis total warm-best + WASM-vs-JS ratio),
+// wires a Download-JSON + Copy button, and best-effort POSTs the JSON to
+// `/results` so a capturing dev server can persist it (no-op if the static
+// server doesn't accept POST). All client-side ; safe for standalone use.
+function exportResults(fixtureCount, axes) {
+    const totalBest = (a) => a.fixtures.filter((r) => !r.error).reduce((s, r) => s + r.best, 0);
+    const bestOf = (label) => {
+        const a = axes.find((x) => x.axis === label);
+        return a ? totalBest(a) : null;
+    };
+    const jsMain = bestOf('js-esm · main');
+    const wasmMain = bestOf('wasm-esm · main');
+    const jsWork = bestOf('js-esm · worker');
+    const wasmWork = bestOf('wasm-esm · worker');
+    const ratio = (js, w) => (js && w ? (js / w).toFixed(2) + '×' : '—');
+
+    const payload = {
+        generatedAt: new Date().toISOString(),
+        warmIters: WARM_ITERS,
+        fixtureCount,
+        userAgent: navigator.userAgent,
+        summary: {
+            totalWarmBestMs: {
+                'js·main': jsMain,
+                'js·worker': jsWork,
+                'wasm·main': wasmMain,
+                'wasm·worker': wasmWork,
+            },
+            wasmVsJs: { main: ratio(jsMain, wasmMain), worker: ratio(jsWork, wasmWork) },
+        },
+        axes,
+    };
+    const json = JSON.stringify(payload, null, 2);
+
+    // Summary card + toolbar, injected above the per-axis tables.
+    const bar = document.createElement('section');
+    bar.className = 'summary';
+    const h = document.createElement('h2');
+    h.textContent = 'verdict — total warm-best (lower = faster)';
+    bar.appendChild(h);
+    const p = document.createElement('p');
+    p.textContent =
+        `js·main ${jsMain?.toFixed(1) ?? '—'} ms · wasm·main ${wasmMain?.toFixed(1) ?? '—'} ms ` +
+        `(WASM ${ratio(jsMain, wasmMain)}) — js·worker ${jsWork?.toFixed(1) ?? '—'} ms · ` +
+        `wasm·worker ${wasmWork?.toFixed(1) ?? '—'} ms (WASM ${ratio(jsWork, wasmWork)})`;
+    bar.appendChild(p);
+
+    const dl = document.createElement('button');
+    dl.textContent = '⬇ Download JSON';
+    dl.onclick = () => {
+        const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `granny-bench-${payload.generatedAt.replace(/[:.]/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+    const cp = document.createElement('button');
+    cp.textContent = '📋 Copy JSON';
+    cp.onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(json);
+            cp.textContent = '✓ Copied';
+            setTimeout(() => (cp.textContent = '📋 Copy JSON'), 1500);
+        } catch {
+            cp.textContent = '✗ clipboard blocked — use Download';
+        }
+    };
+    bar.appendChild(dl);
+    bar.appendChild(cp);
+    $results().prepend(bar);
+
+    // Best-effort auto-capture : a dev server may persist this ; harmless if not.
+    fetch('/results', { method: 'POST', headers: { 'content-type': 'application/json' }, body: json }).catch(() => {});
+
+    console.log('[bench:browser] full results JSON :\n' + json);
+}
+
 // ---- main-thread axis -----------------------------------------------------
 async function runMainAxis(axis, corpus) {
     setStatus(`${axis.label}: importing…`);
@@ -239,11 +318,14 @@ async function run() {
             const buf = await (await fetch(`./fixtures/${path}`)).arrayBuffer();
             corpus.push({ path, bytes: new Uint8Array(buf) });
         }
+        const collected = [];
         for (const axis of AXES) {
             const r = axis.mode === 'worker' ? await runWorkerAxis(axis, corpus) : await runMainAxis(axis, corpus);
             renderAxisTable(axis, r.readyMs, r.stallMs, r.rows);
+            collected.push({ axis: axis.label, mode: axis.mode, url: axis.url, readyMs: r.readyMs, stallMs: r.stallMs, fixtures: r.rows });
         }
-        setStatus(`done — ${AXES.length} axes, ${corpus.length} fixtures, ${WARM_ITERS} warm iters. See tables + console.`);
+        exportResults(corpus.length, collected);
+        setStatus(`done — ${AXES.length} axes, ${corpus.length} fixtures, ${WARM_ITERS} warm iters. See summary + Download/Copy above the tables.`);
     } catch (err) {
         setStatus(`ERROR — ${err.message}`);
         console.error(err);

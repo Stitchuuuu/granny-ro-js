@@ -27,8 +27,7 @@
 // `yuvToRGB` (re-exported from the seam).
 import {
     yuvToRGB,
-    planeDecode,
-    iDWT2D,
+    decodeIGCPipeline,
 } from './igc-kernels.js';
 
 // Minimum DWT dimensions — also the shouldBink small-image guard below. The
@@ -101,30 +100,11 @@ export function decodeIGCTexture(igcImage) {
         );
     }
 
-    const planeCount = alpha ? 4 : 3;
-    const planes = new Array(4);
-    for (let i = 0; i < 4; i++) planes[i] = new Int16Array(width * height);
-
-    const rowMask = new Uint8Array(height);
-    const temp = new Int16Array(width * height);
-
-    let cursor = 4;
-    for (let p = 0; p < planeCount; p++) {
-        const consumed = planeDecode(src, cursor, planes[p], 0, width, height,
-            (p === 0) ? rowMask : null);
-        cursor += consumed;
-
-        iDWT2D(planes[p], width * 8, width >> 3, height >> 3, null, temp);
-        iDWT2D(planes[p], width * 4, width >> 2, height >> 2, null, temp);
-        iDWT2D(planes[p], width * 2, width >> 1, height >> 1, null, temp);
-        iDWT2D(planes[p], width, width, height, (p === 0) ? rowMask : null, temp);
-    }
-
-    if (!alpha) {
-        for (let i = 0; i < width * height; i++) planes[3][i] = 255;
-    }
-
-    return yuvToRGB(planes[0], planes[1], planes[2], planes[3], width, height);
+    // The per-plane decode (planeDecode → 4× iDWT2D → alpha fill → yuvToRGB)
+    // runs behind the outermost seam : the pure-JS pipeline oracle by default
+    // (./igc-pipeline.js), or a single fused WASM entry in the opt-in `./wasm`
+    // build (one JS→WASM crossing, planes resident across their iDWT passes).
+    return decodeIGCPipeline(src, width, height, alpha);
 }
 
 // `yuvToRGB` is re-exported from the kernel seam (default = ./igc-yuv.js pure

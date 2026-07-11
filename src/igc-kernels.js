@@ -11,6 +11,16 @@
 // mandatory fallback. `initKernels()` there awaits the wasm instantiation.
 
 export { yuvToRGB } from './igc-yuv.js';
+export {
+    arithBitOpen,
+    arithOpen,
+    arithDecompress,
+    arithWasEscaped,
+    arithSetDecompressed,
+    arithBitsGetValue,
+    arithBitsGet,
+    arithBitsRemove,
+} from './igc-arith.js';
 
 /**
  * Ensure the IGC compute kernels are ready. In the default (pure-JS) build

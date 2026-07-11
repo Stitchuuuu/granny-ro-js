@@ -65,6 +65,22 @@ const _OFFSET_BYTE_MASK = 0x1FF;
 /** 31-bit unsigned cap — the arith decoder lives in 31 bits. */
 const MASK31 = 0x7FFFFFFF;
 
+// --- untrusted-input allocation caps -----------------------------------
+// Decompression-bomb guards. `expanded_size` (u32) and the arith alphabet
+// sizes (23-bit `unique_offsets`) are file-controlled and drive the two
+// big allocations here, both BEFORE any length cross-check fires. The caps
+// are O(1) size-field checks placed outside the decode loops (once per
+// section / once per model open) so they add no hot-path cost. Ceilings are
+// generous — the largest real fixture is 98 KB expanded / 4.24× ratio, so
+// these sit ~2700× / ~240× / ~21× above any legit RO asset and only reject
+// the absurd (multi-GB alloc, billions of iterations).
+/** Absolute ceiling on a section's decompressed size. 256 MiB. */
+export const OODLE0_MAX_EXPANDED_SIZE = 256 * 1024 * 1024;
+/** Max `expanded_size` as a multiple of the compressed input length. */
+export const OODLE0_MAX_EXPAND_RATIO = 1024;
+/** Ceiling on an arith model's alphabet size (blocks the 23-bit 8.4M field). */
+export const OODLE0_MAX_ALPHABET = 1 << 21; // 2,097,152
+
 /** Raised by the Oodle0 decoder on malformed or out-of-spec input. */
 export class DecompressionError extends Error {
     constructor(message) {
@@ -431,6 +447,15 @@ class EscapeSymbol {
  */
 class ArithModel {
     constructor(uniqueValues) {
+        // Cap the alphabet before the two count/value arrays are sized —
+        // `unique_offsets` (23-bit, up to 8.4M) feeds `offset_high` and
+        // would otherwise drive ~hundreds of MB of transient JS arrays.
+        // One guard here covers all four model kinds (bytes / lengths /
+        // offset_low / offset_high) ; legit alphabets are far below the cap.
+        if (uniqueValues > OODLE0_MAX_ALPHABET) {
+            throw new DecompressionError(
+                `oodle0 arith alphabet ${uniqueValues} exceeds cap ${OODLE0_MAX_ALPHABET}`);
+        }
         this.unique_values = uniqueValues;
         const count = alignedCount(uniqueValues);
         this.totals = new Array(16).fill(0);
@@ -688,6 +713,15 @@ export function decompressOodle0(section, compressed) {
     if (section.expanded_size === 0) return new Uint8Array(0);
     if (compressed.length < OODLE0_HEADER_SIZE) {
         throw new DecompressionError('oodle0 data too short for 3 block headers');
+    }
+    // Cap the decompressed size before allocating — reject a bomb (huge
+    // expanded_size from a tiny section) instead of OOMing on the alloc.
+    const expanded = section.expanded_size;
+    if (expanded > OODLE0_MAX_EXPANDED_SIZE ||
+        expanded > compressed.length * OODLE0_MAX_EXPAND_RATIO) {
+        throw new DecompressionError(
+            `oodle0 expanded_size ${expanded} exceeds cap ` +
+            `(${OODLE0_MAX_EXPANDED_SIZE} B / ${OODLE0_MAX_EXPAND_RATIO}× of ${compressed.length} B)`);
     }
     const plan = parseOodle0Plan(section, compressed);
     const bits = new ArithBits(compressed, OODLE0_HEADER_SIZE);

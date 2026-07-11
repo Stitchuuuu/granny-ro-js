@@ -68,7 +68,7 @@ output stays byte-identical to `1.0.0`, same content manifest.
 | Pose composition (skinning matrices ready for GPU) | ✅ DLL-verified¹ |
 | Texture — raw RGBA / BGRA path | ✅ byte-exact |
 | Texture — wavelet-compressed (Bink-family) path | ✅ 17 / 17 fixtures byte-exact |
-| Anti-hang guard on degenerate IGC bitstreams | ✅ throws within 50 ms |
+| Anti-hang guard on degenerate IGC bitstreams | ✅ throws after >64 consecutive idle arith reads |
 
 ¹ The pose runtime (`poseAt`) is verified float-for-float against the
 real `granny2.dll` composite matrices — not just the Python clean-room

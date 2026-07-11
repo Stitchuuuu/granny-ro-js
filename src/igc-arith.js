@@ -646,7 +646,18 @@ function arithRescale(a) {
 // needed) — kept in the signature for backward compat with planeDecode
 // callers L1274+.
 
+// Untrusted-input cap on the arith alphabet size. `uniqueValues` (= `max +
+// 1`, `max` a 16-bit bitstream field) sizes two Uint16Array tables ; the
+// callers (igc-plane.js:174 decodeLow, :247 createDecompContexts) feed it
+// attacker-controlled values up to 65536. A plane-delta alphabet is small,
+// so 8192 is generous ; the fixed lit(64)/zero(256) opens pass unaffected.
+// O(1) guard, once per model open — not an inner-loop check.
+export const IGC_MAX_ALPHABET = 8192;
+
 function arithOpen(_maxValue, uniqueValues) {
+    if (uniqueValues > IGC_MAX_ALPHABET) {
+        throw new Error(`igc arith alphabet ${uniqueValues} exceeds cap ${IGC_MAX_ALPHABET}`);
+    }
     const countsSize = ((uniqueValues + 5) & ~3) | 0;
     const a = {
         cumCounts: new Uint16Array(16),

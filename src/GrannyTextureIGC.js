@@ -37,6 +37,17 @@ import {
 const SMALLEST_DWT_ROW = 16;
 const SMALLEST_DWT_COL = 16;
 
+// Untrusted-input allocation caps for the full-DWT path. `Width`/`Height`
+// are read verbatim from the reflection struct and drive four Int16Array
+// plane allocs + a temp (igc-pipeline.js:40,43) with no upper bound —
+// Width=Height=16384 passes the 16-alignment gate yet asks for ~2 GB. RO
+// textures are ≤ ~1024²/2048², so 4096² gives ≥16× headroom. The per-byte
+// ratio is a loose bomb cross-check mirroring the raw path
+// (GrannyTexture.js:163) : the IGC bitstream must carry at least ~1 byte
+// per 4096 declared pixels. Both are O(1) checks at the choke point.
+const IGC_MAX_PIXELS = 4096 * 4096; // 16 Mpix
+const IGC_MAX_PIXELS_PER_BYTE = 4096;
+
 // ============================================================================
 // Public API.
 //
@@ -97,6 +108,17 @@ export function decodeIGCTexture(igcImage) {
         throw new Error(
             `decodeIGCTexture: shouldBink fallback not supported (W=${width}, ` +
             `H=${height}). iRO corpus walker should filter these out.`
+        );
+    }
+
+    // Cap the plane allocation before igc-pipeline.js sizes 5× Int16Array
+    // on width*height — reject an oversized/bomb texture instead of OOMing.
+    const pixels = width * height;
+    if (pixels > IGC_MAX_PIXELS ||
+        pixels > src.byteLength * IGC_MAX_PIXELS_PER_BYTE) {
+        throw new Error(
+            `decodeIGCTexture: ${width}×${height} (${pixels} px) exceeds cap ` +
+            `(${IGC_MAX_PIXELS} px / ${IGC_MAX_PIXELS_PER_BYTE}× of ${src.byteLength} B)`
         );
     }
 

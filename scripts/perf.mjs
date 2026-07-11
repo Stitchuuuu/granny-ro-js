@@ -57,7 +57,7 @@ for (const name of fixtures) {
         const file = parseGR2File(bytes);
         let bytesOut = 0;
         for (const section of file.sections) {
-            const data = decompressSection(section, bytes);
+            const data = decompressSection(section, file.sectionBytes(section));
             bytesOut += data.length;
         }
         const ms = performance.now() - t0;

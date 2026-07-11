@@ -136,7 +136,16 @@ export function arithBitOpen(buf, offset) {
 
 /** @param {number} max @param {number} num */
 export function arithOpen(max, num) {
-    return arith ? arith.open(num) : jsArith.arithOpen(max, num);
+    if (arith) {
+        // Mirror the JS oracle's untrusted-input cap (igc-arith.js) : the wasm
+        // model-open bypasses it otherwise. `num` is visible here, so an O(1)
+        // JS guard suffices — no need for a kernel-side check on this seam.
+        if (num > jsArith.IGC_MAX_ALPHABET) {
+            throw new Error(`igc arith alphabet ${num} exceeds cap ${jsArith.IGC_MAX_ALPHABET}`);
+        }
+        return arith.open(num);
+    }
+    return jsArith.arithOpen(max, num);
 }
 
 export function arithDecompress(a, ab) {

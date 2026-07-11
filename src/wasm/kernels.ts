@@ -540,6 +540,19 @@ export function arithDecompress(a: usize, ab: usize): i32 {
 // decodeHigh1 lit/zero lengths) and calls `arithSetDecompressed`.
 // ============================================================================
 
+// Untrusted-input cap on the arith alphabet size — mirror of src/igc-arith.js
+// IGC_MAX_ALPHABET. `num` (= `max + 1`, `max` a 16-bit varbits field) sizes the
+// per-model buffer ; a plane-delta alphabet is small, so 8192 is generous. On
+// the fused path `max` is read in-wasm and never crosses to JS, so the guard
+// lives here (O(1) at the model open, never an inner-loop check).
+// @inline
+const IGC_MAX_ALPHABET: i32 = 8192;
+
+// Set when a model open exceeds IGC_MAX_ALPHABET ; reset per planeDecode entry.
+// planeDecode returns the -2 alphabet sentinel when set (distinct from the -1
+// anti-hang), which the fused entry bubbles and the JS driver turns into a throw.
+let g_alphabetExceeded: i32 = 0;
+
 // Per-plane bump-allocator cursor (set to workPtr at each planeDecode entry).
 let g_pdCursor: usize = 0;
 
@@ -674,6 +687,13 @@ function pdArithBitOpen(bufPtr: usize, offset: i32): usize {
 
 // arithOpen with in-wasm allocation (uniqueValues = JS `num`).
 function pdArithOpen(uniqueValues: i32): usize {
+  // Untrusted-input cap : flag + bail before the alloc (return the current
+  // cursor — a valid in-range address — so the caller never dereferences an
+  // unallocated block ; callers check g_alphabetExceeded before using it).
+  if (uniqueValues > IGC_MAX_ALPHABET) {
+    g_alphabetExceeded = 1;
+    return g_pdCursor;
+  }
   const countsSize: i32 = (uniqueValues + 5) & ~3;
   const blockSize: i32 = <i32>A_SC + countsSize * 4;
   const a: usize = pdAlloc(blockSize);
@@ -694,6 +714,7 @@ function decodeLow(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPit
   const max: i32 = <i32>varBitsGet(vb, 16);
   const num: i32 = max + 1;
   const a: usize = pdArithOpen(num);
+  if (g_alphabetExceeded) return; // alphabet cap tripped — bail before the decode loop
   const yadj: i32 = pixelPitch - encWidth;
 
   let prev: i32 = <i32>varBitsGet(vb, 16);
@@ -759,6 +780,7 @@ function decodeLow(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPit
 // encode.c:1611 — decode_high_1. High-pass plane, order-1 prediction.
 // Returns 0 on success, 1 on the 64-idle-iter anti-hang (bitstream off-corpus).
 function decodeHigh1(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPitch: i32, encWidth: i32, encHeight: i32): i32 {
+  if (g_alphabetExceeded) return 0; // an earlier subband tripped the cap — cheap no-op until planeDecode returns
   const qlevel: i32 = <i32>varBitsGet(vb, 16);
 
   if (varBitsGet1(vb)) {
@@ -778,6 +800,7 @@ function decodeHigh1(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelP
   let ctxBase: usize = 0;
   for (let i: i32 = 0; i < numl; i++) {
     const p: usize = pdArithOpen(num);
+    if (g_alphabetExceeded) return 0; // alphabet cap tripped — bail before the numl models / decode loop
     if (i == 0) ctxBase = p;
   }
   const lits: usize = pdArithOpen(LIT_LENGTH_LIMIT + 1);
@@ -1123,6 +1146,7 @@ function readEscapes(ab: usize, maskPtr: usize, count: i32): void {
  */
 export function planeDecode(bufPtr: usize, srcOffset: i32, outPtr: usize, width: i32, height: i32, rowMaskPtr: usize, workPtr: usize): i32 {
   g_pdCursor = workPtr;
+  g_alphabetExceeded = 0;
 
   const arithLen: u32 = load<u32>(bufPtr + <usize>srcOffset);
   const varbitsStart: i32 = srcOffset + 8 + <i32>arithLen;
@@ -1150,6 +1174,8 @@ export function planeDecode(bufPtr: usize, srcOffset: i32, outPtr: usize, width:
   if (decodeHigh1(ab, vb, outPtr, width >> 1, width * 2, width >> 1, height >> 1)) return -1;
   if (decodeHigh1(ab, vb, outPtr, width, width * 2, width >> 1, height >> 1)) return -1;
   if (decodeHigh1(ab, vb, outPtr, (width >> 1) + width, width * 2, width >> 1, height >> 1)) return -1;
+
+  if (g_alphabetExceeded) return -2; // alphabet cap tripped mid-plane — bubble the sentinel
 
   if (rowMaskPtr != 0) {
     readEscapes(ab, rowMaskPtr, height);

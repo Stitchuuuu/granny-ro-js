@@ -8,8 +8,13 @@
 // Byte-exact regression (legit files still decode identically) is covered
 // by the content-manifest suite (`npm run test:js` / integration/manifest).
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { performance } from 'node:perf_hooks';
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createPipelineDriver } from '../../src/wasm/pipeline-driver.js';
+import { decodeIGCPipeline } from '../../src/igc-pipeline.js';
 import {
     decompressOodle0,
     DecompressionError,
@@ -108,6 +113,61 @@ describe('finding 4b — IGC arith alphabet', () => {
         expect(() => arithOpen(0, IGC_MAX_ALPHABET)).not.toThrow();
         expect(() => arithOpen(0, 64)).not.toThrow();   // LIT_LENGTH_LIMIT+1
         expect(() => arithOpen(0, 256)).not.toThrow();  // ZERO_LENGTH_LIMIT+1
+    });
+});
+
+// --- finding 4b on the WASM decode path (session 3) -------------------
+//
+// The pure-JS `arithOpen` cap (above) is BYPASSED on the opt-in `./wasm`
+// build : the fused kernel re-reads the alphabet field (`max`, a 16-bit
+// varbits value) INSIDE wasm and allocates its model buffer there, so the JS
+// guard never runs. The AS-side echo (kernels.ts `pdArithOpen`) must trip on
+// the same input and surface a clean typed throw — not a wasm trap / OOM.
+//
+// The wasm driver and the JS pipeline oracle share byte-exact framing, so one
+// forged plane-0 buffer drives both : asserting the oracle throws calibrates
+// the craft, then asserting the wasm driver throws proves parity.
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const KERNELS_WASM = resolve(__dirname, '../../src/wasm/kernels.wasm');
+
+// Minimal IGC bitstream whose plane-0 low-pass sub-band declares an arith
+// alphabet `max` far over IGC_MAX_ALPHABET. Framing (igc-pipeline.js) : the
+// pipeline starts plane 0 at offset 4 ; a plane is
+// [arithLen u32][varbitsLen u32][arith bytes…][varbits bytes…]. decodeLow reads
+// varBitsGet1 (bit0 = 0 → alphabet path) then varBitsGet(16) = max. varBitsGet
+// is LSB-first, so the varbits word = (max << 1) | bit0 → max=9000 ⇒ 0x4650.
+function forgeOversizedAlphabetPlane(max = 9000) {
+    const buf = new Uint8Array(64); // ~20 B used ; trailing zeros cover read-ahead
+    const view = new DataView(buf.buffer);
+    view.setUint32(4, 4, true);                 // plane 0 arithLen = 4 (minimal stream)
+    view.setUint32(8, 0, true);                 // plane 0 varbitsLen (unread — we bail first)
+    // arith bytes 12..15 stay 0 (coder inits ; unused before the cap trips).
+    view.setUint32(16, (max << 1) >>> 0, true); // varbits : bit0 = 0, next 16 bits = max
+    return buf;
+}
+
+describe('finding 4b (wasm) — IGC arith alphabet on the fused path', () => {
+    const src = forgeOversizedAlphabetPlane(9000); // num = 9001 > IGC_MAX_ALPHABET (8192)
+
+    it('JS pipeline oracle throws on the forged alphabet (calibrates the craft)', () => {
+        expect(() => decodeIGCPipeline(src, 16, 16, false)).toThrow(/igc arith alphabet/);
+    });
+
+    if (!existsSync(KERNELS_WASM)) {
+        it.skip('skipped : src/wasm/kernels.wasm absent (run `npm run build:wasm`)', () => {});
+        return;
+    }
+
+    /** @type {ReturnType<typeof createPipelineDriver>} */
+    let driver;
+    beforeAll(async () => {
+        const { instance } = await WebAssembly.instantiate(readFileSync(KERNELS_WASM), {});
+        driver = createPipelineDriver(instance);
+    });
+
+    it('fused WASM entry throws a clean typed error, not a wasm trap or OOM', () => {
+        throwsFast(() => driver.decode(src, 16, 16, 0), /igc arith alphabet/);
     });
 });
 

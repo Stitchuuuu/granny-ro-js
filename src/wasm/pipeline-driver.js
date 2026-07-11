@@ -17,8 +17,12 @@
 // `workBase` via its in-wasm bump allocator, so JS refreshes its views after the
 // call (grow detaches the ArrayBuffer).
 
+import { IGC_MAX_ALPHABET } from '../igc-arith.js';
+
 /** Bytes zeroed past the bitstream so the coders' read-past-end yields 0. */
 const BUF_PAD = 32;
+/** planeDecode's alphabet-cap sentinel — must match kernels.ts `return -2`. */
+const RET_ALPHABET_CAP = -2;
 /** i16 guard trailing the plane block + temp block (== kernels.ts GUARD). */
 const GUARD_I16 = 8;
 
@@ -81,6 +85,9 @@ export function createPipelineDriver(instance) {
 
             const ret = ex.decodeIGCTexture(bufPtr, width, height, alpha ? 1 : 0, rgbaPtr, workBase);
             if (ret < 0) {
+                if (ret === RET_ALPHABET_CAP) {
+                    throw new Error(`igc arith alphabet exceeds cap ${IGC_MAX_ALPHABET}`);
+                }
                 throw new Error('decodeIGCTexture: planeDecode anti-hang (off-corpus bitstream)');
             }
 

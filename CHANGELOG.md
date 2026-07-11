@@ -6,9 +6,28 @@ milestones for the upcoming stable `1.0.0`.
 
 ## 1.1.0 — 2026-07-10
 
-Distribution pass. Ships a built `dist/` for every JS consumption vector —
-single-file / code-split, ESM / CJS / IIFE, browser / Node — instead of raw
-source. Decode output is byte-identical to `1.0.0` (same content manifest).
+Distribution + performance pass. Ships a built `dist/` for every JS consumption
+vector — single-file / code-split, ESM / CJS / IIFE, browser / Node — instead of
+raw source, plus a 2× faster texture decoder. Decode output is byte-identical to
+`1.0.0` (same content manifest).
+
+### Performance
+
+Profile-driven optimization of the IGC texture codec (the ~85%-of-model-load
+cost). Byte-exact after every commit — 17/17 IGC textures against the content
+manifest, guarded by a call-by-call arithmetic differential.
+
+- **IGC texture decode : 2.00× faster** — 226.74 ms → 113.30 ms summed across
+  the 6 model fixtures.
+- **Full model load : 1.74× faster** — 265.2 ms → 152.5 ms (parse, already
+  optimal, now dominates a larger share : model `tex %` fell 85.0% → 74.3%).
+- Two structural wins : pooled the `iDWT` ring buffers into module-scoped pools
+  (kills per-group allocation churn) and dropped `BigInt` for `f64` in the hot
+  arithmetic multiply sites (provably exact — `range·scale < 2⁴⁵`).
+- Animation packs unchanged (no IGC path — Oodle0 decompression was already tuned).
+
+Full ledger — what landed, what was tried and reverted, and why — in
+[docs/perf-baseline.md](docs/perf-baseline.md).
 
 ### Public API additions
 
@@ -19,6 +38,9 @@ source. Decode output is byte-identical to `1.0.0` (same content manifest).
 - **`await loadTextureCodec()`** — ensures the IGC texture decoder is loaded.
   A no-op in the default build (decoder inlined) ; in the code-split build it
   dynamic-imports the IGC chunk. Idempotent.
+- **`extractModels(loaded, options)`** — decodes the GR2 `Model` struct and
+  surfaces `root.Models` as a typed array, alongside `extractSkeletons` /
+  `extractMeshes` / `extractMaterials`.
 
 ### Distribution
 
@@ -38,6 +60,18 @@ source. Decode output is byte-identical to `1.0.0` (same content manifest).
   the ESM. `files` whitelist ships `dist/` only (no tests / scripts / shim /
   fixtures) — verified by `npm publish --dry-run`.
 - Bundle-size table in [docs/dist-size.md](docs/dist-size.md) (min + brotli).
+
+### Validation & tooling
+
+- **World-pose DLL oracle** : the pose / placement runtime is now verified
+  float-for-float against a Win32 `gr2_worldpose` oracle built on the real
+  `granny2.dll`, on top of the existing Python clean-room cross-check.
+- **Full-load benches** : per-commit compare tooling (`npm run perf` /
+  `perf:profile`) plus a real-browser full-load harness (main-thread vs worker
+  axes) for measuring parse + decode end-to-end.
+- **Types** : inline JSDoc is now the single source of truth for the public
+  API, rolled up into the shipped `.d.ts`.
+- **CI** bumped to GitHub Actions v5 on Node 22.
 
 ### Breaking changes
 

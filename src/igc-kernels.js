@@ -11,6 +11,7 @@
 // mandatory fallback. `initKernels()` there awaits the wasm instantiation.
 
 export { yuvToRGB } from './igc-yuv.js';
+export { planeDecode } from './igc-plane.js';
 export {
     arithBitOpen,
     arithOpen,

@@ -13,7 +13,9 @@
 
 import { yuvToRGB as yuvJS } from './igc-yuv.js';
 import * as jsArith from './igc-arith.js';
+import * as jsPlane from './igc-plane.js';
 import { createArithDriver } from './wasm/arith-driver.js';
+import { createPlaneDriver } from './wasm/plane-driver.js';
 import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
 
 /**
@@ -31,6 +33,7 @@ import KERNELS_WASM_B64 from './wasm/kernels-b64.js';
  * @property {(abPtr: number, scale: number) => number} arithBitsGetValue
  * @property {(abPtr: number, scale: number) => number} arithBitsGet
  * @property {(abPtr: number, lo: number, count: number, scale: number) => void} arithBitsRemove
+ * @property {(bufPtr: number, srcOffset: number, outPtr: number, width: number, height: number, rowMaskPtr: number, workPtr: number) => number} planeDecode
  */
 
 /** @type {KernelExports | null} — kernel exports once instantiated. */
@@ -39,6 +42,8 @@ let wasm = null;
 let base = 0;
 /** @type {ReturnType<typeof createArithDriver> | null} — arith kernel driver. */
 let arith = null;
+/** @type {ReturnType<typeof createPlaneDriver> | null} — planeDecode driver. */
+let plane = null;
 
 /** Decode a base64 string to bytes (global `atob` : Node ≥ 16 + browsers). */
 function b64ToBytes(b64) {
@@ -63,6 +68,7 @@ export async function initKernels() {
     wasm = /** @type {KernelExports} */ (/** @type {unknown} */ (instance.exports));
     base = wasm.scratchBase() >>> 0;
     arith = createArithDriver(instance);
+    plane = createPlaneDriver(instance);
 }
 
 /** Grow `memory` so `[base, base+bytes)` is addressable ; returns the buffer. */
@@ -145,4 +151,29 @@ export function arithBitsGet(ab, scale) {
 export function arithBitsRemove(ab, lo, count, scale) {
     if (arith) arith.bitsRemove(ab, lo, count, scale);
     else jsArith.arithBitsRemove(ab, lo, count, scale);
+}
+
+// --- planeDecode ------------------------------------------------------------
+//
+// WASM when instantiated (one crossing per plane — the arith coder runs
+// entirely in-wasm, no per-symbol boundary), else the pure-JS oracle
+// (./igc-plane.js). Signature matches the oracle so `decodeIGCTexture`'s call
+// site is build-agnostic.
+
+/**
+ * Decode one IGC plane bitstream into the S16 `output` plane.
+ *
+ * @param {Uint8Array} src @param {number} srcOffset
+ * @param {Int16Array} output @param {number} outOffset
+ * @param {number} width @param {number} height
+ * @param {Uint8Array | null} rowMask
+ * @returns {number} bytes consumed from `src`.
+ */
+export function planeDecode(src, srcOffset, output, outOffset, width, height, rowMask) {
+    if (!plane) return jsPlane.planeDecode(src, srcOffset, output, outOffset, width, height, rowMask);
+
+    const r = plane.planeDecode(src, srcOffset, width, height, rowMask != null);
+    output.set(r.plane, outOffset);
+    if (rowMask) rowMask.set(r.mask);
+    return r.consumed;
 }

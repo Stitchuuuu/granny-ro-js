@@ -526,3 +526,635 @@ export function arithDecompress(a: usize, ab: usize): i32 {
 
   return -(newSL + 1);
 }
+
+// ============================================================================
+// planeDecode — adaptive-arithmetic + 4-level sub-band traversal. Byte-exact
+// port of src/igc-plane.js (the JS oracle). Drives the arith kernel above
+// entirely in-wasm : one JS→WASM crossing per plane, zero per-symbol round
+// trips. State (coder `ab`, varbits `vb`, N adaptive models) is bump-allocated
+// per call from a JS-provided `workPtr`, growing linear memory as needed.
+//
+// Escape resolution is in-wasm : `arithDecompress` returns `-(slot+1)` on
+// escape → the ported code reads `escaped` from the right stream
+// (`arithBitsGetValue` for decodeLow / pixel-context ; `varBitsGet` for
+// decodeHigh1 lit/zero lengths) and calls `arithSetDecompressed`.
+// ============================================================================
+
+// Per-plane bump-allocator cursor (set to workPtr at each planeDecode entry).
+let g_pdCursor: usize = 0;
+
+// Allocate `nbytes` from the work region (4-aligned), growing memory to fit.
+function pdAlloc(nbytes: i32): usize {
+  const p: usize = (g_pdCursor + 3) & ~(<usize>3);
+  g_pdCursor = p + <usize>nbytes;
+  const have: usize = <usize>memory.size() << 16;
+  if (g_pdCursor > have) {
+    memory.grow(<i32>(((g_pdCursor - have) + 0xffff) >> 16));
+  }
+  return p;
+}
+
+// --- VarBits — 32-bit LE bit reader (NOT bit-reversed ; separate from `ab`) --
+// Block (16 B) : { bufPtr(usize @0), cur(u32 @4), bits(u32 @8), bitlen(i32 @12) }.
+// @inline
+const VB_BUF: usize = 0;
+// @inline
+const VB_CUR: usize = 4;
+// @inline
+const VB_BITS: usize = 8;
+// @inline
+const VB_BITLEN: usize = 12;
+
+function pdVarBitsOpen(bufPtr: usize, offset: i32): usize {
+  const vb: usize = pdAlloc(16);
+  store<usize>(vb + VB_BUF, bufPtr);
+  store<u32>(vb + VB_CUR, <u32>offset);
+  store<u32>(vb + VB_BITS, 0);
+  store<i32>(vb + VB_BITLEN, 0);
+  return vb;
+}
+
+// varbits.h — VarBitsGet1LE. Reads one bit. `load<u32>` is the LE U32 read
+// (wasm is LE ; the 32-byte zero-pad after the copied bitstream supplies the
+// read-past-end zeros the JS oracle gets from `buf[oob] → undefined → 0`).
+function varBitsGet1(vb: usize): i32 {
+  const bitlen: i32 = load<i32>(vb + VB_BITLEN);
+  if (bitlen == 0) {
+    const bufp: usize = load<usize>(vb + VB_BUF);
+    const cur: u32 = load<u32>(vb + VB_CUR);
+    const i: u32 = load<u32>(bufp + <usize>cur);
+    store<u32>(vb + VB_CUR, cur + 4);
+    store<u32>(vb + VB_BITS, i >>> 1);
+    store<i32>(vb + VB_BITLEN, 31);
+    return <i32>(i & 1);
+  }
+  const bits: u32 = load<u32>(vb + VB_BITS);
+  store<u32>(vb + VB_BITS, bits >>> 1);
+  store<i32>(vb + VB_BITLEN, bitlen - 1);
+  return <i32>(bits & 1);
+}
+
+// varbits.h — VarBitsGetLE. Reads `len` bits, returns unsigned (JS `>>> 0`).
+function varBitsGet(vb: usize, len: i32): u32 {
+  const mask: u32 = (len == 32) ? 0xffffffff : ((<u32>1 << len) - 1);
+  const bitlen: i32 = load<i32>(vb + VB_BITLEN);
+  const bits: u32 = load<u32>(vb + VB_BITS);
+  if (bitlen < len) {
+    const bufp: usize = load<usize>(vb + VB_BUF);
+    const cur: u32 = load<u32>(vb + VB_CUR);
+    const nb: u32 = load<u32>(bufp + <usize>cur);
+    store<u32>(vb + VB_CUR, cur + 4);
+    const merged: u32 = (bits | (nb << bitlen)) & mask;
+    store<u32>(vb + VB_BITS, nb >>> <u32>(len - bitlen));
+    store<i32>(vb + VB_BITLEN, bitlen + 32 - len);
+    return merged;
+  }
+  const result: u32 = bits & mask;
+  store<u32>(vb + VB_BITS, bits >>> len);
+  store<i32>(vb + VB_BITLEN, bitlen - len);
+  return result;
+}
+
+// --- Helpers -----------------------------------------------------------------
+
+// Sign-extend a 16-bit value to signed (called only on 0..65535 inputs).
+// @inline
+function s16(v: i32): i32 { return (v << 16) >> 16; }
+
+// @inline
+function radabs(v: i32): i32 { return v < 0 ? -v : v; }
+
+// varbits.h — getbitlevel. Caps at 15 for value >= 16384 ; operates on U32.
+function getBitLevel(value: u32): i32 {
+  let n: u32 = value;
+  if (n == 0) return 0;
+  if (n >= 16384) return 15;
+  let r: i32 = 0;
+  while (n > 0) { r++; n >>>= 1; }
+  return r;
+}
+
+// encode.c:1416 — fill_rect. `outOffset` in S16 elements ; `val` stored as i16.
+function fillRect(outPtr: usize, outOffset: i32, pitch: i32, width: i32, height: i32, val: i32): void {
+  const yadj: i32 = pitch - width;
+  let o: i32 = outOffset;
+  for (let h: i32 = 0; h < height; h++) {
+    for (let w: i32 = 0; w < width; w++) {
+      store<i16>(outPtr + (<usize>o << 1), <i16>val);
+      o++;
+    }
+    o += yadj;
+  }
+}
+
+// Length-decode tables (encode.c) — static data, no runtime allocation.
+const EXTRA_LIT_PTR: usize = memory.data<i32>([128, 256, 512, 1024]);
+const EXTRA_ZERO_PTR: usize = memory.data<i32>([512, 1024, 2048, 3072]);
+
+// @inline
+const MIN_ZERO_LENGTH: i32 = 3;
+// @inline
+const LIT_LENGTH_BITS: i32 = 6;
+// @inline
+const ZERO_LENGTH_BITS: i32 = 8;
+// @inline
+const LIT_LENGTH_LIMIT: i32 = 63;   // (1 << 6) - 1
+// @inline
+const ZERO_LENGTH_LIMIT: i32 = 255; // (1 << 8) - 1
+// @inline
+const EXTRA_LENGTHS: i32 = 4;
+
+// --- Bump-allocating openers -------------------------------------------------
+
+function pdArithBitOpen(bufPtr: usize, offset: i32): usize {
+  const ab: usize = pdAlloc(28);
+  arithBitOpen(ab, bufPtr, offset);
+  return ab;
+}
+
+// arithOpen with in-wasm allocation (uniqueValues = JS `num`).
+function pdArithOpen(uniqueValues: i32): usize {
+  const countsSize: i32 = (uniqueValues + 5) & ~3;
+  const blockSize: i32 = <i32>A_SC + countsSize * 4;
+  const a: usize = pdAlloc(blockSize);
+  arithOpen(a, uniqueValues);
+  return a;
+}
+
+// --- Plane sub-decoders ------------------------------------------------------
+
+// encode.c:1440 — decode_low. Low-pass plane, pixel-to-left/above prediction.
+function decodeLow(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPitch: i32, encWidth: i32, encHeight: i32): void {
+  if (varBitsGet1(vb)) {
+    const v: i32 = <i32>varBitsGet(vb, 16);
+    fillRect(outPtr, outOffset, pixelPitch, encWidth, encHeight, s16(v));
+    return;
+  }
+
+  const max: i32 = <i32>varBitsGet(vb, 16);
+  const num: i32 = max + 1;
+  const a: usize = pdArithOpen(num);
+  const yadj: i32 = pixelPitch - encWidth;
+
+  let prev: i32 = <i32>varBitsGet(vb, 16);
+  store<i16>(outPtr + (<usize>outOffset << 1), <i16>s16(prev));
+  outOffset++;
+  prev = s16(prev);
+
+  for (let w: i32 = 0; w < encWidth - 1; w++) {
+    let cur: i32 = arithDecompress(a, ab);
+    if (cur < 0) {
+      const escaped: i32 = arithBitsGetValue(ab, num);
+      arithSetDecompressed(a, -cur - 1, escaped);
+      cur = escaped;
+    }
+    if (cur) {
+      const v: i32 = -varBitsGet1(vb);
+      cur = (cur ^ v) - v;
+    }
+    prev = cur + prev;
+    store<i16>(outPtr + (<usize>outOffset << 1), <i16>prev);
+    outOffset++;
+  }
+
+  for (let h: i32 = 0; h < encHeight - 1; h++) {
+    outOffset += yadj;
+    let from: i32 = outOffset - pixelPitch;
+
+    let cur: i32 = arithDecompress(a, ab);
+    if (cur < 0) {
+      const escaped: i32 = arithBitsGetValue(ab, num);
+      arithSetDecompressed(a, -cur - 1, escaped);
+      cur = escaped;
+    }
+    if (cur) {
+      const v: i32 = -varBitsGet1(vb);
+      cur = (cur ^ v) - v;
+    }
+    prev = cur + <i32>load<i16>(outPtr + (<usize>from << 1));
+    store<i16>(outPtr + (<usize>outOffset << 1), <i16>prev);
+    outOffset++;
+    from++;
+
+    for (let w: i32 = 0; w < encWidth - 1; w++) {
+      cur = arithDecompress(a, ab);
+      if (cur < 0) {
+        const escaped: i32 = arithBitsGetValue(ab, num);
+        arithSetDecompressed(a, -cur - 1, escaped);
+        cur = escaped;
+      }
+      if (cur) {
+        const v: i32 = -varBitsGet1(vb);
+        cur = (cur ^ v) - v;
+      }
+      const avg: i32 = (prev + <i32>load<i16>(outPtr + (<usize>from << 1))) / 2;
+      prev = cur + avg;
+      store<i16>(outPtr + (<usize>outOffset << 1), <i16>prev);
+      outOffset++;
+      from++;
+    }
+  }
+}
+
+// encode.c:1611 — decode_high_1. High-pass plane, order-1 prediction.
+// Returns 0 on success, 1 on the 64-idle-iter anti-hang (bitstream off-corpus).
+function decodeHigh1(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPitch: i32, encWidth: i32, encHeight: i32): i32 {
+  const qlevel: i32 = <i32>varBitsGet(vb, 16);
+
+  if (varBitsGet1(vb)) {
+    const v: i32 = s16(<i32>varBitsGet(vb, 16));
+    fillRect(outPtr, outOffset, pixelPitch, encWidth, encHeight, v * qlevel);
+    return 0;
+  }
+
+  const max: i32 = <i32>varBitsGet(vb, 16);
+  const num: i32 = max + 1;
+  let numl: i32 = max * qlevel;
+  numl = getBitLevel(<u32>numl) + 1;
+
+  // create_decomp_contexts : numl context models (uniform size), + lits + zeros.
+  const countsSize: i32 = (num + 5) & ~3;
+  const blockSize: i32 = <i32>A_SC + countsSize * 4;
+  let ctxBase: usize = 0;
+  for (let i: i32 = 0; i < numl; i++) {
+    const p: usize = pdArithOpen(num);
+    if (i == 0) ctxBase = p;
+  }
+  const lits: usize = pdArithOpen(LIT_LENGTH_LIMIT + 1);
+  const zeros: usize = pdArithOpen(ZERO_LENGTH_LIMIT + 1);
+
+  const yadj: i32 = pixelPitch - encWidth;
+  let h: i32 = encHeight;
+
+  let above: i32 = arithBitsGetValue(ab, num);
+  if (above) {
+    const v: i32 = -varBitsGet1(vb);
+    above = (above ^ v) - v;
+    above = above * qlevel;
+  }
+
+  store<i16>(outPtr + (<usize>outOffset << 1), <i16>above);
+  let aboveLeft: i32 = above;
+  let prev: i32 = above;
+  let fromOffset: i32 = outOffset;
+  outOffset++;
+
+  if (encWidth == 1) {
+    return decodeHigh1AfterFirst(ab, vb, outPtr, outOffset, pixelPitch, encWidth, encHeight,
+      ctxBase, blockSize, lits, zeros, num, qlevel, yadj, h, above, aboveLeft, prev, fromOffset);
+  }
+
+  let w: i32 = encWidth - 1;
+  let litLen: i32 = 0;
+  let zeroLen: i32 = 0;
+  let idleIter: i32 = 0;
+
+  for (;;) {
+    // Read lit_len
+    const litLenRet: i32 = arithDecompress(lits, ab);
+    if (litLenRet < 0) {
+      const escaped: i32 = <i32>varBitsGet(vb, LIT_LENGTH_BITS);
+      arithSetDecompressed(lits, -litLenRet - 1, escaped);
+      litLen = escaped;
+    } else {
+      litLen = litLenRet;
+    }
+    if (litLen >= (LIT_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) {
+      litLen = load<i32>(EXTRA_LIT_PTR + (<usize>(litLen - (LIT_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) << 2));
+    }
+
+    // Read zero_len
+    const zeroLenRet: i32 = arithDecompress(zeros, ab);
+    if (zeroLenRet < 0) {
+      const escaped: i32 = <i32>varBitsGet(vb, ZERO_LENGTH_BITS);
+      arithSetDecompressed(zeros, -zeroLenRet - 1, escaped);
+      zeroLen = escaped;
+    } else {
+      zeroLen = zeroLenRet;
+    }
+    if (zeroLen >= (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) {
+      zeroLen = load<i32>(EXTRA_ZERO_PTR + (<usize>(zeroLen - (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) << 2)) + MIN_ZERO_LENGTH - 1;
+    } else if (zeroLen) {
+      zeroLen += MIN_ZERO_LENGTH - 1;
+    }
+
+    // Anti-hang : both lengths zero = neither inner while progresses h.
+    if (litLen == 0 && zeroLen == 0) {
+      if (++idleIter > 64) return 1;
+    } else {
+      idleIter = 0;
+    }
+
+    // Decode literals
+    while (litLen > 0) {
+      if (w <= 1) {
+        if (w) {
+          const sum3: u32 = <u32>(radabs(prev * 2) + radabs(aboveLeft) + radabs(above));
+          const context: i32 = getBitLevel(sum3 / 4);
+          const a: usize = ctxBase + <usize>(context * blockSize);
+          let cur: i32 = arithDecompress(a, ab);
+          if (cur < 0) {
+            const escaped: i32 = arithBitsGetValue(ab, num);
+            arithSetDecompressed(a, -cur - 1, escaped);
+            cur = escaped;
+          }
+          if (cur) {
+            const v: i32 = -varBitsGet1(vb);
+            cur = (cur ^ v) - v;
+            cur = cur * qlevel;
+          }
+          store<i16>(outPtr + (<usize>outOffset << 1), <i16>cur);
+          outOffset++;
+          litLen--;
+        }
+
+        // after_first label
+        h--;
+        if (h == 0) return 0;
+        w = encWidth;
+        outOffset += yadj;
+        fromOffset = outOffset - pixelPitch;
+        above = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        fromOffset++;
+        aboveLeft = above;
+        prev = above;
+      } else {
+        const aboveRight: i32 = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        const sum4: u32 = <u32>(radabs(prev) + radabs(aboveLeft) + radabs(above) + radabs(aboveRight));
+        const context: i32 = getBitLevel(sum4 / 4);
+        const a: usize = ctxBase + <usize>(context * blockSize);
+        let cur: i32 = arithDecompress(a, ab);
+        if (cur < 0) {
+          const escaped: i32 = arithBitsGetValue(ab, num);
+          arithSetDecompressed(a, -cur - 1, escaped);
+          cur = escaped;
+        }
+        if (cur) {
+          const v: i32 = -varBitsGet1(vb);
+          cur = (cur ^ v) - v;
+          cur = cur * qlevel;
+        }
+        store<i16>(outPtr + (<usize>outOffset << 1), <i16>cur);
+
+        aboveLeft = above;
+        above = aboveRight;
+        prev = cur;
+
+        outOffset++;
+        fromOffset++;
+        w--;
+        litLen--;
+      }
+    }
+
+    // Decode zero runs
+    while (zeroLen > 0) {
+      if (zeroLen >= w) {
+        zeroLen -= w;
+        fromOffset += w;
+        while (w > 0) {
+          store<i16>(outPtr + (<usize>outOffset << 1), 0);
+          outOffset++;
+          w--;
+        }
+        h--;
+        if (h == 0) return 0;
+        w = encWidth;
+        outOffset += yadj;
+        fromOffset = outOffset - pixelPitch;
+        above = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        fromOffset++;
+        aboveLeft = above;
+        prev = above;
+      } else {
+        w -= zeroLen;
+        fromOffset += zeroLen;
+        do {
+          store<i16>(outPtr + (<usize>outOffset << 1), 0);
+          outOffset++;
+        } while (--zeroLen > 0);
+        prev = 0;
+        above = <i32>load<i16>(outPtr + (<usize>(fromOffset - 1) << 1));
+        aboveLeft = <i32>load<i16>(outPtr + (<usize>(fromOffset - 2) << 1));
+      }
+    }
+  }
+  return 0; // unreachable — the for(;;) only exits via return.
+}
+
+// encode.c:1611 continuation — the `after_first` entry when encWidth === 1.
+// NOTE : the w<=1 context uses i32 `/4 |0` (div_s), whereas decodeHigh1's uses
+// u32 `/4 >>>0` (div_u) — mirror each literally, they are NOT interchangeable.
+function decodeHigh1AfterFirst(ab: usize, vb: usize, outPtr: usize, outOffset: i32, pixelPitch: i32, encWidth: i32, encHeight: i32,
+  ctxBase: usize, blockSize: i32, lits: usize, zeros: usize, num: i32, qlevel: i32, yadj: i32,
+  hIn: i32, aboveIn: i32, aboveLeftIn: i32, prevIn: i32, fromOffsetIn: i32): i32 {
+  let h: i32 = hIn;
+  let above: i32 = aboveIn;
+  let aboveLeft: i32 = aboveLeftIn;
+  let prev: i32 = prevIn;
+  let fromOffset: i32 = fromOffsetIn;
+
+  // after_first label
+  h--;
+  if (h == 0) return 0;
+  let w: i32 = encWidth;
+  outOffset += yadj;
+  fromOffset = outOffset - pixelPitch;
+  above = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+  fromOffset++;
+  aboveLeft = above;
+  prev = above;
+
+  let litLen: i32 = 0;
+  let zeroLen: i32 = 0;
+  let idleIter: i32 = 0;
+
+  for (;;) {
+    const litLenRet: i32 = arithDecompress(lits, ab);
+    if (litLenRet < 0) {
+      const escaped: i32 = <i32>varBitsGet(vb, LIT_LENGTH_BITS);
+      arithSetDecompressed(lits, -litLenRet - 1, escaped);
+      litLen = escaped;
+    } else {
+      litLen = litLenRet;
+    }
+    if (litLen >= (LIT_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) {
+      litLen = load<i32>(EXTRA_LIT_PTR + (<usize>(litLen - (LIT_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) << 2));
+    }
+
+    const zeroLenRet: i32 = arithDecompress(zeros, ab);
+    if (zeroLenRet < 0) {
+      const escaped: i32 = <i32>varBitsGet(vb, ZERO_LENGTH_BITS);
+      arithSetDecompressed(zeros, -zeroLenRet - 1, escaped);
+      zeroLen = escaped;
+    } else {
+      zeroLen = zeroLenRet;
+    }
+    if (zeroLen >= (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) {
+      zeroLen = load<i32>(EXTRA_ZERO_PTR + (<usize>(zeroLen - (ZERO_LENGTH_LIMIT - EXTRA_LENGTHS + 1)) << 2)) + MIN_ZERO_LENGTH - 1;
+    } else if (zeroLen) {
+      zeroLen += MIN_ZERO_LENGTH - 1;
+    }
+
+    if (litLen == 0 && zeroLen == 0) {
+      if (++idleIter > 64) return 1;
+    } else {
+      idleIter = 0;
+    }
+
+    while (litLen > 0) {
+      if (w <= 1) {
+        if (w) {
+          const sum3: i32 = radabs(prev * 2) + radabs(aboveLeft) + radabs(above);
+          const context: i32 = getBitLevel(<u32>(sum3 / 4));
+          const a: usize = ctxBase + <usize>(context * blockSize);
+          let cur: i32 = arithDecompress(a, ab);
+          if (cur < 0) {
+            const escaped: i32 = arithBitsGetValue(ab, num);
+            arithSetDecompressed(a, -cur - 1, escaped);
+            cur = escaped;
+          }
+          if (cur) {
+            const v: i32 = -varBitsGet1(vb);
+            cur = (cur ^ v) - v;
+            cur = cur * qlevel;
+          }
+          store<i16>(outPtr + (<usize>outOffset << 1), <i16>cur);
+          outOffset++;
+          litLen--;
+        }
+        h--;
+        if (h == 0) return 0;
+        w = encWidth;
+        outOffset += yadj;
+        fromOffset = outOffset - pixelPitch;
+        above = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        fromOffset++;
+        aboveLeft = above;
+        prev = above;
+      } else {
+        const aboveRight: i32 = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        const sum4: u32 = <u32>(radabs(prev) + radabs(aboveLeft) + radabs(above) + radabs(aboveRight));
+        const context: i32 = getBitLevel(sum4 / 4);
+        const a: usize = ctxBase + <usize>(context * blockSize);
+        let cur: i32 = arithDecompress(a, ab);
+        if (cur < 0) {
+          const escaped: i32 = arithBitsGetValue(ab, num);
+          arithSetDecompressed(a, -cur - 1, escaped);
+          cur = escaped;
+        }
+        if (cur) {
+          const v: i32 = -varBitsGet1(vb);
+          cur = (cur ^ v) - v;
+          cur = cur * qlevel;
+        }
+        store<i16>(outPtr + (<usize>outOffset << 1), <i16>cur);
+        aboveLeft = above;
+        above = aboveRight;
+        prev = cur;
+        outOffset++;
+        fromOffset++;
+        w--;
+        litLen--;
+      }
+    }
+
+    while (zeroLen > 0) {
+      if (zeroLen >= w) {
+        zeroLen -= w;
+        fromOffset += w;
+        while (w > 0) {
+          store<i16>(outPtr + (<usize>outOffset << 1), 0);
+          outOffset++;
+          w--;
+        }
+        h--;
+        if (h == 0) return 0;
+        w = encWidth;
+        outOffset += yadj;
+        fromOffset = outOffset - pixelPitch;
+        above = <i32>load<i16>(outPtr + (<usize>fromOffset << 1));
+        fromOffset++;
+        aboveLeft = above;
+        prev = above;
+      } else {
+        w -= zeroLen;
+        fromOffset += zeroLen;
+        do {
+          store<i16>(outPtr + (<usize>outOffset << 1), 0);
+          outOffset++;
+        } while (--zeroLen > 0);
+        prev = 0;
+        above = <i32>load<i16>(outPtr + (<usize>(fromOffset - 1) << 1));
+        aboveLeft = <i32>load<i16>(outPtr + (<usize>(fromOffset - 2) << 1));
+      }
+    }
+  }
+  return 0; // unreachable — the for(;;) only exits via return.
+}
+
+// encode.c:532 — read_escapes. Zero-row RLE mask (plane 0) into `maskPtr` (u8/row).
+function readEscapes(ab: usize, maskPtr: usize, count: i32): void {
+  const zeros: i32 = arithBitsGetValue(ab, count + 1);
+  for (let i: i32 = 0; i < count; i++) {
+    if (arithBitsGet(ab, count) >= zeros) {
+      store<u8>(maskPtr + <usize>i, 1);
+      arithBitsRemove(ab, zeros, count - zeros, count);
+    } else {
+      store<u8>(maskPtr + <usize>i, 0);
+      arithBitsRemove(ab, 0, zeros, count);
+    }
+  }
+}
+
+/**
+ * Decode one IGC plane bitstream into an S16 plane — the single WASM entry the
+ * JS `planeDecode` seam dispatches to (one crossing per plane).
+ *
+ * @param bufPtr - the copied IGC bitstream (this plane's data + everything after
+ *   it in `src`, + 32-byte zero-pad for the coders' read-past-end).
+ * @param srcOffset - byte offset of this plane within `bufPtr` (0 from the driver).
+ * @param outPtr - destination S16 plane (`width * height` i16).
+ * @param width, height - plane dimensions in pixels.
+ * @param rowMaskPtr - zero-row mask output (`height` bytes), or 0 for no mask.
+ * @param workPtr - base of the per-plane bump-allocation region (coder + models).
+ * @returns bytes consumed from the bitstream, or a negative sentinel on the
+ *   decodeHigh1 anti-hang (bitstream off-corpus).
+ */
+export function planeDecode(bufPtr: usize, srcOffset: i32, outPtr: usize, width: i32, height: i32, rowMaskPtr: usize, workPtr: usize): i32 {
+  g_pdCursor = workPtr;
+
+  const arithLen: u32 = load<u32>(bufPtr + <usize>srcOffset);
+  const varbitsStart: i32 = srcOffset + 8 + <i32>arithLen;
+
+  const ab: usize = pdArithBitOpen(bufPtr, srcOffset + 8);
+  const vb: usize = pdVarBitsOpen(bufPtr, varbitsStart);
+
+  // Level 3 (W/16 x H/16)
+  decodeLow(ab, vb, outPtr, 0, width * 16, width >> 4, height >> 4);
+  if (decodeHigh1(ab, vb, outPtr, width >> 4, width * 16, width >> 4, height >> 4)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, width * 8, width * 16, width >> 4, height >> 4)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, (width >> 4) + (width * 8), width * 16, width >> 4, height >> 4)) return -1;
+
+  // Level 2 (W/8 x H/8)
+  if (decodeHigh1(ab, vb, outPtr, width >> 3, width * 8, width >> 3, height >> 3)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, width * 4, width * 8, width >> 3, height >> 3)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, (width >> 3) + (width * 4), width * 8, width >> 3, height >> 3)) return -1;
+
+  // Level 1 (W/4 x H/4)
+  if (decodeHigh1(ab, vb, outPtr, width >> 2, width * 4, width >> 2, height >> 2)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, width * 2, width * 4, width >> 2, height >> 2)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, (width >> 2) + (width * 2), width * 4, width >> 2, height >> 2)) return -1;
+
+  // Level 0 (W/2 x H/2)
+  if (decodeHigh1(ab, vb, outPtr, width >> 1, width * 2, width >> 1, height >> 1)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, width, width * 2, width >> 1, height >> 1)) return -1;
+  if (decodeHigh1(ab, vb, outPtr, (width >> 1) + width, width * 2, width >> 1, height >> 1)) return -1;
+
+  if (rowMaskPtr != 0) {
+    readEscapes(ab, rowMaskPtr, height);
+  }
+
+  const varbitsLen: u32 = load<u32>(bufPtr + <usize>(srcOffset + 4));
+  return <i32>arithLen + <i32>varbitsLen + 8;
+}

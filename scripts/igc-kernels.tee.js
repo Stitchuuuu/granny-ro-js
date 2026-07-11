@@ -15,6 +15,11 @@ import { createArithDriver } from '../src/wasm/arith-driver.js';
 import KERNELS_WASM_B64 from '../src/wasm/kernels-b64.js';
 
 export { yuvToRGB };
+// GrannyTextureIGC imports planeDecode from the seam ; the arith gate drives it
+// on the pure-JS oracle, whose per-symbol arith calls route back through this
+// tee (the oracle imports arith from './igc-kernels.js' = this module) and get
+// compared JS-vs-WASM. So the plane loop feeds the per-symbol arith gate.
+export { planeDecode } from '../src/igc-plane.js';
 
 let driver = null;
 let callNo = 0;

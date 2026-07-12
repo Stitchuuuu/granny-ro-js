@@ -262,12 +262,16 @@ export function spawnShim(shimExe, shimArgs, options = {}) {
         ...(options.env ?? {}),
     };
     const stdio = options.stdio ?? ['ignore', 'pipe', 'pipe'];
+    // Forward maxBuffer so callers producing large stdout (the pose oracle's
+    // 40 Hz dump reaches several MB) aren't silently killed at spawnSync's 1 MB
+    // default. Undefined leaves the default in place for every other caller.
+    const maxBuffer = options.maxBuffer;
 
     checkRuntimeReady();
     if (process.platform === 'win32') {
-        return spawnSync(shimExe, shimArgs, { cwd, env, stdio });
+        return spawnSync(shimExe, shimArgs, { cwd, env, stdio, maxBuffer });
     }
 
     const wine = findWine();
-    return spawnSync(wine, [shimExe, ...shimArgs], { cwd, env, stdio });
+    return spawnSync(wine, [shimExe, ...shimArgs], { cwd, env, stdio, maxBuffer });
 }

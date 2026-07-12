@@ -11,7 +11,8 @@
 //   - storage  : column-major Float32Array(16) (WebGL-ready).
 //   - vector   : column-vector (v' = M × v).
 //   - TRS order: Mlocal = T × R × S (scale-shear applied first to v).
-//   - quat order: (x, y, z, w), normalized defensively before R build.
+//   - quat order: (x, y, z, w), used as-is (the DLL does not renormalize
+//     at matrix-build; the curve sampler already fast-normalized it).
 //
 // The bind-pose InverseWorldTransform is stored on disk as 16 floats in
 // Granny's row-major byte layout. The on-disk bytes are mathematically
@@ -79,9 +80,9 @@ const IWT_TRANSPOSE_ON_LOAD = false;
 
 /**
  * Convert one Transform `{position, orientation, scaleShear}` into a
- * column-major 4×4 matrix `Mlocal = T × R × S`. The quaternion is
- * normalized defensively before the rotation matrix is built ; the
- * 9-float scale-shear (row-major 3×3) is lifted into the upper-left
+ * column-major 4×4 matrix `Mlocal = T × R × S`. The quaternion is used
+ * as-is (granny2.dll does not renormalize at matrix-build — see below) ;
+ * the 9-float scale-shear (row-major 3×3) is lifted into the upper-left
  * 3×3 of the column-major 4×4. Output is a fresh Float32Array(16).
  *
  * @param {SampledTransform | null | undefined} transform
@@ -90,7 +91,10 @@ const IWT_TRANSPOSE_ON_LOAD = false;
 export function composeLocalMatrix(transform) {
     const t = transform ?? IDENTITY_TRANSFORM;
     const pos = t.position ?? IDENTITY_TRANSFORM.position;
-    const quat = normalizeQuaternion(t.orientation ?? IDENTITY_TRANSFORM.orientation);
+    // No renormalize — see {@link composeLocalMatrixF64}. granny2.dll builds the
+    // bone matrix (fcn.100189a0) straight from the fast-normalized local-pose
+    // quaternion ; an exact 1/√ here would diverge from the DLL on off-unit blends.
+    const quat = t.orientation ?? IDENTITY_TRANSFORM.orientation;
     const ss = t.scaleShear ?? IDENTITY_TRANSFORM.scaleShear;
     const px = pos[0], py = pos[1], pz = pos[2];
     const qx = quat[0], qy = quat[1], qz = quat[2], qw = quat[3];
@@ -286,7 +290,13 @@ export function poseSkeletonAt(skeleton, animation, t) {
 function composeLocalMatrixF64(transform) {
     const t = transform ?? IDENTITY_TRANSFORM;
     const pos = t.position ?? IDENTITY_TRANSFORM.position;
-    const quat = normalizeQuaternion(t.orientation ?? IDENTITY_TRANSFORM.orientation);
+    // No renormalize : granny2.dll builds the bone matrix (fcn.100189a0, via
+    // BuildCompositeTransform4x4) straight from the local-pose quaternion, which
+    // `SampleModelAnimations` already left fast-normalized. Re-normalizing here
+    // (exact 1/√) would undo the DLL's fast-normalize rounding and diverge on
+    // off-unit blends (8_dead skinning 0.145 → f32-order). Bind-pose fallbacks
+    // are already unit.
+    const quat = t.orientation ?? IDENTITY_TRANSFORM.orientation;
     const ss = t.scaleShear ?? IDENTITY_TRANSFORM.scaleShear;
     const px = pos[0], py = pos[1], pz = pos[2];
     const qx = quat[0], qy = quat[1], qz = quat[2], qw = quat[3];
@@ -329,14 +339,6 @@ function mat4ToArray(src) {
     return out;
 }
 
-function normalizeQuaternion(values) {
-    const x = values[0], y = values[1], z = values[2], w = values[3];
-    const lengthSq = x * x + y * y + z * z + w * w;
-    if (lengthSq <= 0.0) return [0, 0, 0, 1];
-    const invLength = 1.0 / Math.sqrt(lengthSq);
-    return [x * invLength, y * invLength, z * invLength, w * invLength];
-}
-
 /**
  * Convert one bone's on-disk 16-float InverseWorldTransform into a
  * plain `Array(16)` column-major form (f64 precision) for the skinning
@@ -367,7 +369,6 @@ export const __test__ = {
     IDENTITY_MAT4,
     IDENTITY_TRANSFORM,
     IWT_TRANSPOSE_ON_LOAD,
-    normalizeQuaternion,
     boneIwtAsArray,
     composeLocalMatrixF64,
 };

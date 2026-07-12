@@ -929,6 +929,24 @@ function normalizeQuaternion(values) {
     return [x * invLength, y * invLength, z * invLength, w * invLength];
 }
 
+/**
+ * Fast quaternion renormalize used by granny2.dll's B-spline quaternion
+ * samplers (`fcn.1000a3e0` and siblings, sha `befa33fb…3653570d`) : a single
+ * Newton–Raphson step of inverse-sqrt seeded at 1, i.e. `q *= (3 − |q|²) / 2`.
+ * The DLL applies this — NOT an exact `1/√|q|²` — after every degree-1/2/3
+ * quaternion blend, so the raw local-pose it emits carries this exact rounding.
+ * It matches exact normalization at `|q| = 1` but diverges as the blend drifts
+ * off-unit near non-unit B-spline control points (e.g. 8_dead's death throw,
+ * where an exact normalize left w saturating at 1.0 vs the DLL's 0.998). Match
+ * it verbatim so `poseAt().localTransforms` is float-faithful to `LOCALPOSE`.
+ */
+function normalizeQuaternionFast(values) {
+    const x = values[0], y = values[1], z = values[2], w = values[3];
+    const lengthSq = x * x + y * y + z * z + w * w;
+    const factor = (3.0 - lengthSq) * 0.5;
+    return [x * factor, y * factor, z * factor, w * factor];
+}
+
 function controlAt(controls, dimension, knotIndex) {
     const knotCount = controls.length / dimension;
     const idx = knotIndex < knotCount ? knotIndex : knotCount - 1;
@@ -994,7 +1012,7 @@ function evaluateCurve(curve, t) {
     } else {
         result = pi[center];
     }
-    if (dimension === 4) return normalizeQuaternion(result);
+    if (dimension === 4) return normalizeQuaternionFast(result);
     return result;
 }
 
@@ -1077,6 +1095,7 @@ export const __test__ = {
     linearCoefficients,
     quadraticCoefficients,
     normalizeQuaternion,
+    normalizeQuaternionFast,
     readLegacyCurveMetadata,
     readCurveMetadata,
     evaluateCurve,

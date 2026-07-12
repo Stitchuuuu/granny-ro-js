@@ -139,6 +139,45 @@ describe.skipIf(!haveManifest)('evaluateTransformTrack — curve sampling', () =
     }
 });
 
+// Asset-free golden : a hand-authored degree-2 quaternion curve with a
+// deliberately NON-UNIT control point (like 8_dead's LegacyCurve32f knot at
+// [0,0,0.2197,1.0857]). It reproduces the divergent path with zero copyrighted
+// data, so it runs in public CI (no fixture, no wine). Guards the DLL fast
+// normalize `q *= (3−|q|²)/2` : where the blend drifts off-unit, the result
+// stays measurably non-unit — an exact `1/√` regression would force |q| = 1.
+describe('evaluateTransformTrack — synthetic fast-normalize golden (no fixture)', () => {
+    const knots = new Float32Array([0, 1, 2, 3, 4]);
+    const controls = new Float32Array([
+        0, 0, -0.3144, 0.9481,
+        0, 0, -0.3144, 0.9481,
+        0, 0, 0.2197, 1.0857, // non-unit outlier |q| ≈ 1.108
+        0, 0, -0.7304, 0.7407,
+        0, 0, -0.7304, 0.7407,
+    ]);
+    const track = {
+        index: 0,
+        name: 'Synthetic',
+        flags: 0,
+        orientationCurve: {
+            codec: 'LegacyCurve32f', format: -1, degree: 2, dimension: 4,
+            knotControlCount: 10, sampleValue: new Float32Array(0), knots, controls,
+        },
+        positionCurve: null,
+        scaleShearCurve: null,
+    };
+
+    it('leaves the blended quaternion off-unit (DLL fast normalize, not exact)', () => {
+        const q = evaluateTransformTrack(track, 2.4).orientation;
+        const len = Math.hypot(q[0], q[1], q[2], q[3]);
+        // Fast normalize → 0.99820… here ; exact would be 1.0 to machine precision.
+        expect(len).toBeCloseTo(0.99820, 4);
+        expect(len).not.toBeCloseTo(1.0, 4);
+        // Golden components (would shift under any curve-eval change).
+        expect(q[2]).toBeCloseTo(0.0458887, 6);
+        expect(q[3]).toBeCloseTo(0.9971466, 6);
+    });
+});
+
 describe.skipIf(!haveManifest)('evaluateAnimation — full pose at t', () => {
     for (const fixture of animationFixtures) {
         it(`${fixture.name} produces a name→transform map`, () => {
@@ -166,6 +205,7 @@ describe('codec helpers — table + arithmetic', () => {
         linearCoefficients,
         quadraticCoefficients,
         normalizeQuaternion,
+        normalizeQuaternionFast,
     } = __test__;
 
     it('curveDimension parses Dn prefix', () => {
@@ -226,6 +266,32 @@ describe('codec helpers — table + arithmetic', () => {
         // Entry 0 : scale ≈ √2, offset ≈ -1/√2
         expect(scales[0]).toBeCloseTo(Math.SQRT2 / 127.0, 4);
         expect(offsets[0]).toBeCloseTo(-1 / Math.SQRT2, 4);
+    });
+
+    describe('normalizeQuaternionFast (mirror of granny2.dll fcn.1000a3e0)', () => {
+        it('equals an exact normalize when the input is already unit', () => {
+            const q = [0, 0, Math.sin(0.3), Math.cos(0.3)]; // |q| = 1
+            const fast = normalizeQuaternionFast(q);
+            const exact = normalizeQuaternion(q);
+            for (let i = 0; i < 4; i++) expect(fast[i]).toBeCloseTo(exact[i], 6);
+        });
+
+        it('diverges from an exact normalize on an off-unit input (the DLL behaviour)', () => {
+            // |q|² = 1.2 : one Newton step gives factor (3 − 1.2)/2 = 0.9, so the
+            // result stays slightly non-unit — exactly what the DLL emits and what
+            // an exact 1/√ would (wrongly, vs the DLL) correct away.
+            const q = [0, 0, 0, Math.sqrt(1.2)];
+            const fast = normalizeQuaternionFast(q);
+            expect(fast[3]).toBeCloseTo(Math.sqrt(1.2) * 0.9, 6);
+            const len = Math.hypot(...fast);
+            expect(len).not.toBeCloseTo(1.0, 4); // NOT re-unitized, unlike exact
+        });
+
+        it('is idempotent-free but stable near unit (factor → 1 as |q|² → 1)', () => {
+            const q = [0.01, -0.02, 0.0, 0.9997]; // |q|² ≈ 1.0003
+            const fast = normalizeQuaternionFast(q);
+            expect(Math.hypot(...fast)).toBeCloseTo(1.0, 4);
+        });
     });
 });
 

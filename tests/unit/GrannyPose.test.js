@@ -111,6 +111,22 @@ describe('composeLocalMatrix', () => {
         expectMatrixCloseTo(mat, expected, 1e-6);
     });
 
+    it('builds the rotation from the RAW quaternion — no renormalize (DLL fcn.100189a0)', () => {
+        // A deliberately NON-UNIT quaternion (|q|² = 1.09). granny2.dll builds
+        // the bone matrix straight from the local-pose quaternion without
+        // renormalizing, so r00 = 1 − 2(y²+z²) = 1 − 2(0.09) = 0.82 from the RAW
+        // components. A defensive `normalizeQuaternion` here would first scale to
+        // |q| = 1 (z² → 0.0826) and give r00 = 0.835 — the session-2 skinning
+        // divergence. Golden pins the raw build.
+        const mat = composeLocalMatrix({
+            ...IDENTITY_TRANSFORM,
+            orientation: [0, 0, 0.3, 1.0],
+        });
+        expect(mat[0]).toBeCloseTo(0.82, 5);   // r00 col-major, from raw quat
+        expect(mat[0]).not.toBeCloseTo(0.835, 3); // NOT the renormalized value
+        expect(mat[1]).toBeCloseTo(0.6, 5);    // r10 = 2(xy + wz) = 2(0 + 0.3)
+    });
+
     it('90° rotation around Z transforms (1,0,0,1) → (0,1,0,1)', () => {
         // quat for 90° around Z : (0, 0, sin(45°), cos(45°))
         const halfAngle = Math.PI / 4;
@@ -322,6 +338,62 @@ describe('poseSkeletonAt — null animation = bind pose', () => {
         expect(pose.worldMatrices[0][12]).toBeCloseTo(1, 6);
         expect(pose.worldMatrices[0][13]).toBeCloseTo(2, 6);
         expect(pose.worldMatrices[0][14]).toBeCloseTo(3, 6);
+    });
+});
+
+// Asset-free END-TO-END golden : a hand-built 2-bone skeleton driven by a
+// degree-2 quaternion curve with a non-unit control (8_dead's divergent path)
+// through the WHOLE poseAt pipeline — evaluateCurve (fast-normalize) →
+// composeLocalMatrixF64 (no renormalize) → composeWorldPose (FK) →
+// composeSkinningMatrices. Runs in public CI (no fixture, no wine). It's the
+// "dummy" that guards both fixes at the integration level, not just per-unit.
+describe('poseSkeletonAt — synthetic animation drives the fast-normalize + FK path (no fixture)', () => {
+    const knots = new Float32Array([0, 1, 2, 3, 4]);
+    const controls = new Float32Array([
+        0, 0, -0.3144, 0.9481,
+        0, 0, -0.3144, 0.9481,
+        0, 0, 0.2197, 1.0857, // non-unit control |q| ≈ 1.108
+        0, 0, -0.7304, 0.7407,
+        0, 0, -0.7304, 0.7407,
+    ]);
+    /** @type {any} */
+    const skeleton = {
+        name: 'dummy', lodType: 0,
+        bones: [
+            { index: 0, name: 'root', parentIndex: -1, transform: { ...IDENTITY_TRANSFORM }, inverseWorldTransform: [] },
+            { index: 1, name: 'mid', parentIndex: 0, transform: { ...IDENTITY_TRANSFORM }, inverseWorldTransform: [] },
+        ],
+    };
+    /** @type {any} */
+    const animation = {
+        index: 0, name: 'dummy', duration: 4, timeStep: 0,
+        trackGroups: [{
+            index: 0, name: 'g',
+            transformTracks: [{
+                index: 0, name: 'mid', flags: 0, positionCurve: null, scaleShearCurve: null,
+                orientationCurve: {
+                    codec: 'LegacyCurve32f', format: -1, degree: 2, dimension: 4,
+                    knotControlCount: 10, sampleValue: new Float32Array(0), knots, controls,
+                },
+            }],
+        }],
+    };
+
+    it('keeps the driven bone off-unit end-to-end (fast normalize survives poseAt)', () => {
+        const pose = poseSkeletonAt(skeleton, animation, 2.4);
+        const q = pose.localTransforms[1].orientation;
+        const len = Math.hypot(q[0], q[1], q[2], q[3]);
+        expect(len).toBeCloseTo(0.99820, 4);      // off-unit → fast, not exact
+        expect(len).not.toBeCloseTo(1.0, 4);
+    });
+
+    it('builds the skinning matrix from the raw off-unit quaternion (golden)', () => {
+        const pose = poseSkeletonAt(skeleton, animation, 2.4);
+        // iwt = [] → identity, so mid skinning = mid world = root(identity) × mid local.
+        // r00 = 1 − 2(y²+z²) from the RAW fast-normalized quat.
+        expect(pose.skinningMatrices[1][0]).toBeCloseTo(0.9957885, 6);
+        expect(pose.skinningMatrices[1][1]).toBeCloseTo(0.0915156, 6);
+        expect(pose.skinningMatrices[0][0]).toBeCloseTo(1.0, 6); // root undriven = identity
     });
 });
 

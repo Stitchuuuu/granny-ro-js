@@ -42,7 +42,16 @@ NoCompression compression.
 64-bit pointers, format ≥ 2.8). PRs with fixtures from another Granny
 dialect are welcome.
 
-## Status — `1.3.0` (stable)
+## Status — `1.4.0` (stable)
+
+`1.4.0` makes **`poseAt()` float-faithful to the real `granny2.dll`** across
+all 21 fixtures at the 40 Hz client tick — local transforms within `1.9e-6`
+and skinning matrices within `1.8e-5`, strict `< 1e-4` with no per-fixture
+bounds. The B-spline quaternion sampler now renormalizes each blend with the
+DLL's fast one-Newton-step `q *= (3 − |q|²) / 2` (not an exact `1/√`), and the
+per-bone matrix is built from that quaternion with no second renormalize —
+matching the DLL byte-path. A new `poses` sha in the content manifest pins the
+pose runtime **without wine**. See the [changelog](CHANGELOG.md).
 
 `1.3.0` is an **untrusted-input hardening** pass — every file-controlled
 allocation and recursion in the parse path is now bounded (allocation
@@ -81,15 +90,18 @@ output stays byte-identical to `1.0.0`, same content manifest.
 ¹ The pose runtime (`poseAt`) is verified float-for-float against the
 real `granny2.dll` composite matrices — not just the Python clean-room
 port — by the wine-gated `tests/integration/worldpose-oracle.test.js`
-(within `1e-4`, skips cleanly without wine).
+across all 21 fixtures at the 40 Hz tick, strict `< 1e-4` (skips cleanly
+without wine). Its output is additionally pinned wine-free by the `poses`
+sha in the content manifest.
 
 Parity is locked by the content-addressed
 [`tests/fixtures/content-manifest.json`](tests/fixtures/content-manifest.json) :
 21 fixtures keyed by `.gr2` sha256, with per-element sha256s for every
 output category (sections, textures, meshes, skeletons, animations,
-materials). `npm test` walks `tests/fixtures/source/`, hashes each
-`.gr2`, and compares JS port output element-by-element against the
-pinned values — no wine, no DLL needed.
+materials, models, and `poses` — poseAt output hashed on the 40 Hz grid).
+`npm run test:js` walks `tests/fixtures/source/`, hashes each `.gr2`, and
+compares JS port output element-by-element against the pinned values —
+no wine, no DLL needed.
 
 See [docs/HOWTO.md](docs/HOWTO.md) for prerequisites, the full command
 matrix (host Node, Docker, multi-host re-bake), and the parity contract

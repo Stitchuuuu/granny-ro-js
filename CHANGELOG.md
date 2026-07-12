@@ -4,6 +4,40 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.4.0 — 2026-07-12
+
+**`poseAt()` is now float-faithful to the real `granny2.dll`** across the whole
+21-fixture corpus, with a wine-free pose regression guard baked into the content
+manifest.
+
+### Fixed
+
+- **Quaternion normalize now matches `granny2.dll`.** The B-spline quaternion
+  curve sampler renormalizes each blend with the DLL's fast one-Newton-step
+  `q *= (3 − |q|²) / 2` (`granny2.dll fcn.1000a3e0`) instead of an exact `1/√`,
+  and the per-bone local matrix is built straight from that quaternion with no
+  second renormalize (matching `fcn.100189a0`). Both only diverged where a
+  B-spline blend drifts off-unit near non-unit control points — worst on fast
+  degree-2 curves (a death animation's forearm), where the raw local orientation
+  was off by up to 3.2e-3 and the skinning composite by up to 0.145. `poseAt()`
+  is now within **1.9e-6** (local transforms) and **1.8e-5** (skinning matrices)
+  of the real DLL on all 21 fixtures — strict `< 1e-4`, no per-fixture bounds.
+
+### Added
+
+- **DLL pose oracle (strict).** The wine-gated `worldpose-oracle` suite asserts
+  `initialPlacement`, `poseAt().localTransforms` and `poseAt().skinningMatrices`
+  against the real `granny2.dll` across all 21 fixtures at the 40 Hz client tick.
+- **`poses` sha in the content manifest.** `buildEntry` bakes the sha256 of
+  poseAt()'s per-bone local orientation + skinning matrices over the 40 Hz grid,
+  so the JS-only manifest test catches a pose regression **without wine or the
+  DLL**. Plus synthetic, asset-free golden tests reproducing the divergent
+  quaternion path so the fix stays guarded in public CI.
+- **Three test flows.** `test:unit` (wine-free, asset-free — what public CI
+  runs), `test:js` (JS/SHA content parity, incl. the new `poses` category),
+  `test:dll` (the wine DLL-parity suite). `test:js` prints a 3-column category
+  grid by default, with a `--compact` one-liner.
+
 ## 1.3.1 — 2026-07-12
 
 **Docs + bench tooling. No code or decode change** — the parser, codecs and

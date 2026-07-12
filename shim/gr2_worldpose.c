@@ -30,10 +30,19 @@
  *       (flags@8, pos@12, orient@24, scaleShear@40). Emitted before the mesh/
  *       animation path, so a fixture with no matching mesh or no animation
  *       still yields a PLACEMENT line (then exits 0 cleanly).
+ *   LOCALPOSE t=<f> bone=<i> flags=<u32> pos=<3f> orient=<4f> scale=<9f>
+ *     — the raw per-bone granny_transform straight out of
+ *       GrannySampleModelAnimations (curve-evaluator output, pre-FK), read via
+ *       _GrannyGetLocalPoseTransform@8 (granny_transform: flags@0, pos@4,
+ *       orient@16 xyzw, scaleShear@32 — stride 68 B). Isolates the JS curve
+ *       evaluator from the FK/skinning stages.
  *   POSE t=<f> bone=<i> m=<16 comma-sep floats>
  *     — the GetWorldPoseComposite4x4Array entry for each bone at each sampled
  *       t (col-major, T@12..14 — this is the skinning composite, world×invBind).
  * Full precision (%.9g). Without the flag the bbox table is byte-unchanged.
+ * In --pose-json mode the mesh arg is OPTIONAL : POSE/LOCALPOSE are per-bone and
+ * mesh-independent, so a fixture with no mesh binding (pure action files) still
+ * dumps them (pass any placeholder mesh name, e.g. __pose__).
  *
  * Compile (mingw-w64) :
  *   i686-w64-mingw32-gcc -static -O2 -o prebuilt/gr2_worldpose.exe gr2_worldpose.c
@@ -62,6 +71,7 @@ typedef int32_t  (__stdcall *VCountFn)(void*);
 typedef void*    (__stdcall *VertsFn)(void*);
 typedef void*    (__stdcall *NewBindFn)(void*, void*, void*);
 typedef int32_t* (__stdcall *BindIdxFn)(void*);
+typedef void*    (__stdcall *GetLPTFn)(void*, int32_t);   /* GetLocalPoseTransform(pose, bone) -> granny_transform* */
 
 static HMODULE H;
 static void* P(const char* name) {
@@ -113,6 +123,10 @@ int main(int argc, char** argv) {
     VertsFn    Verts = (VertsFn) P("_GrannyGetMeshVertices@4");
     NewBindFn  NewBind = (NewBindFn) P("_GrannyNewMeshBinding@12");
     BindIdxFn  BindIdx = (BindIdxFn) P("_GrannyGetMeshBindingToBoneIndices@4");
+    /* Raw local-pose reader — plain GetProcAddress (NOT P()) so a missing export
+     * degrades to the buffer fallback instead of exit(9). Confirmed present in
+     * the Nov-2002 build (ordinal 189), so the primary path is what runs. */
+    GetLPTFn   GetLPT = (GetLPTFn) GetProcAddress(H, "_GrannyGetLocalPoseTransform@8");
 
     /* read file into a heap buffer that stays alive (Granny fixes up in place) */
     FILE* f = fopen(argv[1], "rb");
@@ -163,9 +177,12 @@ int main(int argc, char** argv) {
         fprintf(stderr, "mesh[%d].Name = \"%s\"\n", i, nm ? nm : "(null)");
         if (nm && strcmp(nm, meshName) == 0) mesh = meshes[i];
     }
-    /* In --pose-json mode PLACEMENT is already out; a missing mesh/animation is
-     * a clean exit (placement-only fixtures), not an error. */
-    if (!mesh) { fprintf(stderr, "FATAL: mesh \"%s\" not found\n", meshName); return poseJson ? 0 : 7; }
+    /* The POSE / LOCALPOSE dump is per-bone and mesh-independent, so in
+     * --pose-json mode a missing mesh is NOT fatal — the 11 pure-action fixtures
+     * carry no mesh binding yet must still reach the pose loop. Continue with
+     * mesh == NULL; only the bbox (non-JSON) path actually needs vertices. */
+    if (!mesh && !poseJson) { fprintf(stderr, "FATAL: mesh \"%s\" not found\n", meshName); return 7; }
+    if (!mesh) fprintf(stderr, "note: mesh \"%s\" not found — pose dump is mesh-independent, continuing\n", meshName);
     if (!model || animCount < 1) { fprintf(stderr, "FATAL: no model/animation\n"); return poseJson ? 0 : 7; }
 
     void* inst = Instantiate(model);
@@ -174,17 +191,25 @@ int main(int argc, char** argv) {
     int32_t boneCount = rdI(skel, 4);
     fprintf(stderr, "skeleton.Name=\"%s\" boneCount=%d\n", (char*)rdP(skel, 0), boneCount);
 
-    void* binding = NewBind(mesh, skel, skel);
-    int32_t* toBone = BindIdx(binding);   /* mesh-local bone idx -> skeleton bone idx */
-
+    /* localPose / worldPose are mesh-independent — always allocated. The mesh
+     * binding + vertices are only needed by the bbox (non-JSON) skinning path,
+     * so they stay NULL/0 when mesh == NULL (pose-json on a mesh-less fixture). */
     void* localPose = NewLP(boneCount);
     void* worldPose = NewWP(boneCount);
 
-    int32_t vcount = VCount(mesh);
-    uint8_t* v = (uint8_t*)Verts(mesh);
+    void* binding = NULL;
+    int32_t* toBone = NULL;   /* mesh-local bone idx -> skeleton bone idx */
+    int32_t vcount = 0;
+    uint8_t* v = NULL;
     const int STRIDE = 40, P_OFF = 0, W_OFF = 12, I_OFF = 16;
-    fprintf(stderr, "vcount=%d first vtx pos=(%.4f,%.4f,%.4f)\n", vcount,
-            ((float*)(v+P_OFF))[0], ((float*)(v+P_OFF))[1], ((float*)(v+P_OFF))[2]);
+    if (mesh) {
+        binding = NewBind(mesh, skel, skel);
+        toBone = BindIdx(binding);
+        vcount = VCount(mesh);
+        v = (uint8_t*)Verts(mesh);
+        fprintf(stderr, "vcount=%d first vtx pos=(%.4f,%.4f,%.4f)\n", vcount,
+                ((float*)(v+P_OFF))[0], ((float*)(v+P_OFF))[1], ((float*)(v+P_OFF))[2]);
+    }
 
     /* raw (un-posed) bbox */
     if (!poseJson) {
@@ -201,11 +226,37 @@ int main(int argc, char** argv) {
 
     /* posed+skinned bbox across the cycle */
     if (!poseJson) printf("t(s)      Xspan    Yspan    Zspan     Xmin     Xmax\n");
+    if (poseJson)
+        fprintf(stderr, "LOCALPOSE read path: %s\n",
+                GetLPT ? "_GrannyGetLocalPoseTransform@8 (primary)"
+                       : "buffer fallback localPose+4 stride 68 (UNTESTED)");
     float maxXspan=-1e30f, minXspan=1e30f;
     for (int s = 0; s < samples; s++) {
         float t = (samples > 1) ? duration * (float)s / (float)(samples-1) : 0.0f;
         SetClock(inst, t);
         Sample(inst, 0, boneCount, localPose);
+
+        /* --pose-json : dump the raw per-bone local Transform straight out of
+         * GrannySampleModelAnimations (the curve-evaluator output, pre-FK).
+         * granny_transform layout: flags@0, pos@4 (3f), orient@16 (4f, xyzw),
+         * scaleShear@32 (9f, 3x3) — stride 68 B, same as the model+8 placement
+         * read above. Emitted before POSE; POSE stdout stays byte-unchanged. */
+        if (poseJson) {
+            for (int b = 0; b < boneCount; b++) {
+                char* tr = GetLPT ? (char*)GetLPT(localPose, b)
+                                  : (char*)rdP(localPose, 4) + (size_t)b * 68;
+                uint32_t fl = *(uint32_t*)(tr + 0);
+                float* pp = (float*)(tr + 4);    /* pos[3]         */
+                float* oo = (float*)(tr + 16);   /* orient[4] xyzw */
+                float* sc = (float*)(tr + 32);   /* scaleShear[9]  */
+                printf("LOCALPOSE t=%.9g bone=%d flags=%u pos=%.9g,%.9g,%.9g "
+                       "orient=%.9g,%.9g,%.9g,%.9g "
+                       "scale=%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g\n",
+                       t, b, fl, pp[0], pp[1], pp[2], oo[0], oo[1], oo[2], oo[3],
+                       sc[0], sc[1], sc[2], sc[3], sc[4], sc[5], sc[6], sc[7], sc[8]);
+            }
+        }
+
         Build(skel, 0, boneCount, localPose, NULL, worldPose);
         float* comp = Composite(worldPose);   /* boneCount * 16, col-major, T@12..14 */
 

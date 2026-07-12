@@ -1,7 +1,7 @@
 {
   "version": 2,
   "schema": "content-manifest-v2",
-  "generatedAt": "2026-07-10T13:55:19.917Z",
+  "generatedAt": "2026-07-12T12:43:31.061Z",
   "sourceBaseline": {
     "target": "js-only",
     "generatedBy": "regenerate-manifest.mjs (JS-only)",
@@ -153,6 +153,15 @@
           "sha256": "74bb9effff2ace9f812c6d438334630da97f5eacedc15be7904fb648a5ca0af6"
         }
       ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0211R2NoviceFF\\0220R2NFF-attackII01.max",
+          "skeletonIdx": 0,
+          "samples": 46,
+          "sha256": "161424628630d4d6d5db2dbcda7dadabd824d888c5636687260cb07ed9794c53"
+        }
+      ],
       "errors": {
         "textures": "decodeHigh1: stuck at h=16 w=15 after 65 consecutive arith reads with litLen=0/zeroLen=0 — bitstream likely off-corpus (granny2.dll hangs on the same input). Encoding=16x16."
       }
@@ -225,6 +234,15 @@
           "meshBindingCount": 0,
           "sha256": "779d15d23c09c203c82523b4f908f9ff4b978dfc2e7d92d037c78b7b93341f22"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_damage01-td_01.max",
+          "skeletonIdx": 0,
+          "samples": 54,
+          "sha256": "66af629617d592306370e8d0e05d464f01a0fd22eecfef2c1dee899f8a8ddb72"
+        }
       ]
     },
     "9c22930c8b008aa7e17261d08af931ebf264432d28149e676b756350f4f42470": {
@@ -294,6 +312,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 0,
           "sha256": "779d15d23c09c203c82523b4f908f9ff4b978dfc2e7d92d037c78b7b93341f22"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_die09-td02_01.max",
+          "skeletonIdx": 0,
+          "samples": 134,
+          "sha256": "983d1ad2adb6b36de9d875800b3bcd793b787a79f4eec4155c858189104f68d4"
         }
       ]
     },
@@ -385,6 +412,15 @@
           "meshBindingCount": 0,
           "sha256": "60c7d05daf2b8a767b719a906e5b8e5a672aa9d060606bb13a6180af6aa862bb"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_Attack-center0228.max",
+          "skeletonIdx": 0,
+          "samples": 61,
+          "sha256": "5271befca7efa079b7f306512559203c0830e0f32e823e57fba9e0c135ca6238"
+        }
       ]
     },
     "785a3019be8a0feb4aaf46949d28b5bbe6a3a19590be40f3c0d813f67a5ca5eb": {
@@ -474,6 +510,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 0,
           "sha256": "1217d174b84bb1b8a08aa66eab2def2f6aa2fef83914b320aae894db3e287757"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_damage-center.max",
+          "skeletonIdx": 0,
+          "samples": 81,
+          "sha256": "8ea17df612be232d4fc1a428b63bd40b5fdfdd1cb7ae0a5a85b5ede40171f0f5"
         }
       ]
     },
@@ -565,6 +610,15 @@
           "meshBindingCount": 0,
           "sha256": "1217d174b84bb1b8a08aa66eab2def2f6aa2fef83914b320aae894db3e287757"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_death-center.max",
+          "skeletonIdx": 0,
+          "samples": 148,
+          "sha256": "dd1332c7ebb49a4dff2398284bb8ecf7793b9ce4b18d0fefbb12ad43d3c06e6d"
+        }
       ]
     },
     "111e893ae933afb96331adf2dfebbe141569446ed4bffc1597c7ef70ba30644e": {
@@ -654,6 +708,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 0,
           "sha256": "e67a5a7360e67501a93134715187247f6a261af4523cc56b671dc4fbe48a34ff"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_walking-center.max",
+          "skeletonIdx": 0,
+          "samples": 81,
+          "sha256": "e5c59f45cf992748868b5b8159215c73f3194f6e308b33ac8e75c43bff828838"
         }
       ]
     },
@@ -755,6 +818,15 @@
           "meshBindingCount": 2,
           "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0414-HG2_ARROW_SH.max",
+          "skeletonIdx": 0,
+          "samples": 74,
+          "sha256": "bbe898a74f4efca6f5e1fb101ef507ae3495075fd60997b844514edef0be9520"
+        }
       ]
     },
     "31d8c6334be7eac0e5c930b4b5df526410646f28758172e3a266b7665672cc0d": {
@@ -854,6 +926,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 2,
           "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_DM.max",
+          "skeletonIdx": 0,
+          "samples": 61,
+          "sha256": "4fd350dfbf1471f65d2748c7e34fc30f647e49267c50308422e1d178db39c61f"
         }
       ]
     },
@@ -955,6 +1036,15 @@
           "meshBindingCount": 2,
           "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_DIE01.max",
+          "skeletonIdx": 0,
+          "samples": 121,
+          "sha256": "de0ea04d5349ca257049ea7a1f08078b3468b0de133bb65477f7fdd1ec16a25f"
+        }
       ]
     },
     "624cd8f5d094d2bf92b4ad6bba42ad3b055154a2d4dfea0ee84991ca2a07ed36": {
@@ -1055,6 +1145,15 @@
           "meshBindingCount": 2,
           "sha256": "3c4e554a653dba70779364515be14289c5fd3f13b5e62951b48cc0d12448f5f9"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0127-HG2_WALK01.max",
+          "skeletonIdx": 0,
+          "samples": 76,
+          "sha256": "13e0b1ce660aa81a4c6178cc989d3ea0f19a1f5ef6dfe25ad2221f8f45ef3c10"
+        }
       ]
     },
     "6217636e88bee0f8c0870309d28d5796b7c2493169fd4a91f3d8c1348cdc4648": {
@@ -1139,6 +1238,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 0,
           "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "skeletonIdx": 0,
+          "samples": 61,
+          "sha256": "8c9da564ed56ca53a6fb7bb0b3fb26b5238009df3c9e2f291305a51d89972202"
         }
       ]
     },
@@ -1225,6 +1333,15 @@
           "meshBindingCount": 0,
           "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "skeletonIdx": 0,
+          "samples": 68,
+          "sha256": "b5abdca65edd2e2bf1ed3734d395c9902a22bc2d51740fbd01c2fb5edf4b1681"
+        }
       ]
     },
     "1cdb974bf8341435defbd1a1fe95be5ed9a1ac1b8fe277e177817e354483adce": {
@@ -1310,6 +1427,15 @@
           "meshBindingCount": 0,
           "sha256": "211bf145c69a6000c170a5c24296480d55acaf7c734297375f6d4c0bafc6e044"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "skeletonIdx": 0,
+          "samples": 142,
+          "sha256": "0e2923e8ee2f5d44afc49a5afae1bf35a0d17bb479a198fea70fe440060dc374"
+        }
       ]
     },
     "ec2bbfbc4f76bfe0bb94d29f1b3ca40a7c5d2f278bbc87d671977eb86c0c3680": {
@@ -1394,6 +1520,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 0,
           "sha256": "fcee74929534352f1f9349e203fe9b981ba2ec92b18b8b9434f6ffc9efa0b3c1"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0228NG02.max",
+          "skeletonIdx": 0,
+          "samples": 80,
+          "sha256": "0caddf05858ee7f3849f54d8f52cfaad8653cda492be34b87962022f0d113c6c"
         }
       ]
     },
@@ -1584,6 +1719,15 @@
           "meshBindingCount": 6,
           "sha256": "bd7c2146fd0ea1b828cb4867bb7c14c6cfe3eeb8a60c2e3585971b273ac18595"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\REN\\0123-HG2_BREATH_SH.max",
+          "skeletonIdx": 0,
+          "samples": 134,
+          "sha256": "a638c3691edde3b50acb74ab8f92956e05691e0565b09bfe42a5a6872c169509"
+        }
       ]
     },
     "b850bcb443505e6b9e87196cb8b6ed3b2744dcda0fc73dd6cab8da679f42957f": {
@@ -1677,6 +1821,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 1,
           "sha256": "331744fcdb0b80298e8b81d800c159939a5e49d7fedafb7f0c820bdb963aa640"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0226empelium\\0227_empel-groundsolution0314.max",
+          "skeletonIdx": 0,
+          "samples": 398,
+          "sha256": "aaa70863915feaf64dbcfe5fc680676c9580034c5165de1443255e4e2c3f3435"
         }
       ]
     },
@@ -1803,6 +1956,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 2,
           "sha256": "f441b258b23dab5abcfb10a9ca47212758be5fd24a5a2b5e4fbb126fe4f2a490"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227flag\\flag03-ani-emblem-0414extrude.max",
+          "skeletonIdx": 0,
+          "samples": 228,
+          "sha256": "403931d12599cafcf3b2226471874cbafc5216346710ada05f03ab242026e3bd"
         }
       ]
     },
@@ -2006,6 +2168,15 @@
           "meshBindingCount": 5,
           "sha256": "382fc7c8ba5446374d3c2da6f84fa04d82a1d605d0aef0ccac8cbeea4ee1c053"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0124HG\\yoon\\guard1\\guardian_basis-center.max",
+          "skeletonIdx": 0,
+          "samples": 81,
+          "sha256": "5b8eef8c1be4dfced149ca330d92fa6dc15ad7864ec0430b70645e935aaf6923"
+        }
       ]
     },
     "dc08c70f05a368477128cc40e644342ed6adfd3a03e83b734346c49b6a27c6cc": {
@@ -2191,6 +2362,15 @@
           "meshBindingCount": 4,
           "sha256": "c5859cb3edf0f80817252379e2169a44d8c4703e818d41b10911c95374255bb4"
         }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "D:\\ChalesWORK_2003\\0227Nomal_Guardian\\0227NG01.max",
+          "skeletonIdx": 0,
+          "samples": 81,
+          "sha256": "3f72d9b354c2eca7f854d4753bc6aa02fce387ae36c2eca64522033b39ed5c61"
+        }
       ]
     },
     "b139dc834d9578c0a67a7ae4fcefecb0dead03b4a74f19758a099cfc1b7a4e14": {
@@ -2284,6 +2464,15 @@
           "skeletonIdx": 0,
           "meshBindingCount": 1,
           "sha256": "2bc6015a2df36c264a78abb00645a05567c85a834dcf715c9ba0d1765721d583"
+        }
+      ],
+      "poses": [
+        {
+          "idx": 0,
+          "name": "C:\\Treasure_base01-t_02.max",
+          "skeletonIdx": 0,
+          "samples": 121,
+          "sha256": "18ca9c5bc66ad567dc0567d00305f088b84a5ddea25dada3edbd2937be1f1db8"
         }
       ]
     }

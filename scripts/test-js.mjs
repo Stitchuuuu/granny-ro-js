@@ -62,6 +62,7 @@ function parseArgs(argv) {
         else if (arg === '--manifest') out.manifest = resolve(argv[++i]);
         else if (arg === '--quiet') out.quiet = true;
         else if (arg === '--json') out.json = true;
+        else if (arg === '--compact' || arg === '-c') out.compact = true;
         else throw new Error(`unknown arg : ${arg}`);
     }
     return out;
@@ -121,19 +122,43 @@ function compareEntry(expected, actual) {
         materials:  compareCategory('materials',  expected.materials,  actual.materials,  ['idx']),
         models:     compareCategory('models',     expected.models,     actual.models,     ['idx']),
     };
+    // `poses` is a later addition — only gate on it when the manifest carries it,
+    // so an older manifest without pose shas still verifies the rest cleanly.
+    if (expected.poses !== undefined) {
+        results.poses = compareCategory('poses', expected.poses, actual.poses ?? [], ['idx']);
+    }
     const allMatch = Object.values(results).every((r) => r.match);
     return { match: allMatch, byCategory: results };
 }
 
-function fmtCategoryResult(category, r) {
-    if (r.total === 0) return dim(`${category} 0`);
-    if (r.match) {
-        return `${category} ${r.total}/${r.total} ${green(SYM_OK)}`;
-    }
+/** Just the `N/N ✓` / `0` / `M/N ✗` status for one category (no name). */
+function fmtCategoryStatus(r) {
+    if (r.total === 0) return dim('0');
+    if (r.match) return `${r.total}/${r.total} ${green(SYM_OK)}`;
     const bad = r.mismatches.filter((m) =>
         m.kind === 'sha-mismatch' || m.kind === 'missing'
     ).length;
-    return `${category} ${red(`${r.total - bad}/${r.total}`)} ${red(SYM_FAIL)}`;
+    return `${red(`${r.total - bad}/${r.total}`)} ${red(SYM_FAIL)}`;
+}
+
+function fmtCategoryResult(category, r) {
+    return `${category} ${fmtCategoryStatus(r)}`;
+}
+
+const VISIBLE = /\x1b\[[0-9;]*m/g;
+const visibleLen = (s) => s.replace(VISIBLE, '').length;
+
+/** Category detail as a 3-column grid (verbose mode) — compact, not a tall stack. */
+function logCategoryLines(opts, byCategory) {
+    const entries = Object.entries(byCategory);
+    const nameW = Math.max(...entries.map(([k]) => k.length));
+    const cells = entries.map(([k, v]) => `${dim(k.padEnd(nameW))} ${fmtCategoryStatus(v)}`);
+    const cellW = Math.max(...cells.map(visibleLen)) + 3;
+    const pad = (s) => s + ' '.repeat(Math.max(0, cellW - visibleLen(s)));
+    const COLS = 3;
+    for (let i = 0; i < cells.length; i += COLS) {
+        log(opts, '     ' + cells.slice(i, i + COLS).map(pad).join('').trimEnd());
+    }
 }
 
 function main() {
@@ -236,17 +261,27 @@ function main() {
         results.push(result);
         if (cmp.match) {
             passed++;
-            const cats = Object.entries(cmp.byCategory)
-                .map(([k, v]) => fmtCategoryResult(k, v))
-                .filter((s) => !s.endsWith(' 0'))
-                .join(', ');
-            log(opts, ' ', green(SYM_OK), fixture.name, dim('—'), cats);
+            if (opts.compact) {
+                const cats = Object.entries(cmp.byCategory)
+                    .map(([k, v]) => fmtCategoryResult(k, v))
+                    .filter((s) => !s.endsWith(' 0'))
+                    .join(', ');
+                log(opts, ' ', green(SYM_OK), fixture.name, dim('—'), cats);
+            } else {
+                log(opts, ' ', green(SYM_OK), fixture.name);
+                logCategoryLines(opts, cmp.byCategory);
+            }
         } else {
             failed++;
-            const cats = Object.entries(cmp.byCategory)
-                .map(([k, v]) => fmtCategoryResult(k, v))
-                .join(', ');
-            log(opts, ' ', red(SYM_FAIL), bold(fixture.name), dim('—'), cats);
+            if (opts.compact) {
+                const cats = Object.entries(cmp.byCategory)
+                    .map(([k, v]) => fmtCategoryResult(k, v))
+                    .join(', ');
+                log(opts, ' ', red(SYM_FAIL), bold(fixture.name), dim('—'), cats);
+            } else {
+                log(opts, ' ', red(SYM_FAIL), bold(fixture.name));
+                logCategoryLines(opts, cmp.byCategory);
+            }
             if (!opts.quiet) {
                 for (const cat of Object.values(cmp.byCategory)) {
                     for (const m of cat.mismatches) {

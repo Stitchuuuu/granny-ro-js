@@ -16,6 +16,7 @@
  *     animations: [ { idx, name, duration, sha256 } ],
  *     materials:  [ { idx, name, sha256 } ],
  *     models:     [ { idx, name, skeletonIdx, meshBindingCount, sha256 } ],
+ *     poses:      [ { idx, name, skeletonIdx, samples, sha256 } ],
  *     errors?:    { category: errorMessage }
  *   }
  */
@@ -32,9 +33,47 @@ import { extractMeshes, extractMaterials } from '../../src/GrannyMesh.js';
 import { extractSkeletons } from '../../src/GrannySkeleton.js';
 import { extractAnimations } from '../../src/GrannyAnimation.js';
 import { extractModels } from '../../src/GrannyModel.js';
+import { poseSkeletonAt } from '../../src/GrannyPose.js';
 
 export function sha256Hex(buf) {
     return createHash('sha256').update(buf).digest('hex');
+}
+
+/**
+ * Deterministic 40 Hz sample grid over `[0, duration]` — the RO client tick
+ * rate, the same grid the DLL pose oracle uses. `samples = round(dur/0.025)+1`.
+ */
+export function poseSampleTimes(duration) {
+    if (!(duration > 0)) return [0];
+    const samples = Math.round(duration / 0.025) + 1;
+    const times = new Array(samples);
+    for (let s = 0; s < samples; s++) times[s] = (duration * s) / (samples - 1);
+    return times;
+}
+
+/**
+ * Hash `poseSkeletonAt` output (per-bone local orientation + skinning matrix)
+ * across the 40 Hz grid into one f32 buffer, then sha256 it. This is the
+ * wine-free regression guard for the pose path : it exercises the curve
+ * evaluator (incl. the DLL fast-normalize) AND the world-pose composition, so
+ * any drift in either flips the sha. Orientation + skinning only — position and
+ * scaleShear ride along inside the skinning matrix.
+ */
+export function poseSha(skeleton, animation, duration) {
+    const times = poseSampleTimes(duration);
+    const bones = skeleton.bones.length;
+    const buf = new Float32Array(times.length * bones * (4 + 16));
+    let o = 0;
+    for (let i = 0; i < times.length; i++) {
+        const snap = poseSkeletonAt(skeleton, animation, times[i]);
+        for (let b = 0; b < bones; b++) {
+            const q = snap.localTransforms[b].orientation;
+            buf[o++] = q[0]; buf[o++] = q[1]; buf[o++] = q[2]; buf[o++] = q[3];
+            const m = snap.skinningMatrices[b];
+            for (let k = 0; k < 16; k++) buf[o++] = m[k];
+        }
+    }
+    return sha256Hex(Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength));
 }
 
 /**
@@ -187,6 +226,23 @@ export function buildEntry({ name, sizeBytes, bytes }) {
         }))
     );
 
+    // Pose : sample every animation against skeleton[0] at 40 Hz and hash the
+    // per-bone local orientation + skinning composite. Unlike `animations`
+    // (which hashes the stored curve DATA), this hashes the EVALUATED pose, so
+    // it catches curve-eval / world-pose regressions the data hash can't.
+    const poseResult = tryExtract(() => {
+        const skels = extractSkeletons(loaded);
+        if (skels.length === 0) return [];
+        const skel = skels[0];
+        return extractAnimations(loaded).map((anim, idx) => ({
+            idx,
+            name: anim.name ?? null,
+            skeletonIdx: 0,
+            samples: poseSampleTimes(anim.duration ?? 0).length,
+            sha256: poseSha(skel, anim, anim.duration ?? 0),
+        }));
+    });
+
     const errors = {};
     if (!texResult.ok)  errors.textures   = texResult.error;
     if (!meshResult.ok) errors.meshes     = meshResult.error;
@@ -194,6 +250,7 @@ export function buildEntry({ name, sizeBytes, bytes }) {
     if (!animResult.ok) errors.animations = animResult.error;
     if (!matResult.ok)  errors.materials  = matResult.error;
     if (!modelResult.ok) errors.models    = modelResult.error;
+    if (!poseResult.ok) errors.poses      = poseResult.error;
 
     const entry = {
         sizeBytes,
@@ -205,6 +262,7 @@ export function buildEntry({ name, sizeBytes, bytes }) {
         animations: animResult.value,
         materials:  matResult.value,
         models:     modelResult.value,
+        poses:      poseResult.value,
     };
     if (Object.keys(errors).length > 0) entry.errors = errors;
     return entry;

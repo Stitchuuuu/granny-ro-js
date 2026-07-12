@@ -47,6 +47,61 @@ const throughput = (bytes, ms) => (bytes / (1024 * 1024) / (ms / 1000)).toFixed(
 const kb = (b) => (b / 1024).toFixed(1);
 const ms = (v) => v.toFixed(2);
 
+// ---- entity grouping : a "real" load = one model + its animation banks -----
+// The engine never loads a single `.gr2` in isolation — it joins a model
+// (mesh + skeleton + texture) with N animation banks by a shared asset id.
+// The corpus encodes that id in the filename : a model ends in `_<id>.gr2`,
+// its anims start with `<id>_`. We derive groups purely from that convention
+// (no asset names baked in) so the group rows describe an entity by its
+// *shape* — "1 model · 4 anim" — never by what it actually is.
+function groupKey(path) {
+    const anim = path.match(/^(\d+)_/);
+    if (anim) return { id: anim[1], role: 'anim' };
+    const model = path.match(/_(\d+)\.gr2$/i);
+    if (model) return { id: model[1], role: 'model' };
+    return { id: path, role: 'model' }; // no id convention → own singleton group
+}
+
+// Name-free category from the entity's shape alone.
+function classify(hasModel, animCount) {
+    if (!hasModel) return 'animation-only bank';
+    if (animCount === 0) return 'static textured model';
+    if (animCount <= 2) return 'textured model · light animation';
+    return 'textured model · full animation set';
+}
+
+// Roll the per-file rows up into groups. Decodes are independent pure calls on
+// separate buffers, so an entity's load cost is the sum over its members — the
+// same way renderAxisTable's TOTAL row sums per-file bests.
+function deriveGroups(rows) {
+    const byId = {};
+    for (const r of rows) {
+        const key = groupKey(r.path);
+        const g = (byId[key.id] ??= { id: key.id, model: null, anims: [] });
+        if (key.role === 'anim') g.anims.push(r);
+        else g.model = r;
+    }
+    const out = [];
+    for (const id in byId) {
+        const g = byId[id];
+        const members = [g.model, ...g.anims].filter((m) => m && !m.error);
+        if (!members.length) continue;
+        const animCount = g.anims.length;
+        const bytes = members.reduce((s, m) => s + m.bytes, 0);
+        out.push({
+            shape: `${g.model ? '1 model' : '0 model'} · ${animCount} anim`,
+            category: classify(!!g.model, animCount),
+            memberCount: members.length,
+            bytes,
+            cold: members.reduce((s, m) => s + m.cold, 0),
+            mean: members.reduce((s, m) => s + m.mean, 0),
+            best: members.reduce((s, m) => s + m.best, 0),
+        });
+    }
+    out.sort((a, b) => a.bytes - b.bytes); // size order — stable, name-free
+    return out;
+}
+
 // ---- frame-gap monitor : longest main-thread stall = the render hitch -----
 // rAF callbacks don't fire while the main thread is busy ; the biggest gap
 // between frames during an axis is the worst hitch a user would feel. A
@@ -166,6 +221,68 @@ function renderAxisTable(axis, readyMs, stallMs, rows) {
     console.log(
         `[bench:browser] archive JSON (${axis.label}) :\n` +
             JSON.stringify({ target: `browser:${axis.mode}`, readyMs, stallMs, warmIters: WARM_ITERS, fixtures: rows }, null, 2),
+    );
+}
+
+// ---- entity-group table : the "real load" view, anonymized by shape -------
+// One row per entity (model + its anim banks). Columns mirror the per-file
+// table but every number is the group sum. The label is the shape/category,
+// never the asset name — this is the table meant to be published.
+function renderGroupTable(axis, groups) {
+    const section = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = `${axis.label} — entity groups (model + its animation banks) · ${WARM_ITERS} warm iters`;
+    section.appendChild(h);
+
+    const table = document.createElement('table');
+    const headers = ['entity (by shape)', 'category', 'files', 'total KB', 'cold ms', 'warm mean', 'warm best', 'MB/s'];
+    const thead = document.createElement('thead');
+    const htr = document.createElement('tr');
+    for (const label of headers) {
+        const th = document.createElement('th');
+        th.textContent = label;
+        htr.appendChild(th);
+    }
+    thead.appendChild(htr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const addRow = (cells, cls) => {
+        const tr = document.createElement('tr');
+        if (cls) tr.className = cls;
+        cells.forEach((c, i) => {
+            const td = document.createElement('td');
+            td.textContent = c;
+            if (i >= 2) td.className = 'num';
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    };
+
+    for (const g of groups) {
+        addRow([g.shape, g.category, g.memberCount, kb(g.bytes), ms(g.cold), ms(g.mean), ms(g.best), throughput(g.bytes, g.best)]);
+    }
+    const totBytes = groups.reduce((s, g) => s + g.bytes, 0);
+    const totCold = groups.reduce((s, g) => s + g.cold, 0);
+    const totMean = groups.reduce((s, g) => s + g.mean, 0);
+    const totBest = groups.reduce((s, g) => s + g.best, 0);
+    addRow([`${groups.length} entities`, '—', '', kb(totBytes), ms(totCold), ms(totMean), ms(totBest), throughput(totBytes, totBest)], 'total');
+
+    table.appendChild(tbody);
+    section.appendChild(table);
+    $results().appendChild(section);
+
+    console.log(`\n=== ${axis.label} — entity groups ===`);
+    console.table(
+        groups.map((g) => ({
+            entity: g.shape,
+            category: g.category,
+            files: g.memberCount,
+            'total KB': +kb(g.bytes),
+            'cold ms': +ms(g.cold),
+            'warm best': +ms(g.best),
+            'MB/s': +throughput(g.bytes, g.best),
+        })),
     );
 }
 
@@ -340,8 +457,10 @@ async function run() {
         const collected = [];
         for (const axis of AXES) {
             const r = axis.mode === 'worker' ? await runWorkerAxis(axis, corpus) : await runMainAxis(axis, corpus);
+            const groups = deriveGroups(r.rows);
+            renderGroupTable(axis, groups);
             renderAxisTable(axis, r.readyMs, r.stallMs, r.rows);
-            collected.push({ axis: axis.label, mode: axis.mode, url: axis.url, readyMs: r.readyMs, stallMs: r.stallMs, fixtures: r.rows });
+            collected.push({ axis: axis.label, mode: axis.mode, url: axis.url, readyMs: r.readyMs, stallMs: r.stallMs, groups, fixtures: r.rows });
         }
         exportResults(corpus.length, collected);
         setStatus(`done — ${AXES.length} axes, ${corpus.length} fixtures, ${WARM_ITERS} warm iters. See summary + Download/Copy above the tables.`);

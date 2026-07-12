@@ -4,6 +4,26 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.3.1 — 2026-07-12
+
+**Docs + bench tooling. No code or decode change** — the parser, codecs and
+built `dist/` are byte-identical to `1.3.0` ; the published tarball differs
+only in `README.md`.
+
+- **README** — new "In-browser load — by entity" section. Real-browser
+  full-entity decode timings (a model joined with its animation banks, grouped
+  and labelled by shape rather than asset name), across two engines
+  (Brave / Chromium 150 · V8 and Firefox 152 · SpiderMonkey), pure-JS vs the
+  opt-in WASM texture decoder, warm-best of 50. Replaces the interim Node-only
+  per-asset table and surfaces two findings : the WASM payoff scales with how
+  slow the engine's JS is (~1.35× on V8, ~1.8× on Firefox), and decoding on the
+  main thread stalls it for seconds where a Worker keeps the hitch under 25 ms.
+- **`bench/browser`** — the browser bench now rolls its per-file rows up into
+  entity groups (model + its animation banks, derived from the filename
+  convention) and renders an anonymized-by-shape group table alongside the
+  existing per-`.gr2` table, both carried in the exported batch JSON. Dev
+  tooling only — `bench/` is not part of the npm tarball.
+
 ## 1.3.0 — 2026-07-11
 
 **Untrusted-input hardening.** Bounds every file-controlled allocation and

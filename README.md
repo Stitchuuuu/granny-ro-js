@@ -208,6 +208,42 @@ the 21-fixture corpus). For a v8 sample profile, use
 `npm run perf:profile`. Full breakdown in
 [docs/perf-baseline.md](docs/perf-baseline.md).
 
+### In-browser load — by entity
+
+The table above is Node **decompression only**. What a web consumer actually
+pays is the whole flow — parse + skeleton + mesh + **decode every texture**
+(the wavelet IGC codec) — in a real browser, where instantiation, GC and the
+main-thread budget only show up live. And the unit that matters isn't a lone
+`.gr2` : the engine loads an **entity** — one model joined with its animation
+banks by a shared asset id. So these numbers are grouped by entity and
+labelled by *shape*, not by asset.
+
+Full-entity decode, **warm-best (best of 50)**, `bench/browser/` on one Apple
+Silicon (arm64) Mac — two engines, pure-JS vs the opt-in WASM texture decoder :
+Brave 1.92 (Chromium 150, V8) and Firefox 152 (SpiderMonkey).
+
+| Entity (by shape) | Size | V8 · JS | V8 · WASM | Firefox · JS | Firefox · WASM |
+|---|---|---|---|---|---|
+| Static textured model | ~50 KB | 14 ms | 10 ms | 24 ms | 11 ms |
+| Textured model + light animation | ~55–80 KB | 14–18 ms | 10–13 ms | 23–26 ms | 11–15 ms |
+| Textured model + full animation set | ~0.3 MB | 63–71 ms | 47–51 ms | 100–116 ms | 56–62 ms |
+
+- **A fully-animated model is the worst case** — a heavy-texture model plus a
+  four-clip animation set, ~0.3 MB, four-fifths of its time in the IGC texture
+  decode. A static model is single-digit-to-teens ms.
+- **WASM's payoff scales with how slow the engine's JS is.** On Firefox it
+  nearly halves the heavy path (116 → 62 ms), closing most of the gap to V8 ;
+  on V8, already fast in JS, it's ~1.35×.
+- **Decode off the main thread.** The Worker axis isn't a faster kernel (same
+  JIT), but decoding the corpus on the main thread stalls it **~2.6 s on V8 /
+  ~4.7 s on Firefox** — in a Worker the worst main-thread hitch stays under
+  25 ms, so the render loop never janks. This is the roBrowser pattern.
+
+Reproduce with `npm run bench:browser` (stages the bundle + corpus, prints the
+serve command) then open the page ; **⬇ Download JSON** exports the full
+per-entity + per-file batch. Node-side equivalent (no browser) : `npm run
+perf:load`.
+
 ## Lineage & credits
 
 MIT licensed.

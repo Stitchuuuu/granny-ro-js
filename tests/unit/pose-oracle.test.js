@@ -171,18 +171,22 @@ describe('compareSkinning', () => {
 });
 
 describe('skinningBoundFor', () => {
-    it('is strict for shallow fixtures, relaxed for the divergent ones', () => {
+    it('is strict for every fixture since session 3 closed the skinning divergence', () => {
+        // The normalize root-cause fix dropped all 21 to < 1e-4, so SKINNING_BOUNDS
+        // is empty and every fixture — including the former deep-chain outliers —
+        // falls back to the strict default.
         expect(skinningBoundFor('guildflag90_1')).toBe(DEFAULT_SKINNING_BOUND);
-        expect(skinningBoundFor('7_attack')).toBeGreaterThan(DEFAULT_SKINNING_BOUND);
-        expect(skinningBoundFor('8_dead')).toBeGreaterThan(DEFAULT_SKINNING_BOUND);
+        expect(skinningBoundFor('7_attack')).toBe(DEFAULT_SKINNING_BOUND);
+        expect(skinningBoundFor('8_dead')).toBe(DEFAULT_SKINNING_BOUND);
+        expect(skinningBoundFor('nonexistent')).toBe(DEFAULT_SKINNING_BOUND);
     });
 });
 
 describe('localOrientBoundFor', () => {
-    it('is strict except for the curve-eval quaternion outliers', () => {
+    it('is strict for every fixture since session 3 closed the curve-eval divergence', () => {
         expect(localOrientBoundFor('guildflag90_1')).toBe(DEFAULT_LOCAL_ORIENT_BOUND);
         expect(localOrientBoundFor('2_dead')).toBe(DEFAULT_LOCAL_ORIENT_BOUND);
-        expect(localOrientBoundFor('8_dead')).toBeGreaterThan(DEFAULT_LOCAL_ORIENT_BOUND);
-        expect(localOrientBoundFor('7_attack')).toBeGreaterThan(DEFAULT_LOCAL_ORIENT_BOUND);
+        expect(localOrientBoundFor('8_dead')).toBe(DEFAULT_LOCAL_ORIENT_BOUND);
+        expect(localOrientBoundFor('7_attack')).toBe(DEFAULT_LOCAL_ORIENT_BOUND);
     });
 });

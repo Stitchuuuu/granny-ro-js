@@ -400,44 +400,37 @@ export function compareSkinning(snap, poses, skeleton = null) {
 }
 
 // -------------------------------------------------------------------------
-// Per-fixture divergence bounds (measured on the first real 21-fixture 40 Hz
-// sweep, session 2). Two DISTINCT divergences the oracle surfaced :
+// Per-fixture divergence bounds. Session 2 fenced two divergences the 40 Hz
+// sweep surfaced ; session 3 ROOT-CAUSED both from the granny2.dll disassembly
+// and closed them, so both tables are now EMPTY (every fixture asserts the
+// strict 1e-4 default). The tables + `*BoundFor` machinery are kept so a future
+// regression re-fences with an explicit, documented entry rather than a silent
+// loosened default.
 //
-//   1. SKINNING — the JS f64 FK cascade vs the DLL's f32 world-pose composite
-//      (`_GrannyBuildWorldPose@24`). Grows with bone depth ; worst on the
-//      deep humanoid finger chains. Local-pose is (mostly) exact, so this is
-//      downstream of the curve evaluator. → session 3 (FK).
-//   2. LOCAL-POSE ORIENTATION — the JS curve evaluator's quaternion output vs
-//      the DLL's, on a handful of fixtures (7_attack/9_attack marginally,
-//      8_dead grossly). Position + scaleShear stay float-exact everywhere
-//      (≤1e-6), so ONLY orientation is fenced. This falsifies session 1's
-//      "local-pose is exact" premise (it only tested 2 fixtures) and is a
-//      SEPARATE root-cause from the FK divergence. → session 3 (curve eval).
-//
-// Every omitted fixture defaults to the strict 1e-4 tolerance. `measured` is
-// the max observed at 40 Hz ; `bound` sits above it with margin so a real
-// regression still reds. Nothing is hidden — the CLI/test always name the
-// worst bone + measured value even when the relaxed assertion passes.
+// Both divergences had ONE root cause : the quaternion normalize.
+//   1. LOCAL-POSE ORIENTATION (was up to 3.22e-3 on 8_dead) — the DLL's B-spline
+//      quaternion sampler (`fcn.1000a3e0`) renormalizes each blend with a single
+//      Newton step `q *= (3 − |q|²)/2`, NOT an exact `1/√`. The port used exact
+//      normalization, which diverges as the blend drifts off-unit near non-unit
+//      control points. Fixed in `GrannyAnimation.js::normalizeQuaternionFast`.
+//      → now ≤ 1.9e-6 on all 21.
+//   2. SKINNING (was up to 0.145 on 8_dead, ~3.6e-4 on deep chains) — NOT an f32
+//      cascade-order effect (the session-2 guess). `composeLocalMatrix` was
+//      re-normalizing (exact) the orientation before building the bone matrix ;
+//      the DLL (`fcn.100189a0`, via BuildCompositeTransform4x4) builds straight
+//      from the fast-normalized local-pose quaternion with no renormalize. Fixed
+//      by dropping that renormalize. → now ≤ 1.8e-5 on all 21.
 // -------------------------------------------------------------------------
 
 /** Strict skinning tolerance — every fixture not in {@link SKINNING_BOUNDS}. */
 export const DEFAULT_SKINNING_BOUND = 1e-4;
 
 /**
- * Per-fixture RELAXED skinning bounds (divergence 1 above).
+ * Per-fixture RELAXED skinning bounds. EMPTY since session 3 — all 21 pass
+ * strict 1e-4 (worst 1.8e-5). Re-add a documented entry only on a real regression.
  * @type {{ [fixture: string]: { measured: number, bound: number, note: string } }}
  */
 export const SKINNING_BOUNDS = {
-    '1_attack': { measured: 3.58e-4, bound: 6e-4, note: 'FK depth divergence; session 3' },
-    '2_damage': { measured: 5.84e-4, bound: 9e-4, note: 'FK depth divergence; session 3' },
-    '7_attack': { measured: 4.55e-3, bound: 7e-3, note: 'FK depth divergence (+ curve-eval, see local); session 3' },
-    '7_damage': { measured: 6.48e-4, bound: 1e-3, note: 'FK depth divergence; session 3' },
-    '7_dead': { measured: 4.02e-4, bound: 7e-4, note: 'FK depth divergence; session 3' },
-    '8_attack': { measured: 1.50e-3, bound: 2.5e-3, note: 'FK depth divergence; session 3' },
-    '8_dead': { measured: 1.45e-1, bound: 2e-1, note: 'GROSS — curve-eval orientation error cascades through FK; session 3 priority' },
-    '9_attack': { measured: 4.76e-3, bound: 7e-3, note: 'FK depth divergence (+ curve-eval, see local); session 3' },
-    '9_damage': { measured: 1.75e-4, bound: 3e-4, note: 'FK depth divergence; session 3' },
-    '9_dead': { measured: 3.06e-4, bound: 5e-4, note: 'FK depth divergence; session 3' },
 };
 
 /** The skinning tolerance for a fixture (relaxed if listed, else strict). */
@@ -450,15 +443,11 @@ export function skinningBoundFor(name) {
 export const DEFAULT_LOCAL_ORIENT_BOUND = 1e-4;
 
 /**
- * Per-fixture RELAXED local-pose ORIENTATION bounds (divergence 2 above) — the
- * curve evaluator's quaternion output vs the DLL's. Position/scaleShear are not
- * listed because they never diverge (fence stays strict on them).
+ * Per-fixture RELAXED local-pose ORIENTATION bounds. EMPTY since session 3 —
+ * all 21 pass strict 1e-4 (worst 1.9e-6). Re-add only on a real regression.
  * @type {{ [fixture: string]: { measured: number, bound: number, note: string } }}
  */
 export const LOCAL_ORIENT_BOUNDS = {
-    '7_attack': { measured: 1.13e-4, bound: 2e-4, note: 'curve-eval quaternion, marginal; session 3' },
-    '9_attack': { measured: 1.13e-4, bound: 2e-4, note: 'curve-eval quaternion, marginal; session 3' },
-    '8_dead': { measured: 3.22e-3, bound: 5e-3, note: 'curve-eval quaternion, GROSS (Bip01 L Forearm w); session 3 priority' },
 };
 
 /** The local-pose orientation tolerance for a fixture (relaxed if listed). */

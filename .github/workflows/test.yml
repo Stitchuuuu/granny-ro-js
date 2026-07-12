@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
-      - run: npm test
+      # Flow 1 — public CI : the wine-free, asset-free dummy/unit suite (incl. the
+      # synthetic pose goldens). The DLL-parity flows need the copyrighted client
+      # assets + wine, so they run only where RO_FOLDER is available (see README).
+      - run: npm run test:unit
 
       - run: npm run typecheck

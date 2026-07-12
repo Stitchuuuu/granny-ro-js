@@ -52,6 +52,7 @@ const DEFAULTS = {
     manifest: resolve(PKG_ROOT, 'tests/fixtures/content-manifest.json'),
     quiet: false,
     json: false,
+    compact: false,
 };
 
 function parseArgs(argv) {

@@ -4,6 +4,15 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.4.1 — 2026-07-12
+
+### Fixed
+
+- **License copyright holder reconciled.** `LICENSE` named a different
+  identity than `package.json` `author`; both now read
+  `Stitchuuuu <stitchuuuu@icloud.com>`. No code, license type (MIT), or
+  third-party attribution blocks changed.
+
 ## 1.4.0 — 2026-07-12
 
 **`poseAt()` is now float-faithful to the real `granny2.dll`** across the whole

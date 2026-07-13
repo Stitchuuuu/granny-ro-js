@@ -148,6 +148,7 @@ intellisense.
 | `parse(buffer)` | `(ArrayBuffer) → { file, typeTree, root }` | Raw file + type-tree walk. |
 | `parseModel(buffer)` | `(ArrayBuffer) → { …parse, skeletons, meshes }` | + bone hierarchy + decoded vertex / index / weight buffers. |
 | `parseAnimated(buffer)` | `(ArrayBuffer) → { …parseModel, animations }` | + animation curves (7 codec variants supported). |
+| `parseAll(buffer)` | `(ArrayBuffer) → { …parseAnimated, textures, models }` | **Single pass** — mesh + animation + texture + model (`initialPlacement`) off one `loadGR2`. ~2× a three-call load, ~7% over a lone `parseTextured`. |
 | `poseAt(parsed, animIdx, t)` | `(parsed, number, number) → { localTransforms, worldMatrices, skinningMatrices }` | Per-bone GPU-ready pose at time `t`. Float32Array column-major. |
 
 Sub-path imports for advanced use (each subpath ships its own `.d.ts`) :
@@ -250,6 +251,14 @@ Brave 1.92 (Chromium 150, V8) and Firefox 152 (SpiderMonkey).
   JIT), but decoding the corpus on the main thread stalls it **~2.6 s on V8 /
   ~4.7 s on Firefox** — in a Worker the worst main-thread hitch stays under
   25 ms, so the render loop never janks. This is the roBrowser pattern.
+- **One parse instead of three (`parseAll`).** A consumer that needs mesh +
+  animation + texture + model used to call `parseTextured` + `parseAnimated` +
+  `extractModels(loadGR2(…))`, paying the Oodle0 decompress three times.
+  `parseAll` runs every extractor on one `loadGR2` : **415 → 197 ms** corpus
+  warm-best on the main thread (**2.10×**, 413 → 190 ms / **2.18×** in a Worker,
+  WASM build). It costs only ~7% more than a single `parseTextured` while
+  returning all three — the repeated decompress was the whole cost. Model loads
+  (guardian / Emperium / flag / treasure box) drop ~40–50%.
 
 Reproduce with `npm run bench:browser` (stages the bundle + corpus, prints the
 serve command) then open the page ; **⬇ Download JSON** exports the full

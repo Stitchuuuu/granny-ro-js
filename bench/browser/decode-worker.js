@@ -9,7 +9,7 @@
 // Protocol :
 //   main → { type:'init', url }                          → worker imports + ready()
 //   worker → { type:'ready' } | { type:'error', error }
-//   main → { type:'decode', path, buffer(transfer), warmIters }
+//   main → { type:'decode', path, buffer(transfer), warmIters, op }
 //   worker → { type:'result', path, bytes, kind, cold, mean, p50, p95, best }
 //          | { type:'error', path, error }
 
@@ -24,6 +24,30 @@ function stats(samples) {
     return { mean, p50: rank(50), p95: rank(95), best: sorted[0] };
 }
 
+// Measured operations — mirror of bench.js OPS (the worker is a separate module,
+// like the duplicated stats() above). The `decode` message names the op.
+const OPS = {
+    parseTextured: {
+        run: (m, bytes) => m.parseTextured(bytes),
+        ok: (r) => !!r && Array.isArray(r.textures),
+        kind: (r) => (r.textures.length > 0 ? 'textured' : '—'),
+    },
+    load3x: {
+        run: (m, bytes) => {
+            m.parseTextured(bytes);
+            m.parseAnimated(bytes);
+            return m.extractModels(m.loadGR2(m.parseGR2File(bytes)));
+        },
+        ok: (r) => Array.isArray(r),
+        kind: (r) => (r.length > 0 ? 'model' : '—'),
+    },
+    load1x: {
+        run: (m, bytes) => m.parseAll(bytes),
+        ok: (r) => !!r && Array.isArray(r.textures) && Array.isArray(r.animations) && Array.isArray(r.models),
+        kind: (r) => `${r.textures.length}t·${r.animations.length}a·${r.models.length}m`,
+    },
+};
+
 self.onmessage = async (e) => {
     const msg = e.data;
     try {
@@ -36,11 +60,12 @@ self.onmessage = async (e) => {
         }
         if (msg.type === 'decode') {
             const bytes = new Uint8Array(msg.buffer);
-            const op = () => mod.parseTextured(bytes);
+            const opDef = OPS[msg.op] ?? OPS.parseTextured;
+            const op = () => opDef.run(mod, bytes);
             const t0 = performance.now();
             const res = op();
             const cold = performance.now() - t0;
-            if (!res || !Array.isArray(res.textures)) throw new Error('empty/invalid output');
+            if (!opDef.ok(res)) throw new Error('empty/invalid output');
             const warm = [];
             for (let i = 0; i < msg.warmIters; i++) {
                 const s = performance.now();
@@ -51,7 +76,7 @@ self.onmessage = async (e) => {
                 type: 'result',
                 path: msg.path,
                 bytes: bytes.length,
-                kind: res.textures.length > 0 ? 'textured' : '—',
+                kind: opDef.kind(res),
                 cold,
                 ...stats(warm),
             });

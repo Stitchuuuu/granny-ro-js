@@ -4,6 +4,38 @@ All notable changes to `granny-ro-js`. This project follows [SemVer](https://sem
 Pre-release versions (`1.0.0-a.N`, `1.0.0-b.N`, …) are validation
 milestones for the upcoming stable `1.0.0`.
 
+## 1.5.0 — 2026-07-13
+
+**Parse a `.gr2` once, get everything.** A single additive entry point for
+consumers that need mesh + animation + texture + model in one shot — one
+Oodle0 decompress instead of three.
+
+### Added
+
+- **`parseAll(buffer, options)`** — single-pass pipeline. One
+  `parseGR2File`→`loadGR2`, then every extractor on that one decompressed graph,
+  returning the superset of `parseTextured` and `parseAnimated` plus
+  `models: ModelInfo[]` (each with `initialPlacement`). Purely additive —
+  `parseTextured` / `parseAnimated` are unchanged. A caller that previously ran
+  all three passes (`parseTextured` + `parseAnimated` +
+  `extractModels(loadGR2(parseGR2File(u8)))`) — the roBrowser `GR2Loader`
+  pattern — now pays the expensive decompress **once**.
+  - **~2.1× faster than the three-pass load** on the 21-fixture corpus in the
+    browser (WASM build, Chromium 150 / V8, Apple Silicon): 415 → 197 ms on the
+    main thread (2.10×), 413 → 190 ms in a Worker (2.18×). Model loads (guardian
+    / Emperium / flag / treasure box) drop ~40–50% ; animation-only loads ~63%.
+  - **`parseAll` costs only ~7% more than a lone `parseTextured`** (197 vs
+    184 ms corpus warm-best) yet returns textures **and** animations **and**
+    models — the extra extractors are cheap once the graph is resident ; the
+    3× cost was the repeated decompress.
+  - New `ParseAllResult` / `ParseAllOptions` types, surfaced in
+    `dist/granny-ro.d.ts`.
+- **Node bench** `tests/perf/GrannyParseAll.bench.js` (`npm run bench`) —
+  `load3x` vs `load1x` on a model + anim fixture (≈ 2× in Node/JS).
+- **Browser bench** `bench/browser/` — new `wasm-esm · load3x` / `load1x`
+  axes (main + worker) and a `load1xVs3x` ratio in the verdict card + exported
+  payload.
+
 ## 1.4.1 — 2026-07-12
 
 ### Fixed

@@ -21,15 +21,50 @@
 
 const BUILD_URL = './granny-ro.esm.js';
 const WASM_URL = './granny-ro.wasm.esm.js';
+
+// Measured operations, keyed by op name. `run(mod, bytes)` is the work timed ;
+// `ok(r)` validates the cold result before warm iters ; `kind(r)` labels the
+// row. `load3x` reproduces exactly what roBrowser's GR2Loader.load() does today
+// (three independent parses, three `loadGR2`) ; `load1x` is the single-pass
+// `parseAll` (one `loadGR2`, every extractor) — the 3×→1× win this rollout ships.
+const OPS = {
+    parseTextured: {
+        run: (mod, bytes) => mod.parseTextured(bytes),
+        ok: (r) => !!r && Array.isArray(r.textures),
+        kind: (r) => (r.textures.length > 0 ? 'textured' : '—'),
+    },
+    load3x: {
+        run: (mod, bytes) => {
+            mod.parseTextured(bytes);
+            mod.parseAnimated(bytes);
+            return mod.extractModels(mod.loadGR2(mod.parseGR2File(bytes)));
+        },
+        ok: (r) => Array.isArray(r),
+        kind: (r) => (r.length > 0 ? 'model' : '—'),
+    },
+    load1x: {
+        run: (mod, bytes) => mod.parseAll(bytes),
+        ok: (r) => !!r && Array.isArray(r.textures) && Array.isArray(r.animations) && Array.isArray(r.models),
+        kind: (r) => `${r.textures.length}t·${r.animations.length}a·${r.models.length}m`,
+    },
+};
+
 const AXES = [
-    { label: 'js-esm · main', url: BUILD_URL, mode: 'main' },
-    { label: 'js-esm · worker', url: BUILD_URL, mode: 'worker' },
+    { label: 'js-esm · main', url: BUILD_URL, mode: 'main', op: 'parseTextured' },
+    { label: 'js-esm · worker', url: BUILD_URL, mode: 'worker', op: 'parseTextured' },
     // WASM build : `await Granny.ready()` instantiation cost is timed
     // separately (readyMs). The whole IGC decode now runs as one fused WASM
     // entry (planeDecode + 4× iDWT2D + yuvToRGB, planes resident) — a single
-    // JS→WASM crossing per texture. These two axes are the perf verdict.
-    { label: 'wasm-esm · main', url: WASM_URL, mode: 'main' },
-    { label: 'wasm-esm · worker', url: WASM_URL, mode: 'worker' },
+    // JS→WASM crossing per texture.
+    { label: 'wasm-esm · main', url: WASM_URL, mode: 'main', op: 'parseTextured' },
+    { label: 'wasm-esm · worker', url: WASM_URL, mode: 'worker', op: 'parseTextured' },
+    // Single-pass rollout axes — the 3-pass baseline vs the 1-pass `parseAll`,
+    // on the WASM build (what roBrowser imports). `load1xVs3x` in the verdict
+    // card is the ratio of these totals.
+    { label: 'wasm-esm · load3x · main', url: WASM_URL, mode: 'main', op: 'load3x' },
+    { label: 'wasm-esm · load3x · worker', url: WASM_URL, mode: 'worker', op: 'load3x' },
+    { label: 'wasm-esm · load1x · main', url: WASM_URL, mode: 'main', op: 'load1x' },
+    { label: 'wasm-esm · load1x · worker', url: WASM_URL, mode: 'worker', op: 'load1x' },
 ];
 
 // Warm iterations per fixture. Override with ?warm=N for a quicker pass.
@@ -301,6 +336,11 @@ function exportResults(fixtureCount, axes) {
     const wasmMain = bestOf('wasm-esm · main');
     const jsWork = bestOf('js-esm · worker');
     const wasmWork = bestOf('wasm-esm · worker');
+    // Single-pass rollout : 3-pass baseline vs 1-pass `parseAll` (WASM build).
+    const load3xMain = bestOf('wasm-esm · load3x · main');
+    const load1xMain = bestOf('wasm-esm · load1x · main');
+    const load3xWork = bestOf('wasm-esm · load3x · worker');
+    const load1xWork = bestOf('wasm-esm · load1x · worker');
     const ratio = (js, w) => (js && w ? (js / w).toFixed(2) + '×' : '—');
 
     const payload = {
@@ -315,8 +355,13 @@ function exportResults(fixtureCount, axes) {
                 'js·worker': jsWork,
                 'wasm·main': wasmMain,
                 'wasm·worker': wasmWork,
+                'wasm·load3x·main': load3xMain,
+                'wasm·load1x·main': load1xMain,
+                'wasm·load3x·worker': load3xWork,
+                'wasm·load1x·worker': load1xWork,
             },
             wasmVsJs: { main: ratio(jsMain, wasmMain), worker: ratio(jsWork, wasmWork) },
+            load1xVs3x: { main: ratio(load3xMain, load1xMain), worker: ratio(load3xWork, load1xWork) },
         },
         axes,
     };
@@ -336,6 +381,14 @@ function exportResults(fixtureCount, axes) {
         `(WASM ${ratio(jsMain, wasmMain)}) — js·worker ${jsWork?.toFixed(1) ?? '—'} ms · ` +
         `wasm·worker ${wasmWork?.toFixed(1) ?? '—'} ms (WASM ${ratio(jsWork, wasmWork)})`;
     bar.appendChild(p);
+
+    // Single-pass verdict : the 3×→1× parse win this rollout ships.
+    const pSingle = document.createElement('p');
+    pSingle.textContent =
+        `single-pass — load3x·main ${load3xMain?.toFixed(1) ?? '—'} ms → load1x·main ${load1xMain?.toFixed(1) ?? '—'} ms ` +
+        `(parseAll ${ratio(load3xMain, load1xMain)}) — load3x·worker ${load3xWork?.toFixed(1) ?? '—'} ms → ` +
+        `load1x·worker ${load1xWork?.toFixed(1) ?? '—'} ms (parseAll ${ratio(load3xWork, load1xWork)})`;
+    bar.appendChild(pSingle);
 
     const dl = document.createElement('button');
     dl.textContent = '⬇ Download JSON';
@@ -377,23 +430,24 @@ async function runMainAxis(axis, corpus) {
     const readyMs = performance.now() - t0;
     if (typeof mod.loadTextureCodec === 'function') await mod.loadTextureCodec();
 
+    const opDef = OPS[axis.op];
     const rows = [];
     stall.reset();
     for (const { path, bytes } of corpus) {
         setStatus(`${axis.label}: ${path} (${rows.length + 1}/${corpus.length})…`);
         try {
-            const op = () => mod.parseTextured(bytes);
+            const op = () => opDef.run(mod, bytes);
             const c0 = performance.now();
             const res = op();
             const cold = performance.now() - c0;
-            if (!res || !Array.isArray(res.textures)) throw new Error('empty/invalid output');
+            if (!opDef.ok(res)) throw new Error('empty/invalid output');
             const warm = [];
             for (let i = 0; i < WARM_ITERS; i++) {
                 const s = performance.now();
                 op();
                 warm.push(performance.now() - s);
             }
-            rows.push({ path, bytes: bytes.length, kind: res.textures.length > 0 ? 'textured' : '—', cold, ...stats(warm) });
+            rows.push({ path, bytes: bytes.length, kind: opDef.kind(res), cold, ...stats(warm) });
         } catch (err) {
             rows.push({ path, bytes: bytes.length, error: err.message });
         }
@@ -427,7 +481,7 @@ async function runWorkerAxis(axis, corpus) {
         setStatus(`${axis.label}: ${path} (${rows.length + 1}/${corpus.length})…`);
         const buf = bytes.slice().buffer; // own copy so the corpus survives the transfer
         const reply = once(worker);
-        worker.postMessage({ type: 'decode', path, buffer: buf, warmIters: WARM_ITERS }, [buf]);
+        worker.postMessage({ type: 'decode', path, buffer: buf, warmIters: WARM_ITERS, op: axis.op }, [buf]);
         const r = await reply;
         if (r.type === 'error') rows.push({ path, bytes: bytes.length, error: r.error });
         else rows.push({ path, bytes: r.bytes, kind: r.kind, cold: r.cold, mean: r.mean, p50: r.p50, p95: r.p95, best: r.best });

@@ -55,5 +55,17 @@ npx http-server bench/browser -p 8888
 For a scripted node-side equivalent (10-15 runs/side, averaged, Δ% with σ), use
 `npm run perf:regress -- --baseline=v1.2.0 --runs=12` from the repo root.
 
-The `AXES` array in `bench.js` has JS main + worker + the opt-in WASM axes for
-the JS-vs-WASM comparison.
+## Axes
+
+The `AXES` array in `bench.js` pairs a build URL + thread mode with an **op**
+(from the `OPS` map). Two comparisons:
+
+- **JS-vs-WASM** (`op: parseTextured`) — `js-esm` / `wasm-esm`, each × main / worker.
+- **single-pass** (WASM build) — `wasm-esm · load3x · {main,worker}` vs
+  `wasm-esm · load1x · {main,worker}` :
+  - **`load3x`** reproduces roBrowser's `GR2Loader.load()` today — `parseTextured`
+    + `parseAnimated` + `extractModels(loadGR2(parseGR2File(u8)))`, three `loadGR2`.
+  - **`load1x`** is the single-pass `parseAll(u8)` — one `loadGR2`, every extractor.
+
+The verdict card (and exported payload `summary.load1xVs3x`) reports the
+`load3x / load1x` ratio per thread mode — the 3×→1× parse win.

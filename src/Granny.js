@@ -101,6 +101,18 @@ export {
  */
 
 /**
+ * Result of {@link parseAll} : {@link ParseTexturedResult} + animation + model
+ * extraction — the union every high-level consumer needs from a single
+ * `loadGR2`. `models[0].initialPlacement` is the InitialPlacement Transform a
+ * caller previously reached only via the low-level graph.
+ *
+ * @typedef {ParseTexturedResult & {
+ *   animations: ReadonlyArray<import('./GrannyAnimation.js').Animation>,
+ *   models: import('./GrannyModel.js').ModelInfo[],
+ * }} ParseAllResult
+ */
+
+/**
  * Combined options for {@link parseModel} (forwarded to skeleton + mesh extractors).
  *
  * @typedef {import('./GrannySkeleton.js').ExtractSkeletonsOptions
@@ -121,6 +133,18 @@ export {
  * @typedef {import('./GrannySkeleton.js').ExtractSkeletonsOptions
  *   & import('./GrannyMesh.js').ExtractMeshesOptions
  *   & import('./GrannyAnimation.js').ExtractAnimationsOptions} ParseAnimatedOptions
+ */
+
+/**
+ * Combined options for {@link parseAll} (skeleton + mesh + texture + animation +
+ * model extractors). The model extractor's options are inline (`maxModels`,
+ * `maxBindings`) — it has no exported Options typedef.
+ *
+ * @typedef {import('./GrannySkeleton.js').ExtractSkeletonsOptions
+ *   & import('./GrannyMesh.js').ExtractMeshesOptions
+ *   & import('./GrannyTexture.js').ExtractTexturesOptions
+ *   & import('./GrannyAnimation.js').ExtractAnimationsOptions
+ *   & { maxModels?: number, maxBindings?: number }} ParseAllOptions
  */
 
 // --- async init seam ---------------------------------------------------
@@ -290,6 +314,36 @@ export function parseTextured(buffer, options = {}) {
     const meshes = extractMeshes(loaded, options);
     const textures = extractTextures(loaded, options);
     return { file, typeTree, root, skeletons, meshes, textures };
+}
+
+/**
+ * Single-pass pipeline : one `parseGR2File`→`loadGR2`, then every extractor on
+ * that single decompressed graph — skeleton + mesh + texture + animation +
+ * model. Returns the superset of {@link parseTextured} and {@link parseAnimated}
+ * plus `models` (each with `initialPlacement`), so a consumer that needs
+ * textured + animated + model(InitialPlacement) pays the expensive Oodle0
+ * decompress (`loadGR2`) **once** instead of three times.
+ *
+ * Additive — {@link parseTextured} / {@link parseAnimated} are unchanged. On an
+ * animation-only fixture, `meshes` / `skeletons` / `textures` / `models` resolve
+ * to empty arrays and `animations` carries the curves ; on a pure model fixture
+ * the reverse. Same throw / error surface as {@link parse}.
+ *
+ * @param {import('./GrannyFile.js').GR2Input} buffer — the .gr2 bytes.
+ * @param {ParseAllOptions} [options]
+ * @returns {ParseAllResult}
+ */
+export function parseAll(buffer, options = {}) {
+    const file = parseGR2File(buffer);
+    const loaded = loadGR2(file);
+    const typeTree = parseTypeTree(loaded, file.header.root_type);
+    const root = parseObject(loaded, typeTree, file.header.root_object);
+    const skeletons = extractSkeletons(loaded, options);
+    const meshes = extractMeshes(loaded, options);
+    const textures = extractTextures(loaded, options);
+    const animations = extractAnimations(loaded, options);
+    const models = extractModels(loaded, options);
+    return { file, typeTree, root, skeletons, meshes, textures, animations, models };
 }
 
 /**

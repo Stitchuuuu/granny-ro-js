@@ -20,12 +20,17 @@ Oodle0 decompress instead of three.
   all three passes (`parseTextured` + `parseAnimated` +
   `extractModels(loadGR2(parseGR2File(u8)))`) — the roBrowser `GR2Loader`
   pattern — now pays the expensive decompress **once**.
-  - **~2.1× faster than the three-pass load** on the 21-fixture corpus in the
-    browser (WASM build, Chromium 150 / V8, Apple Silicon): 415 → 197 ms on the
-    main thread (2.10×), 413 → 190 ms in a Worker (2.18×). Model loads (guardian
-    / Emperium / flag / treasure box) drop ~40–50% ; animation-only loads ~63%.
+  - **Per-load reality — one spawn (model + its animation banks)**, browser
+    warm-best, WASM build, Chromium 150 / V8, Apple Silicon, main thread :
+    a static model (Emperium) **20.6 → 10.4 ms** (1.98×), a model + 2 anim
+    (treasure box) **31.1 → 14.5 ms** (2.14×), a heavy model + 4 anim (guardian)
+    **~110 → ~52 ms** (~2.1×). Once per model *type* (cached after), so the real
+    cumulative cost is bounded — but a clean 3×→1× on the decompress.
+  - **Corpus aggregate** — sum of per-fixture warm-best over the 20 decoding
+    fixtures (of 21 ; one off-corpus input errors identically on every axis) :
+    **415 → 197 ms** main (2.10×), **413 → 190 ms** Worker (2.18×).
   - **`parseAll` costs only ~7% more than a lone `parseTextured`** (197 vs
-    184 ms corpus warm-best) yet returns textures **and** animations **and**
+    184 ms, same corpus total) yet returns textures **and** animations **and**
     models — the extra extractors are cheap once the graph is resident ; the
     3× cost was the repeated decompress.
   - New `ParseAllResult` / `ParseAllOptions` types, surfaced in

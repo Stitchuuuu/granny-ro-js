@@ -254,11 +254,22 @@ Brave 1.92 (Chromium 150, V8) and Firefox 152 (SpiderMonkey).
 - **One parse instead of three (`parseAll`).** A consumer that needs mesh +
   animation + texture + model used to call `parseTextured` + `parseAnimated` +
   `extractModels(loadGR2(…))`, paying the Oodle0 decompress three times.
-  `parseAll` runs every extractor on one `loadGR2` : **415 → 197 ms** corpus
-  warm-best on the main thread (**2.10×**, 413 → 190 ms / **2.18×** in a Worker,
-  WASM build). It costs only ~7% more than a single `parseTextured` while
-  returning all three — the repeated decompress was the whole cost. Model loads
-  (guardian / Emperium / flag / treasure box) drop ~40–50%.
+  `parseAll` runs every extractor on one `loadGR2`. It costs only ~7% more than
+  a single `parseTextured` while returning all three — the repeated decompress
+  was the whole cost.
+
+  **What one spawn actually costs** (model + its animation banks, warm-best,
+  WASM build, Chromium 150 / V8, Apple Silicon, main thread) :
+
+  | What spawns | 3-pass | `parseAll` | saved |
+  |---|---|---|---|
+  | static model (Emperium) | 20.6 ms | 10.4 ms | −10 ms (1.98×) |
+  | model + 2 anim (treasure box) | 31.1 ms | 14.5 ms | −17 ms (2.14×) |
+  | model + 4 anim (guardian) | ~110 ms | ~52 ms | ~−58 ms (~2.1×) |
+
+  Once per model *type* (cached after), so the cumulative cost is bounded.
+  Corpus aggregate (sum of per-fixture warm-best, 20 of 21 fixtures decode) :
+  **415 → 197 ms** main (**2.10×**), **413 → 190 ms** Worker (**2.18×**).
 
 Reproduce with `npm run bench:browser` (stages the bundle + corpus, prints the
 serve command) then open the page ; **⬇ Download JSON** exports the full
